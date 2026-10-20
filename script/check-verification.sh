@@ -1,0 +1,57 @@
+#!/usr/bin/env bash
+set -euo pipefail
+cd "$(dirname "$0")/.."
+
+ARTIFACT=out/ImmutableSwapper.sol/ImmutableSwapper.json
+HASHES=verification/bytecode-hashes.json
+INPUT=verification/ImmutableSwapper.standard-input.json
+[ -f "$ARTIFACT" ] || { echo "::error::$ARTIFACT missing; run forge build" >&2; exit 1; }
+[ -f "$HASHES" ] || { echo "::error::$HASHES missing; run script/refresh-verification.sh" >&2; exit 1; }
+[ -f "$INPUT" ] || { echo "::error::$INPUT missing; run script/refresh-verification.sh" >&2; exit 1; }
+status=0
+
+expect() {
+  local recorded
+  recorded=$(jq -j "$1 // \"\"" "$HASHES")
+  if [ "$recorded" != "$2" ]; then
+    echo "::error::$1: recorded '$recorded', built '$2'" >&2
+    status=1
+  else
+    echo "$1 ok"
+  fi
+}
+
+creation=$(jq -j '.bytecode.object' "$ARTIFACT")
+expect .creationCodeKeccak "$(cast keccak "$creation")"
+expect .solc "$(jq -j '.metadata.compiler.version' "$ARTIFACT")"
+expect .salt "$(cast keccak "$(jq -j .saltPreimage "$HASHES")")"
+
+exchanges="[$(jq -j '.exchanges | join(",")' "$HASHES")]"
+deployer=$(jq -j .create2Deployer "$HASHES")
+salt=$(jq -j .salt "$HASHES")
+for symbol in $(jq -r '.deployments | keys[]' "$HASHES"); do
+  d=".deployments.$symbol"
+  args=$(cast abi-encode 'constructor(address,address[12])' "$(jq -j "$d.outputToken" "$HASHES")" "$exchanges")
+  expect "$d.constructorArgs" "$args"
+  expect "$d.address" "$(cast create2 --deployer "$deployer" --salt "$salt" --init-code "${creation}${args#0x}" | grep -oE '0x[0-9a-fA-F]{40}' | head -n1)"
+done
+
+projection='del(.settings.outputSelection)'
+current=$(forge verify-contract --show-standard-json-input 0x0000000000000000000000000000000000000001 src/ImmutableSwapper.sol:ImmutableSwapper | jq -S "$projection")
+if [ "$current" != "$(jq -S "$projection" "$INPUT")" ]; then
+  echo "::error::$INPUT is stale" >&2
+  status=1
+else
+  echo "$INPUT ok"
+fi
+
+for address in $(jq -r '.deployments[].address' "$HASHES"); do
+  if grep -qF "\`$address\`" README.md; then
+    echo "README.md shows $address"
+  else
+    echo "::error::README.md does not show $address" >&2
+    status=1
+  fi
+done
+
+exit $status

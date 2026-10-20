@@ -42,6 +42,8 @@ CONCENTRATED = {"HydrexAlgebra", "AeroSlipstream", "AerodromeSlipstream", "Aerod
 CONCENTRATED |= {"AerodromeSlipstream3", "UniswapV3"}
 AERO_V3 = {"AeroVolatile", "AeroStable", "AeroSlipstream"}
 
+V3_FEE = 500
+
 # Where a pool is found: (factory call, arguments). Uniswap v4 hops are keys: (fee, tick spacing).
 LOOKUP = {
     "HydrexAlgebra": ("poolByPair(address,address)", []),
@@ -54,7 +56,7 @@ LOOKUP = {
     "AerodromeSlipstream2": ("getPool(address,address,int24)", [50]),
     "AerodromeSlipstream3": ("getPool(address,address,int24)", [50]),
     "UniswapV2": ("getPair(address,address)", []),
-    "UniswapV3": ("getPool(address,address,uint24)", [500]),
+    "UniswapV3": ("getPool(address,address,uint24)", [V3_FEE]),
 }
 
 # name: (holder, token, amount, [(exchange, token out, (fee, tick spacing) for Uniswap v4)]). Each route goes through the
@@ -173,6 +175,13 @@ def quote_hop(block, exchange, pool, token_in, token_out, amount):
     return out - 1 if exchange == "HydrexClassic" and out else out
 
 
+# Uniswap v3 hops name their pool's fee, and Uniswap v4 hops their key's.
+def fee(hop):
+    if hop[0] == "UniswapV3":
+        return V3_FEE
+    return hop[2][0] if len(hop) > 2 else 0
+
+
 def quote_v4(block, token_in, amount, hops):
     path = ",".join(f"({out},{fee},{spacing},{ETH},0x)" for _, out, (fee, spacing) in hops)
     signature = "quoteExactInput((address,(address,uint24,int24,address,bytes)[],uint128))"
@@ -212,7 +221,7 @@ def main():
             "exchanges": [INDEX[h[0]] for h in hops],
             "pools": pools,
             "tokensOut": [h[1] for h in hops],
-            "fees": [h[2][0] if len(h) > 2 else 0 for h in hops],
+            "fees": [fee(h) for h in hops],
             "tickSpacings": [h[2][1] if len(h) > 2 else 0 for h in hops],
             "quote": "0" if created else str(quote),
         }

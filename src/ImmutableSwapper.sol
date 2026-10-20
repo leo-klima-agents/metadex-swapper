@@ -10,7 +10,6 @@ import {IPairFactory} from "./interfaces/IPairFactory.sol";
 import {IPoolFactory} from "./interfaces/IPoolFactory.sol";
 import {IPoolManager} from "./interfaces/IPoolManager.sol";
 import {IUniswapV2Factory} from "./interfaces/IUniswapV2Factory.sol";
-import {IUniswapV2Pair} from "./interfaces/IUniswapV2Pair.sol";
 import {IUniswapV3Factory} from "./interfaces/IUniswapV3Factory.sol";
 import {IUniswapV3SwapCallback} from "./interfaces/IUniswapV3SwapCallback.sol";
 import {IUnlockCallback} from "./interfaces/IUnlockCallback.sol";
@@ -37,7 +36,7 @@ contract ImmutableSwapper is IAlgebraSwapCallback, IUniswapV3SwapCallback, IUnlo
         Exchange exchange; // picked by the caller
         address pool; // zero for Uniswap v4
         address tokenOut; // the last hop's is the output token; zero is native ETH, between two Uniswap v4 hops only
-        uint24 fee; // Uniswap v4 only
+        uint24 fee; // Uniswap v3 and v4 only
         int24 tickSpacing; // Uniswap v4 only
     }
 
@@ -52,7 +51,6 @@ contract ImmutableSwapper is IAlgebraSwapCallback, IUniswapV3SwapCallback, IUnlo
         bool done;
         uint256 amountIn;
         uint256 amountOut; // before the fee
-        uint256 fee;
         bytes reason; // why the route failed, if it did
     }
 
@@ -86,13 +84,11 @@ contract ImmutableSwapper is IAlgebraSwapCallback, IUniswapV3SwapCallback, IUnlo
     uint256 private transient owedAmount;
     bool private transient owedIsToken0;
 
-    event Swapped(
-        address indexed caller, address[] tokens, uint256[] amountsIn, uint256[] amountsOut, uint256 paid, uint256 fee
-    );
+    event RouteSwapped(address indexed caller, uint256 index, address token, uint256 amountIn, uint256 amountOut);
     event RouteFailed(address indexed caller, uint256 index, address token, bytes reason);
+    event Swapped(address indexed caller, uint256 paid, uint256 fee);
 
     error Expired();
-    error NoRoutes();
     error BadHopCount(uint256 route);
     error BadPath(uint256 route, uint256 hop);
     error NotExchangePool(Exchange exchange, address pool);
@@ -141,16 +137,15 @@ contract ImmutableSwapper is IAlgebraSwapCallback, IUniswapV3SwapCallback, IUnlo
         returns (Result[] memory results, uint256 paid, uint256 fee)
     {
         if (block.timestamp > deadline) revert Expired();
-        if (routes.length == 0) revert NoRoutes();
         results = new Result[](routes.length);
-        uint256 done;
         for (uint256 i; i < routes.length; ++i) {
             Result memory r = _try(i, routes[i]);
             results[i] = r;
             if (r.done) {
-                ++done;
-                fee += r.fee;
-                paid += r.amountOut - r.fee;
+                uint256 routeFee = _fee(r.amountOut);
+                fee += routeFee;
+                paid += r.amountOut - routeFee;
+                emit RouteSwapped(msg.sender, i, routes[i].token, r.amountIn, r.amountOut);
             } else if (skipFailed) {
                 emit RouteFailed(msg.sender, i, routes[i].token, r.reason);
             } else {
@@ -159,24 +154,13 @@ contract ImmutableSwapper is IAlgebraSwapCallback, IUniswapV3SwapCallback, IUnlo
         }
         if (fee != 0) _transfer(outputToken, TREASURY, fee);
         if (paid != 0) _transfer(outputToken, msg.sender, paid);
-
-        address[] memory tokens = new address[](done);
-        uint256[] memory amountsIn = new uint256[](done);
-        uint256[] memory amountsOut = new uint256[](done);
-        uint256 k;
-        for (uint256 i; i < routes.length; ++i) {
-            if (!results[i].done) continue;
-            tokens[k] = routes[i].token;
-            amountsIn[k] = results[i].amountIn;
-            amountsOut[k++] = results[i].amountOut;
-        }
-        emit Swapped(msg.sender, tokens, amountsIn, amountsOut, paid, fee);
+        emit Swapped(msg.sender, paid, fee);
     }
 
     // Called with eth_call: what swap would return now. It moves nothing, and needs no allowance: an amount of
-    // type(uint256).max quotes the caller's whole balance.
+    // type(uint256).max quotes the caller's whole balance. The lock matters: a swap nested in a quote would pull nothing,
+    // yet pay out.
     function quote(Route[] calldata routes) external nonReentrant returns (Result[] memory results) {
-        if (routes.length == 0) revert NoRoutes();
         quoting = true;
         results = new Result[](routes.length);
         for (uint256 i; i < routes.length; ++i) {
@@ -198,13 +182,16 @@ contract ImmutableSwapper is IAlgebraSwapCallback, IUniswapV3SwapCallback, IUnlo
         external
         returns (uint256 amountIn, uint256 amountOut)
     {
-        if (msg.sender != address(this) || !locked) revert OnlySelf();
+        if (msg.sender != address(this)) revert OnlySelf();
         _checkRoute(index, route);
         address token = route.token;
         amountIn = route.amount;
         if (amountIn == type(uint256).max) {
             amountIn = IERC20(token).balanceOf(caller);
-            if (!quoting) amountIn = _min(amountIn, IERC20(token).allowance(caller, address(this)));
+            if (!quoting) {
+                uint256 allowance = IERC20(token).allowance(caller, address(this));
+                if (allowance < amountIn) amountIn = allowance;
+            }
         }
         if (!quoting) {
             uint256 before = _balance(token);
@@ -226,10 +213,10 @@ contract ImmutableSwapper is IAlgebraSwapCallback, IUniswapV3SwapCallback, IUnlo
 
     function unlockCallback(bytes calldata data) external returns (bytes memory) {
         _checkCaller();
-        (uint256 index, uint256 start, Hop[] memory hops) = abi.decode(data, (uint256, uint256, Hop[]));
+        Hop[] memory hops = abi.decode(data, (Hop[]));
         IPoolManager manager = IPoolManager(msg.sender);
-        address token = owedToken;
-        uint256 amount = owedAmount;
+        (address tokenIn, uint256 amountIn) = (owedToken, owedAmount);
+        (address token, uint256 amount) = (tokenIn, amountIn);
         for (uint256 i; i < hops.length; ++i) {
             address tokenOut = hops[i].tokenOut;
             bool zeroForOne = token < tokenOut;
@@ -243,14 +230,14 @@ contract ImmutableSwapper is IAlgebraSwapCallback, IUniswapV3SwapCallback, IUnlo
             );
             (int256 owed, int256 out) = _split(delta, zeroForOne);
             if (owed != amountSpecified) revert PartialFill(msg.sender);
-            if (out <= 0) revert NoOutput(index, start + i);
+            // Never negative: an exact input swap through a pool without hooks only owes the swapper.
             // forge-lint: disable-next-line(unsafe-typecast)
             amount = uint256(out);
             token = tokenOut;
         }
         if (quoting) revert Quoted(amount);
-        manager.sync(owedToken);
-        _transfer(owedToken, msg.sender, owedAmount);
+        manager.sync(tokenIn);
+        _transfer(tokenIn, msg.sender, amountIn);
         manager.settle();
         manager.take(token, address(this), amount);
         return "";
@@ -258,7 +245,7 @@ contract ImmutableSwapper is IAlgebraSwapCallback, IUniswapV3SwapCallback, IUnlo
 
     function _try(uint256 index, Route calldata route) private returns (Result memory r) {
         try this.runRoute(msg.sender, index, route) returns (uint256 amountIn, uint256 amountOut) {
-            r = Result(true, amountIn, amountOut, _fee(amountOut), "");
+            r = Result(true, amountIn, amountOut, "");
         } catch (bytes memory reason) {
             r.reason = reason;
         }
@@ -272,6 +259,7 @@ contract ImmutableSwapper is IAlgebraSwapCallback, IUniswapV3SwapCallback, IUnlo
         for (uint256 i; i < n; ++i) {
             Hop calldata hop = route.hops[i];
             if ((hop.tokenOut == outputToken) != (i == n - 1)) revert BadPath(index, i);
+            // A hop out to native ETH is not the last, which ends in the output token, so hops[i + 1] exists.
             if (
                 hop.tokenOut == address(0)
                     && (hop.exchange != Exchange.UniswapV4 || route.hops[i + 1].exchange != Exchange.UniswapV4)
@@ -284,16 +272,13 @@ contract ImmutableSwapper is IAlgebraSwapCallback, IUniswapV3SwapCallback, IUnlo
     function _isExchangePool(Hop calldata hop, address tokenIn) private view returns (bool) {
         Exchange e = hop.exchange;
         address pool = hop.pool;
-        address factory = _factory(e);
         if (e == Exchange.UniswapV4) return pool == address(0);
+        // Factories answer zero for a pair they don't know.
         if (pool == address(0)) return false;
+        address factory = _factory(e);
         if (e == Exchange.HydrexAlgebra) return IAlgebraFactory(factory).poolByPair(tokenIn, hop.tokenOut) == pool;
         if (e == Exchange.UniswapV2) return IUniswapV2Factory(factory).getPair(tokenIn, hop.tokenOut) == pool;
-        if (e == Exchange.UniswapV3) {
-            (bool ok, bytes memory ret) = pool.staticcall(abi.encodeCall(IConcentratedPool.fee, ()));
-            return ok && ret.length == 32
-                && IUniswapV3Factory(factory).getPool(tokenIn, hop.tokenOut, abi.decode(ret, (uint24))) == pool;
-        }
+        if (e == Exchange.UniswapV3) return IUniswapV3Factory(factory).getPool(tokenIn, hop.tokenOut, hop.fee) == pool;
         bool listed =
             e == Exchange.HydrexClassic ? IPairFactory(factory).isPair(pool) : IPoolFactory(factory).isPool(pool);
         if (!listed) return false;
@@ -313,7 +298,7 @@ contract ImmutableSwapper is IAlgebraSwapCallback, IUniswapV3SwapCallback, IUnlo
                 }
                 // The run pays its first token inside unlock, so its output can be counted only if it's another token.
                 if (hops[next - 1].tokenOut == token) revert BadPath(index, next - 1);
-                amount = _swapV4(index, i, hops[i:next], token, amount);
+                amount = _swapV4(hops[i:next], token, amount);
             } else if (_isConcentrated(e)) {
                 amount = _swapConcentrated(hops[i], token, amount);
             } else {
@@ -342,43 +327,33 @@ contract ImmutableSwapper is IAlgebraSwapCallback, IUniswapV3SwapCallback, IUnlo
         return _output(ok, ret, hop.tokenOut, before);
     }
 
-    function _swapV4(uint256 index, uint256 start, Hop[] calldata hops, address tokenIn, uint256 amount)
-        private
-        returns (uint256)
-    {
+    function _swapV4(Hop[] calldata hops, address tokenIn, uint256 amount) private returns (uint256) {
         address tokenOut = hops[hops.length - 1].tokenOut;
         _expect(uniswapV4, tokenIn, amount, false);
         uint256 before = _balance(tokenOut);
-        (bool ok, bytes memory ret) =
-            uniswapV4.call(abi.encodeCall(IPoolManager.unlock, (abi.encode(index, start, hops))));
+        (bool ok, bytes memory ret) = uniswapV4.call(abi.encodeCall(IPoolManager.unlock, (abi.encode(hops))));
         expectedCaller = address(0);
         return _output(ok, ret, tokenOut, before);
     }
 
     function _swapClassic(Hop calldata hop, address tokenIn, uint256 amount) private returns (uint256) {
         Exchange e = hop.exchange;
-        address pool = hop.pool;
+        IClassicPool pool = IClassicPool(hop.pool);
         bool zeroForOne = tokenIn < hop.tokenOut;
-        if (!quoting) _transfer(tokenIn, pool, amount);
-        uint256 reserveIn;
-        uint256 reserveOut;
-        if (e == Exchange.UniswapV2) {
-            (reserveIn, reserveOut,) = IUniswapV2Pair(pool).getReserves();
-        } else {
-            (reserveIn, reserveOut,) = IClassicPool(pool).getReserves();
-        }
+        if (!quoting) _transfer(tokenIn, address(pool), amount);
+        (uint256 reserveIn, uint256 reserveOut,) = pool.getReserves();
         if (!zeroForOne) (reserveIn, reserveOut) = (reserveOut, reserveIn);
         // What the pool received: a token that charges a fee on transfers sends it less.
-        if (!quoting) amount = IERC20(tokenIn).balanceOf(pool) - reserveIn;
+        if (!quoting) amount = IERC20(tokenIn).balanceOf(address(pool)) - reserveIn;
 
         uint256 out;
         if (e == Exchange.UniswapV2) {
             out = amount * 997 * reserveOut / (reserveIn * 1000 + amount * 997);
         } else if (e == Exchange.AeroVolatile || e == Exchange.AeroStable) {
             // Aero's fee depends on the caller and on the transaction's priority fee, so the swapper asks itself.
-            out = IClassicPool(pool).getAmountOutWithTotalFee(amount, tokenIn);
+            out = pool.getAmountOutWithTotalFee(amount, tokenIn);
         } else {
-            out = IClassicPool(pool).getAmountOut(amount, tokenIn);
+            out = pool.getAmountOut(amount, tokenIn);
         }
         // Hydrex's pairs run Solidly's first stable curve, which can quote one wei more than the pair then accepts.
         if (e == Exchange.HydrexClassic && out != 0) --out;
@@ -386,11 +361,7 @@ contract ImmutableSwapper is IAlgebraSwapCallback, IUniswapV3SwapCallback, IUnlo
 
         (uint256 out0, uint256 out1) = zeroForOne ? (uint256(0), out) : (out, uint256(0));
         uint256 before = _balance(hop.tokenOut);
-        if (e == Exchange.UniswapV2) {
-            IUniswapV2Pair(pool).swap(out0, out1, address(this), "");
-        } else {
-            IClassicPool(pool).swap(out0, out1, address(this), "");
-        }
+        pool.swap(out0, out1, address(this), "");
         return _balance(hop.tokenOut) - before;
     }
 
@@ -467,10 +438,6 @@ contract ImmutableSwapper is IAlgebraSwapCallback, IUniswapV3SwapCallback, IUnlo
 
     function _fee(uint256 amountOut) private pure returns (uint256) {
         return amountOut * FEE_BPS / 10_000;
-    }
-
-    function _min(uint256 a, uint256 b) private pure returns (uint256) {
-        return a < b ? a : b;
     }
 
     function _balance(address token) private view returns (uint256) {

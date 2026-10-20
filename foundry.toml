@@ -31,5 +31,4 @@ exclude_lints = [
   "reentrancy-events",
   "unused-return",
   "uninitialized-local",
-  "environment-read-across-mutation",
 ]

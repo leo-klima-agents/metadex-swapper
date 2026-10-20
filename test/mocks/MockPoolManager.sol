@@ -7,6 +7,9 @@ import {IUnlockCallback} from "../../src/interfaces/IUnlockCallback.sol";
 
 // Keeps accounts like Uniswap v4's PoolManager, for pools at fixed prices.
 contract MockPoolManager {
+    uint160 internal constant MIN_SQRT_PRICE = 4295128739;
+    uint160 internal constant MAX_SQRT_PRICE = 1461446703485210103287273052203988822378723970342;
+
     struct Price {
         uint256 num;
         uint256 den;
@@ -52,6 +55,7 @@ contract MockPoolManager {
         Price memory p = prices[keccak256(abi.encode(key))];
         require(p.den != 0, "PoolNotInitialized");
         require(params.amountSpecified < 0, "exact input only");
+        require(params.sqrtPriceLimitX96 == (params.zeroForOne ? MIN_SQRT_PRICE + 1 : MAX_SQRT_PRICE - 1), "limit");
         swapped.push(key);
         uint256 amountIn = uint256(-params.amountSpecified) * fillBps / 10_000;
         uint256 out = params.zeroForOne ? amountIn * p.num / p.den : amountIn * p.den / p.num;

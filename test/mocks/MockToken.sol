@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.37;
 
-// An ERC-20 that can charge a fee on transfers, call a hook on each transfer, revert, or return nothing.
+// An ERC-20 that can charge a fee on transfers, call a hook on its next transfer, revert, or return nothing.
 contract MockToken {
-    uint8 public immutable decimals;
     mapping(address => uint256) public balanceOf;
     mapping(address => mapping(address => uint256)) public allowance;
 
@@ -12,10 +11,6 @@ contract MockToken {
     bool public noReturn;
     address public hookTarget;
     bytes public hookData;
-
-    constructor(uint8 decimals_) {
-        decimals = decimals_;
-    }
 
     function mint(address to, uint256 amount) external {
         balanceOf[to] += amount;

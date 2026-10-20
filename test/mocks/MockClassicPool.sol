@@ -4,7 +4,8 @@ pragma solidity 0.8.37;
 import {IERC20} from "../../src/interfaces/IERC20.sol";
 
 // A constant-product pool, priced like Solidly pools and Uniswap v2 pairs. taxBps is an extra fee that only
-// getAmountOutWithTotalFee and swap see, as Aero's MEV tax.
+// getAmountOutWithTotalFee and swap see, as Aero's MEV tax. A real pool lacks one or both getAmountOut functions, so
+// only the fork tests catch the swapper asking the wrong one.
 contract MockClassicPool {
     address public immutable token0;
     address public immutable token1;

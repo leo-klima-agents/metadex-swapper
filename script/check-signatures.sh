@@ -88,14 +88,20 @@ for name in token0 token1 getReserves getAmountOut swap; do
   check IClassicPool.sol "$name" aero/IPool.sol
 done
 check IClassicPool.sol getAmountOutWithTotalFee aero/IPool.sol
-check IUniswapV2Pair.sol getReserves uniswap/v2/IUniswapV2Pair.sol
-check IUniswapV2Pair.sol swap uniswap/v2/IUniswapV2Pair.sol
+check IClassicPool.sol swap uniswap/v2/IUniswapV2Pair.sol
+# Uniswap v2's getReserves returns narrower types, each in a word of its own, which IClassicPool reads as uint256.
+v2=$(sig "$U/uniswap/v2/IUniswapV2Pair.sol" getReserves)
+if [ "$v2" != "getReserves()(uint112,uint112,uint32)" ]; then
+  echo "::error::uniswap/v2/IUniswapV2Pair.sol has $v2" >&2
+  status=1
+else
+  echo "$v2 ok (uniswap/v2/IUniswapV2Pair.sol, read as uint256)"
+fi
 
 for name in token0 token1; do
   check IClassicPool.sol "$name" aero/slipstream/ICLPoolConstants.sol
   check IClassicPool.sol "$name" aerodrome/slipstream/ICLPoolConstants.sol
 done
-check IConcentratedPool.sol fee uniswap/v3/IUniswapV3PoolImmutables.sol
 check IConcentratedPool.sol swap algebra/IAlgebraPoolActions.sol
 check IConcentratedPool.sol swap aero/slipstream/ICLPoolActions.sol
 check IConcentratedPool.sol swap aerodrome/slipstream/ICLPoolActions.sol

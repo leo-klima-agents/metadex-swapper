@@ -24,7 +24,7 @@ selector.
 | `aerodrome/slipstream/*.sol` | Aerodrome's first CLPool implementation, `contracts/core/CLPool.sol` and the same four interfaces | GPL-2.0-or-later |
 | `aerodrome/slipstream3/ICLFactory.sol` | Aerodrome's third CLPool implementation, `contracts/core/interfaces/ICLFactory.sol`; the second's is identical | GPL-2.0-or-later |
 | `uniswap/v2/*.sol` | UniswapV2Factory, `contracts/UniswapV2Pair.sol`, `contracts/interfaces/IUniswapV2Factory.sol`, `contracts/interfaces/IUniswapV2Pair.sol` | GPL-3.0-or-later |
-| `uniswap/v3/*.sol` | UniswapV3Factory, `contracts/interfaces/`: `IUniswapV3Factory.sol`, `pool/IUniswapV3PoolActions.sol`, `pool/IUniswapV3PoolImmutables.sol`, `callback/IUniswapV3SwapCallback.sol` | GPL-2.0-or-later |
+| `uniswap/v3/*.sol` | UniswapV3Factory, `contracts/interfaces/`: `IUniswapV3Factory.sol`, `pool/IUniswapV3PoolActions.sol`, `callback/IUniswapV3SwapCallback.sol` | GPL-2.0-or-later |
 | `uniswap/v4/*.sol` | PoolManager, `lib/v4-core/src/`: `interfaces/IPoolManager.sol`, `interfaces/callback/IUnlockCallback.sol`, `types/PoolKey.sol`, `types/PoolOperation.sol` | MIT |
 
 Uniswap v2's sources carry no SPDX header; `@uniswap/v2-core` is published under GPL-3.0-or-later.
@@ -76,7 +76,7 @@ get 0xc770898522D2A9c8Da7A10D63989b6b58305B665 contracts/core/interfaces/ICLFact
 for f in UniswapV2Pair.sol interfaces/IUniswapV2Factory.sol interfaces/IUniswapV2Pair.sol; do
   get 0x8909Dc15e40173Ff4699343b6eB8132c65e18eC6 contracts/$f uniswap/v2/"$(basename $f)"
 done
-for f in IUniswapV3Factory.sol pool/IUniswapV3PoolActions.sol pool/IUniswapV3PoolImmutables.sol callback/IUniswapV3SwapCallback.sol; do
+for f in IUniswapV3Factory.sol pool/IUniswapV3PoolActions.sol callback/IUniswapV3SwapCallback.sol; do
   get 0x33128a8fC17869897dcE68Ed026d694621f6FDfD contracts/interfaces/$f uniswap/v3/"$(basename $f)"
 done
 for f in interfaces/IPoolManager.sol interfaces/callback/IUnlockCallback.sol types/PoolKey.sol types/PoolOperation.sol; do
@@ -199,7 +199,6 @@ Line numbers are in the vendored files, unless a Sourcify link is given.
 | `getAmountOut(uint256,address)` | `0xf140a35a` | `IPair.sol`, `IPool.sol` |
 | `getAmountOutWithTotalFee(uint256,address)` | `0x0ea099c1` | Aero's `IPool.sol` |
 | `swap(uint256,uint256,address,bytes)` | `0x022c0d9f` | `IPair.sol`, `IPool.sol`, `IUniswapV2Pair.sol` |
-| `fee()` | `0xddca3f43` | `IUniswapV3PoolImmutables.sol` |
 | `swap(address,bool,int256,uint160,bytes)` | `0x128acb08` | `IAlgebraPoolActions.sol`, `ICLPoolActions.sol`, `IUniswapV3PoolActions.sol` |
 | `unlock(bytes)` | `0x48c89491` | `IPoolManager.sol` |
 | `swap((address,address,uint24,int24,address),(bool,int256,uint160),bytes)` | `0xf3cd914c` | `IPoolManager.sol` |

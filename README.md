@@ -11,11 +11,11 @@ deployed yet. Deployed as described under [Deployment](#deployment), the five sw
 
 | Output | Token | Swapper |
 | --- | --- | --- |
-| USDC | `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913` | `0x7e7212C38C80b9f453a379c2b5bac17B4ddEE2dD` |
-| WETH | `0x4200000000000000000000000000000000000006` | `0x127C37a927D550D3de59E7cf169F39eF713d7294` |
-| cbBTC | `0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf` | `0x9Da6A81317373DAa9eC27c765C83B5CfAC18e080` |
-| AERO | `0x3f5bF3EdAc59d650D8fDf9657a71F2f904A3a4Ee` | `0x7b8026c7aceaDd4c0d695331e27468f8A4AE344d` |
-| HYDX | `0x00000e7efa313F4E11Bfff432471eD9423AC6B30` | `0x625939C360F429baeff86A8B8033bF9874Ce3799` |
+| USDC | `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913` | `0x990576B202c2a8A37271901A41575aD31BD1DBAf` |
+| WETH | `0x4200000000000000000000000000000000000006` | `0x75Be6A4E63B5797765AFCdCd2C5aC53937051E96` |
+| cbBTC | `0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf` | `0x255fD456E2078533867bd2e7e64e3436E84A87b3` |
+| AERO | `0x3f5bF3EdAc59d650D8fDf9657a71F2f904A3a4Ee` | `0x2fCf59260A857B43AB4CdB5204a60E9E6e412D55` |
+| HYDX | `0x00000e7efa313F4E11Bfff432471eD9423AC6B30` | `0x3b45620Df5Fac3A8D76fF2b918A5C4CA558D9A50` |
 
 AERO here is Aero's token since its v3, named by Aero's `Voter` on Base. Aerodrome's AERO,
 `0x940181a94A35A4569E4529A3CDfB74e38FD98631`, converts into it one for one through Aero's upgrade portal, from 21 October
@@ -34,7 +34,7 @@ struct Hop {
     Exchange exchange; // picked by the caller
     address pool; // zero for Uniswap v4
     address tokenOut; // the last hop's is the output token; zero is native ETH, between two Uniswap v4 hops only
-    uint24 fee; // Uniswap v4 only
+    uint24 fee; // Uniswap v3 and v4 only
     int24 tickSpacing; // Uniswap v4 only
 }
 
@@ -55,9 +55,10 @@ For each route, the swapper:
 4. takes 1% of the output, rounded down, and reverts unless the rest is at least `minPaid`.
 
 Each route runs in a call of its own, so a route that fails undoes everything it did, including the pull of its token.
-With `skipFailed`, the route is skipped and reported in a `RouteFailed` event, and its token stays with the caller.
-Without it, the whole call reverts with the route's reason. After the last route, the swapper sends the fees to the
-treasury and the rest to the caller, and emits `Swapped`. It reverts after `deadline`.
+A route that goes through is reported in a `RouteSwapped` event. With `skipFailed`, a route that fails is skipped and
+reported in a `RouteFailed` event, and its token stays with the caller. Without it, the whole call reverts with the
+route's reason. After the last route, the swapper sends the fees to the treasury and the rest to the caller, and emits
+`Swapped`. It reverts after `deadline`.
 
 The contract never picks a route, and it never pays anyone but the caller and the treasury. It only pulls tokens from
 the caller, so nobody's approval can be used by anyone else.
@@ -96,7 +97,7 @@ that their registries list.
 | `AerodromeSlipstream2` | `CLFactory`, `0xaDe65c38CD4849aDBA595a4323a8C7DdfE89716a` | `isPool(pool)`, and its tokens are the hop's |
 | `AerodromeSlipstream3` | `CLFactory`, `0xf8f2eB4940CFE7d13603DDDD87f123820Fc061Ef` | `isPool(pool)`, and its tokens are the hop's |
 | `UniswapV2` | `UniswapV2Factory`, `0x8909Dc15e40173Ff4699343b6eB8132c65e18eC6` | `getPair(a, b) == pool` |
-| `UniswapV3` | `UniswapV3Factory`, `0x33128a8fC17869897dcE68Ed026d694621f6FDfD` | `getPool(a, b, pool.fee()) == pool` |
+| `UniswapV3` | `UniswapV3Factory`, `0x33128a8fC17869897dcE68Ed026d694621f6FDfD` | `getPool(a, b, fee) == pool` |
 | `UniswapV4` | `PoolManager`, `0x498581fF718922c3f8e6A244956aF099B2652b2b` | the key of the hop's tokens, `fee` and `tickSpacing`, with no hooks |
 
 `exchanges()` returns these addresses, in this order. The swapper pays each kind of pool its own way:
@@ -124,9 +125,8 @@ anything there, so tokens that trade only in pools with hooks, as many launchpad
 | Aerodrome | A 3-of-7 Safe, `0xE6A41fE61E7a1996B59d508661e3f524d6A32075` | Pause classic pools. Their fee, up to 3%. Slipstream fees, up to 10%, through a fee module. |
 | Uniswap | The owners of the v3 factory, `0xaBEA76658b205696d49B5F91b2a03536cB8A3bE1`, and of the v4 manager, `0x31FAfd4889FA1269F7a13A66eE0fB458f27D72A9` | v2 and v3: nothing that changes what a swap costs. v4: a protocol fee of up to 0.1%. |
 
-None of them can take the swapper's tokens: it pays only the pool, or the manager, that it called, only the token the
-hop owes, and only up to the hop's amount. The worst an exchange's admins can do is a worse price, down to the route's
-minimum, or a revert.
+None of them can take the swapper's tokens, given how it pays pools. The worst they can do is a worse price, down to the
+route's minimum, or a revert.
 
 ## For holders
 
@@ -165,13 +165,11 @@ fit in one call when each has a pool against USDC, and about 65 when each goes t
 the most: after each swap, the pool's plugin looks for an arbitrage across other exchanges, and about 15 such hops fit.
 So estimate gas and split large batches.
 
-Send a generous gas limit: on Base, unused gas costs nothing. With `skipFailed`, a route that runs short of gas is
-skipped like any other failure, or the whole call reverts if too little is left to finish it. Hydrex's plugin does less
-when it gets less gas, so where this happens is hard to predict. On the fork, HYDX to WETH on Hydrex Algebra then to
-USDC on Uniswap v3 uses 1.87M gas under a high limit. Under limits up to 1.22M, the plugin skipped its search and the
-route went through for 0.4M. From 1.24M to 1.82M the route was skipped, except from 1.40M to 1.44M, where the whole
-call reverted. From 1.84M it went through. A gas estimate only looks for a limit at which the call doesn't revert, and
-a skipped route doesn't revert it. So check the results of `eth_call` at the limit you send.
+Send a generous gas limit: on Base, unused gas costs nothing. A route that runs short of gas fails like any other: with
+`skipFailed`, it is skipped, or the whole call reverts if too little is left to finish. Hydrex's plugin does less when
+it gets less gas, so a tight limit can also make a route through it go through, without the plugin's arbitrage. A gas
+estimate only looks for a limit at which the call doesn't revert, and a skipped route doesn't revert it, so check the
+results of `eth_call` at the limit you send.
 
 ## Trust and limitations
 
@@ -189,9 +187,8 @@ a skipped route doesn't revert it. So check the results of `eth_call` at the lim
   route can find a pool it has moved. Its code even calls Foundry's console address on Base, which only costs gas.
 - A token that charges a fee on transfers works through classic pools and Uniswap v2. Through Algebra, Slipstream,
   Uniswap v3 and v4 pools, its route reverts, though `quote` prices it.
-- `skipFailed` can't skip every failure. A route gets 63/64 of the gas left, so a token or pool that burns all of it
-  leaves too little for the rest of the call. One that reverts with a huge reason can cost more to copy than is left.
-  Either reverts the whole call, for the caller who included that route only.
+- `skipFailed` can't skip a token or pool that burns all the gas its route gets, 63/64 of what is left, or that
+  reverts with a reason too big to copy. Either reverts the whole call, for the caller who included that route only.
 - USDC and cbBTC are upgradeable, and can block addresses. A caller that the output token blocks can't be paid, so
   their swaps revert, and so would everyone's if it blocked the treasury. WETH, AERO and HYDX can't block anyone.
 - Tokens sent to the swapper by mistake stay there. Every amount is counted within the call, so they are never paid to
@@ -203,15 +200,9 @@ a skipped route doesn't revert it. So check the results of `eth_call` at the lim
 
 The swappers are not deployed yet. Once they are, this section will record the transactions.
 
-| | |
-|---|---|
-| Network | Base |
-| Addresses | the table at the top, one for each output token |
-| Exchanges | the table above, in the order of `Exchange`, the same for all five |
-| Treasury | `0x450c72de8c0079B49AcedF294a13011bd09D125B`, a 2-of-3 Safe, fixed in the source |
-| Fee | 1% (`FEE_BPS = 100`), fixed in the source |
-| Limits | 3 hops per route (`MAX_HOPS`); no limit on routes |
-| Method | CREATE2 through `0x4e59b44847b379578588920cA78FbF26c0B4956C`, salt `keccak256("metadex.cafe/ImmutableSwapper/v1")`; the constructor's arguments, the output token first, set each address apart |
+Each swapper is created on Base through the CREATE2 deployer `0x4e59b44847b379578588920cA78FbF26c0B4956C`, with the salt
+`keccak256("metadex.cafe/ImmutableSwapper/v1")`. Their constructor arguments, the output token and then the exchanges in
+the order of `Exchange`, set their addresses apart.
 
 Deployment steps:
 
@@ -243,7 +234,7 @@ To check that a deployed swapper is this repository's code, compare its code has
 Each swapper's code holds its output token, so each has its own hash:
 
 ```
-cast keccak $(cast code 0x7e7212C38C80b9f453a379c2b5bac17B4ddEE2dD --rpc-url $BASE_RPC_URL)
+cast keccak $(cast code 0x990576B202c2a8A37271901A41575aD31BD1DBAf --rpc-url $BASE_RPC_URL)
 jq -j .deployments.USDC.runtimeKeccak verification/bytecode-hashes.json
 ```
 

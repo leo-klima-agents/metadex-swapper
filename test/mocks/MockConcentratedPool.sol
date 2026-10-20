@@ -13,7 +13,6 @@ contract MockConcentratedPool {
 
     address public immutable token0;
     address public immutable token1;
-    uint24 public immutable fee;
     bool public immutable algebra;
     // token1 per token0
     uint256 public immutable num;
@@ -24,9 +23,8 @@ contract MockConcentratedPool {
     bool public wrongSide;
     uint256 public callbacks = 1;
 
-    constructor(address tokenA, address tokenB, uint24 fee_, bool algebra_, uint256 num_, uint256 den_) {
+    constructor(address tokenA, address tokenB, bool algebra_, uint256 num_, uint256 den_) {
         (token0, token1) = tokenA < tokenB ? (tokenA, tokenB) : (tokenB, tokenA);
-        fee = fee_;
         algebra = algebra_;
         (num, den) = tokenA < tokenB ? (num_, den_) : (den_, num_);
     }

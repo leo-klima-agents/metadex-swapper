@@ -164,8 +164,8 @@ to WETH costs about what WETH to USDC does.
 | 20 routes of 3 Uniswap v2 hops | ~3,001,000 |
 | 5 routes of 3 Hydrex Algebra hops | ~14,910,000 |
 
-There is no limit on the number of routes: Base's cap of 16,777,216 gas on a transaction is the limit. About 78 tokens
-fit in one call when each has a pool against USDC, and about 65 when each goes through WETH. Hydrex's Algebra pools cost
+There is no limit on the number of routes: Base's cap of 16,777,216 gas on a transaction is the limit. About 67 tokens
+fit in one call when each has a pool against USDC, and about 53 when each goes through WETH. Hydrex's Algebra pools cost
 the most: after each swap, the pool's plugin looks for an arbitrage across other exchanges, and about 15 such hops fit.
 So estimate gas and split large batches.
 

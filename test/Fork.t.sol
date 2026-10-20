@@ -53,8 +53,8 @@ contract ForkTest is Test {
     bytes32 internal constant ADMIN_SLOT = 0xb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d6103;
 
     address internal constant USDC = 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913;
-    address internal constant WETH = 0x4200000000000000000000000000000000000006;
     address internal constant EURC = 0x60a3E35Cc302bFA44Cb288Bc5a4F316Fdb1adb42;
+    address internal constant WETH = 0x4200000000000000000000000000000000000006;
     address internal constant TREASURY = 0x450c72de8c0079B49AcedF294a13011bd09D125B;
     address internal constant UNISWAP_V3_WETH_USDC = 0xd0b53D9277642d899DF5C87A3966A349A798F224;
 
@@ -236,6 +236,14 @@ contract ForkTest is Test {
         _check("hydxThroughWeth", address(0));
     }
 
+    function test_usdcToEurc() public {
+        _check("usdcToEurc", address(0));
+    }
+
+    function test_wethToEurc() public {
+        _check("wethToEurc", address(0));
+    }
+
     function test_usdcToWeth() public {
         _check("usdcToWeth", address(0));
     }
@@ -258,14 +266,6 @@ contract ForkTest is Test {
 
     function test_usdcToHydx() public {
         _check("usdcToHydx", address(0));
-    }
-
-    function test_usdcToEurc() public {
-        _check("usdcToEurc", address(0));
-    }
-
-    function test_wethToEurc() public {
-        _check("wethToEurc", address(0));
     }
 
     // At these amounts the pair refuses its own quote; the swapper asks for one wei less, which it accepts.

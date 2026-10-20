@@ -59,7 +59,7 @@ contract DeployTest is Test {
         address cbbtc = d.predict(d.CBBTC());
         vm.etch(d.predict(d.USDC()), hex"00");
         address[6] memory deployed = d.run();
-        assertEq(deployed[2], cbbtc);
+        assertEq(deployed[3], cbbtc);
         assertEq(ImmutableSwapper(cbbtc).outputToken(), d.CBBTC());
         assertEq(deployed[0].code, hex"00", "an existing deployment is left alone");
     }

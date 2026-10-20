@@ -8,12 +8,12 @@ import {ImmutableSwapper} from "../src/ImmutableSwapper.sol";
 
 contract Deploy is Script {
     address public constant USDC = 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913;
+    address public constant EURC = 0x60a3E35Cc302bFA44Cb288Bc5a4F316Fdb1adb42;
     address public constant WETH = 0x4200000000000000000000000000000000000006;
     address public constant CBBTC = 0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf;
     // Aero's token since its v3, not Aerodrome's AERO.
     address public constant AERO = 0x3f5bF3EdAc59d650D8fDf9657a71F2f904A3a4Ee;
     address public constant HYDX = 0x00000e7efa313F4E11Bfff432471eD9423AC6B30;
-    address public constant EURC = 0x60a3E35Cc302bFA44Cb288Bc5a4F316Fdb1adb42;
 
     address public constant HYDREX_ALGEBRA = 0x36077D39cdC65E1e3FB65810430E5b2c4D5fA29E;
     address public constant HYDREX_CLASSIC = 0xC47F17c4fd96F50eFD2A2448ceDe5C185c084bf0;
@@ -31,13 +31,13 @@ contract Deploy is Script {
     string public constant SALT_PREIMAGE = "metadex.cafe/ImmutableSwapper/v1";
     bytes32 public constant SALT = keccak256(bytes(SALT_PREIMAGE));
 
-    // One swapper for each output token.
+    // One swapper for each output token: stablecoins, then ETH and BTC, then the exchanges' tokens.
     function outputs() public pure returns (address[6] memory) {
-        return [USDC, WETH, CBBTC, AERO, HYDX, EURC];
+        return [USDC, EURC, WETH, CBBTC, AERO, HYDX];
     }
 
     function symbols() public pure returns (string[6] memory) {
-        return ["USDC", "WETH", "cbBTC", "AERO", "HYDX", "EURC"];
+        return ["USDC", "EURC", "WETH", "cbBTC", "AERO", "HYDX"];
     }
 
     // In the order of ImmutableSwapper.Exchange.

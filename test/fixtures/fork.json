@@ -305,6 +305,48 @@
       ],
       "quote": "21101284"
     },
+    "usdcToEurc": {
+      "holder": "0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb",
+      "token": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+      "amount": "10000000",
+      "exchanges": [
+        10
+      ],
+      "pools": [
+        "0x7279c08a36333e12c3fc81747963264c100d66fb"
+      ],
+      "tokensOut": [
+        "0x60a3E35Cc302bFA44Cb288Bc5a4F316Fdb1adb42"
+      ],
+      "fees": [
+        500
+      ],
+      "tickSpacings": [
+        0
+      ],
+      "quote": "8906023"
+    },
+    "wethToEurc": {
+      "holder": "0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb",
+      "token": "0x4200000000000000000000000000000000000006",
+      "amount": "10000000000000000",
+      "exchanges": [
+        6
+      ],
+      "pools": [
+        "0x5d4e504eb4c526995e0cc7a6e327fda75d8b52b5"
+      ],
+      "tokensOut": [
+        "0x60a3E35Cc302bFA44Cb288Bc5a4F316Fdb1adb42"
+      ],
+      "fees": [
+        0
+      ],
+      "tickSpacings": [
+        0
+      ],
+      "quote": "21281879"
+    },
     "usdcToWeth": {
       "holder": "0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb",
       "token": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
@@ -389,6 +431,27 @@
       ],
       "quote": "122675"
     },
+    "wethToAero": {
+      "holder": "0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb",
+      "token": "0x4200000000000000000000000000000000000006",
+      "amount": "100000000000000000",
+      "exchanges": [
+        2
+      ],
+      "pools": [
+        "0x0000000000000000000000000000000000000000"
+      ],
+      "tokensOut": [
+        "0x3f5bF3EdAc59d650D8fDf9657a71F2f904A3a4Ee"
+      ],
+      "fees": [
+        0
+      ],
+      "tickSpacings": [
+        0
+      ],
+      "quote": "0"
+    },
     "wethToHydx": {
       "holder": "0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb",
       "token": "0x4200000000000000000000000000000000000006",
@@ -430,69 +493,6 @@
         0
       ],
       "quote": "463672767689143219775"
-    },
-    "wethToAero": {
-      "holder": "0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb",
-      "token": "0x4200000000000000000000000000000000000006",
-      "amount": "100000000000000000",
-      "exchanges": [
-        2
-      ],
-      "pools": [
-        "0x0000000000000000000000000000000000000000"
-      ],
-      "tokensOut": [
-        "0x3f5bF3EdAc59d650D8fDf9657a71F2f904A3a4Ee"
-      ],
-      "fees": [
-        0
-      ],
-      "tickSpacings": [
-        0
-      ],
-      "quote": "0"
-    },
-    "usdcToEurc": {
-      "holder": "0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb",
-      "token": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
-      "amount": "10000000",
-      "exchanges": [
-        10
-      ],
-      "pools": [
-        "0x7279c08a36333e12c3fc81747963264c100d66fb"
-      ],
-      "tokensOut": [
-        "0x60a3E35Cc302bFA44Cb288Bc5a4F316Fdb1adb42"
-      ],
-      "fees": [
-        500
-      ],
-      "tickSpacings": [
-        0
-      ],
-      "quote": "8906023"
-    },
-    "wethToEurc": {
-      "holder": "0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb",
-      "token": "0x4200000000000000000000000000000000000006",
-      "amount": "10000000000000000",
-      "exchanges": [
-        6
-      ],
-      "pools": [
-        "0x5d4e504eb4c526995e0cc7a6e327fda75d8b52b5"
-      ],
-      "tokensOut": [
-        "0x60a3E35Cc302bFA44Cb288Bc5a4F316Fdb1adb42"
-      ],
-      "fees": [
-        0
-      ],
-      "tickSpacings": [
-        0
-      ],
-      "quote": "21281879"
     },
     "gasCheapest": {
       "holder": "0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb",

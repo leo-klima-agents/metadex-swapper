@@ -12,11 +12,11 @@ RPC = os.environ["BASE_RPC_URL"]
 OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "fork.json")
 
 USDC = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
+EURC = "0x60a3E35Cc302bFA44Cb288Bc5a4F316Fdb1adb42"
 WETH = "0x4200000000000000000000000000000000000006"
 CBBTC = "0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf"
-HYDX = "0x00000e7efa313F4E11Bfff432471eD9423AC6B30"
-EURC = "0x60a3E35Cc302bFA44Cb288Bc5a4F316Fdb1adb42"
 NEW_AERO = "0x3f5bF3EdAc59d650D8fDf9657a71F2f904A3a4Ee"
+HYDX = "0x00000e7efa313F4E11Bfff432471eD9423AC6B30"
 ETH = "0x0000000000000000000000000000000000000000"
 MORPHO = "0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb"
 HYDX_VE = "0x25B2ED7149fb8A05f6eF9407d9c8F878f59cd1e1"
@@ -76,15 +76,15 @@ ROUTES = {
     "uniswapV4": (MORPHO, WETH, 10**17, [("UniswapV4", USDC, (3000, 60))]),
     "uniswapV4Native": (MORPHO, CBBTC, 10**5, [("UniswapV4", ETH, (500, 10)), ("UniswapV4", USDC, (3000, 60))]),
     "hydxThroughWeth": (HYDX_VE, HYDX, 10**21, [("HydrexAlgebra", WETH), ("UniswapV3", USDC)]),
+    "usdcToEurc": (MORPHO, USDC, 10**7, [("UniswapV3", EURC)]),
+    "wethToEurc": (MORPHO, WETH, 10**16, [("AerodromeSlipstream", EURC)]),
     "usdcToWeth": (MORPHO, USDC, 10**8, [("UniswapV3", WETH)]),
     "cbBtcToWeth": (MORPHO, CBBTC, 10**5, [("AerodromeSlipstream", WETH)]),
     "wethToCbBtc": (MORPHO, WETH, 10**17, [("UniswapV3", CBBTC)]),
     "usdcToCbBtc": (MORPHO, USDC, 10**8, [("AerodromeSlipstream", CBBTC)]),
+    "wethToAero": (MORPHO, WETH, 10**17, [("AeroVolatile", NEW_AERO)]),
     "wethToHydx": (MORPHO, WETH, 10**16, [("HydrexAlgebra", HYDX)]),
     "usdcToHydx": (MORPHO, USDC, 10**7, [("HydrexClassic", HYDX)]),
-    "wethToAero": (MORPHO, WETH, 10**17, [("AeroVolatile", NEW_AERO)]),
-    "usdcToEurc": (MORPHO, USDC, 10**7, [("UniswapV3", EURC)]),
-    "wethToEurc": (MORPHO, WETH, 10**16, [("AerodromeSlipstream", EURC)]),
     # For gas: three hops through the cheapest exchange, and through the dearest.
     "gasCheapest": (MORPHO, WETH, 10**12, [("UniswapV2", CBBTC), ("UniswapV2", WETH), ("UniswapV2", USDC)]),
     "gasDearest": (MORPHO, WETH, 10**12, [("HydrexAlgebra", CBBTC), ("HydrexAlgebra", WETH), ("HydrexAlgebra", USDC)]),

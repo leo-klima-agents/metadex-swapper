@@ -12,11 +12,11 @@ deployed yet. Deployed as described under [Deployment](#deployment), the six swa
 | Output | Token | Swapper |
 | --- | --- | --- |
 | USDC | `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913` | `0x990576B202c2a8A37271901A41575aD31BD1DBAf` |
+| EURC | `0x60a3E35Cc302bFA44Cb288Bc5a4F316Fdb1adb42` | `0x8e560Fe7bac3219E059F2401C55f17C118574a9c` |
 | WETH | `0x4200000000000000000000000000000000000006` | `0x75Be6A4E63B5797765AFCdCd2C5aC53937051E96` |
 | cbBTC | `0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf` | `0x255fD456E2078533867bd2e7e64e3436E84A87b3` |
 | AERO | `0x3f5bF3EdAc59d650D8fDf9657a71F2f904A3a4Ee` | `0x2fCf59260A857B43AB4CdB5204a60E9E6e412D55` |
 | HYDX | `0x00000e7efa313F4E11Bfff432471eD9423AC6B30` | `0x3b45620Df5Fac3A8D76fF2b918A5C4CA558D9A50` |
-| EURC | `0x60a3E35Cc302bFA44Cb288Bc5a4F316Fdb1adb42` | `0x8e560Fe7bac3219E059F2401C55f17C118574a9c` |
 
 AERO here is Aero's token since its v3, named by Aero's `Voter` on Base. Aerodrome's AERO,
 `0x940181a94A35A4569E4529A3CDfB74e38FD98631`, converts into it one for one through Aero's upgrade portal, from 21 October
@@ -218,7 +218,7 @@ Deployment steps:
 ```
 forge script script/Deploy.s.sol --rpc-url $BASE_RPC_URL --broadcast --ledger
 H=verification/bytecode-hashes.json
-for s in USDC WETH cbBTC AERO HYDX EURC; do
+for s in USDC EURC WETH cbBTC AERO HYDX; do
   ADDRESS=$(jq -j ".deployments.$s.address" $H)
   ARGS=$(jq -j ".deployments.$s.constructorArgs" $H)
   forge verify-contract $ADDRESS src/ImmutableSwapper.sol:ImmutableSwapper --chain base \

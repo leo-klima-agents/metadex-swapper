@@ -1,44 +1,58 @@
 # metadex-swapper
 
-`ImmutableSwapper` is a contract on Base that swaps the tokens a holder picks to USDC in one call: small balances left
-in a wallet, or rewards paid in many tokens. It swaps through the pools of four exchanges: Hydrex, Aero, Aerodrome and
-Uniswap. The caller picks the exchange and the pool of every hop, and the contract checks each pick against that
-exchange's own factory. It sends 1% of the USDC to a fixed treasury.
+`ImmutableSwapper` is a contract on Base that swaps the tokens a holder picks to one output token in one call: small
+balances left in a wallet, or rewards paid in many tokens. It swaps through the pools of four exchanges: Hydrex, Aero,
+Aerodrome and Uniswap. The caller picks the exchange and the pool of every hop, and the contract checks each pick against
+that exchange's own factory. It sends 1% of the output to a fixed treasury.
 
-The contract has no owner, no settings and no upgrade path. All of it is in
-[`src/ImmutableSwapper.sol`](src/ImmutableSwapper.sol). It is not deployed yet. Deployed as described under
-[Deployment](#deployment), it will be at `0xcB62D0323A063eEDD2b438C9A45378755f0Ee84A`.
+It is deployed once for each output token, which is fixed in that deployment's code. The contract has no owner, no
+settings and no upgrade path. All of it is in [`src/ImmutableSwapper.sol`](src/ImmutableSwapper.sol). It is not
+deployed yet. Deployed as described under [Deployment](#deployment), the five swappers will be at:
+
+| Output | Token | Swapper |
+| --- | --- | --- |
+| USDC | `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913` | `0x6771f2E0Ed03031389DE3c58993858Ebfd84cf25` |
+| WETH | `0x4200000000000000000000000000000000000006` | `0x674E3CE8831Eb0f1e5b79c4F6e9453dD32B96C22` |
+| cbBTC | `0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf` | `0x15A1c469cB473878913aBCa213C3aE9d843b11eE` |
+| AERO | `0x3f5bF3EdAc59d650D8fDf9657a71F2f904A3a4Ee` | `0xB8D4C10FE91C1Ff7C5Cf4C2B3ea20559d529791C` |
+| HYDX | `0x00000e7efa313F4E11Bfff432471eD9423AC6B30` | `0x92d82AfFB970054f030a443cb78650AEF6a0ed86` |
+
+AERO here is Aero's token since its v3, named by Aero's `Voter` on Base. Aerodrome's AERO,
+`0x940181a94A35A4569E4529A3CDfB74e38FD98631`, converts into it one for one through Aero's upgrade portal, from 21 October
+2026. At the block the fork tests pin, the new AERO has no pool on any of the twelve exchanges, so its swapper can swap
+into it only once pools exist. Aerodrome's AERO can still be swapped from, by any of the five.
 
 ## How it works
 
 ### Swapping
 
-`swap(routes, deadline, skipFailed)` takes as many routes as fit in one transaction. Each route sells one token for USDC,
-in 1 to 3 hops (`MAX_HOPS`):
+`swap(routes, deadline, skipFailed)` takes as many routes as fit in one transaction. Each route sells one token for the
+output token, in 1 to 3 hops (`MAX_HOPS`):
 
 ```solidity
 struct Hop {
     Exchange exchange; // picked by the caller
     address pool; // zero for Uniswap v4
-    address tokenOut; // the last hop's is USDC; zero is native ETH, between two Uniswap v4 hops only
+    address tokenOut; // the last hop's is the output token; zero is native ETH, between two Uniswap v4 hops only
     uint24 fee; // Uniswap v4 only
     int24 tickSpacing; // Uniswap v4 only
 }
 
 struct Route {
-    address token; // never USDC, never native ETH
+    address token; // never the output token, never native ETH
     uint256 amount; // type(uint256).max: the caller's balance, up to the allowance given
-    uint256 minPaid; // the least USDC this route must pay the caller, after the fee
+    uint256 minPaid; // the least of the output token this route must pay the caller, after the fee
     Hop[] hops;
 }
 ```
 
 For each route, the swapper:
 
-1. checks the path: only the last hop ends in USDC, and each hop's pool belongs to the exchange the hop names;
+1. checks the path: only the last hop ends in the output token, and each hop's pool belongs to the exchange the hop
+   names;
 2. pulls the token from the caller with `transferFrom`, and counts what arrived;
 3. swaps hop by hop, and counts each hop's output by the change in its own balance;
-4. takes 1% of the USDC, rounded down, and reverts unless the rest is at least `minPaid`.
+4. takes 1% of the output, rounded down, and reverts unless the rest is at least `minPaid`.
 
 Each route runs in a call of its own, so a route that fails undoes everything it did, including the pull of its token.
 With `skipFailed`, the route is skipped and reported in a `RouteFailed` event, and its token stays with the caller.
@@ -110,7 +124,7 @@ minimum, or a revert.
 2. Approve each token for the exact amount. There is no `permit`, no Permit2 and no signature of any kind.
 3. Call `swap` with each route's `minPaid` a little under its quote, a deadline, and `skipFailed` set.
 
-The fee is 1% of the USDC each route returns, rounded down, and goes to the 2-of-3 Safe
+The fee is 1% of the output each route returns, rounded down, paid in the output token to the 2-of-3 Safe
 `0x450c72de8c0079B49AcedF294a13011bd09D125B` on each swap. It is fixed in the code: nobody can change it. The pools'
 fees, price impact and gas come on top.
 
@@ -118,7 +132,8 @@ Keep the priority fee low. Above a tip of 1 gwei, or 2 gwei for stable pools, Ae
 10%, that a quote from `eth_call` doesn't see. The swapper prices Aero's pools with the tax, so the swap goes through, at a worse price, down to
 your minimum: on the fork, with a 2 gwei tip, 1 WETH fetched 2,123 USDC instead of 2,357.
 
-Gas, measured on a fork of Base for a whole call of one route, from a cold start:
+Gas, measured on a fork of Base for a whole call of one route, from a cold start. The output token makes little
+difference: USDC to WETH costs about the same as WETH to USDC.
 
 | Route | Gas |
 | --- | --- |
@@ -162,7 +177,8 @@ less than the gas a call uses without a limit, which is above that range. Check 
   route can find a pool it has moved. Its code even calls Foundry's console address on Base, which only costs gas.
 - A token that charges a fee on transfers works through classic pools and Uniswap v2. Through Algebra, Slipstream,
   Uniswap v3 and v4 pools, its route reverts.
-- USDC can block addresses. A caller that USDC blocks can't be paid, so their swaps revert.
+- USDC and cbBTC are upgradeable, and can block addresses. A caller that the output token blocks can't be paid, so
+  their swaps revert, and so would everyone's if it blocked the treasury. WETH, AERO and HYDX can't block anyone.
 - Tokens sent to the swapper by mistake stay there. Every amount is counted within the call, so they are never paid to
   anyone.
 - Left out on purpose: native ETH in or out of a route; signatures; routers and aggregators; a recipient other than
@@ -170,45 +186,50 @@ less than the gas a call uses without a limit, which is above that range. Check 
 
 ## Deployment
 
-The swapper is not deployed yet. Once it is, this section will record the transaction.
+The swappers are not deployed yet. Once they are, this section will record the transactions.
 
 | | |
 |---|---|
 | Network | Base |
-| Address | `0xcB62D0323A063eEDD2b438C9A45378755f0Ee84A` |
-| USDC | `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913` |
-| Exchanges | the table above, in the order of `Exchange` |
+| Addresses | the table at the top, one for each output token |
+| Exchanges | the table above, in the order of `Exchange`, the same for all five |
 | Treasury | `0x450c72de8c0079B49AcedF294a13011bd09D125B`, a 2-of-3 Safe, fixed in the source |
 | Fee | 1% (`FEE_BPS = 100`), fixed in the source |
 | Limits | 3 hops per route (`MAX_HOPS`); no limit on routes |
-| Method | CREATE2 through `0x4e59b44847b379578588920cA78FbF26c0B4956C`, salt `keccak256("metadex.cafe/ImmutableSwapper/v1")` |
+| Method | CREATE2 through `0x4e59b44847b379578588920cA78FbF26c0B4956C`, salt `keccak256("metadex.cafe/ImmutableSwapper/v1")`; the constructor's arguments, the output token first, set each address apart |
 
 Deployment steps:
 
 1. Install Foundry v1.8.5, the version CI uses, with `foundryup --install v1.8.5`. Another version can compile
    different bytecode.
 2. Run `forge test` with `BASE_RPC_URL` set, then `script/check-verification.sh`.
-3. Do a dry run with `forge script script/Deploy.s.sol --rpc-url $BASE_RPC_URL`, and check that it logs the address
-   in the table above.
-4. Deploy, then verify the contract on Basescan and Sourcify, and commit `broadcast/Deploy.s.sol/8453/run-latest.json`:
+3. Do a dry run with `forge script script/Deploy.s.sol --rpc-url $BASE_RPC_URL`, and check that it logs the five
+   addresses in the table at the top. It skips any that is already deployed.
+4. Deploy, then verify each contract on Basescan and Sourcify, and commit
+   `broadcast/Deploy.s.sol/8453/run-latest.json`:
 
 ```
 forge script script/Deploy.s.sol --rpc-url $BASE_RPC_URL --broadcast --ledger
-ARGS=$(jq -j .deployment.constructorArgs verification/bytecode-hashes.json)
-forge verify-contract 0xcB62D0323A063eEDD2b438C9A45378755f0Ee84A src/ImmutableSwapper.sol:ImmutableSwapper --chain base \
-  --constructor-args $ARGS --license-type MIT --watch
-forge verify-contract 0xcB62D0323A063eEDD2b438C9A45378755f0Ee84A src/ImmutableSwapper.sol:ImmutableSwapper --chain base \
-  --constructor-args $ARGS --verifier sourcify
+H=verification/bytecode-hashes.json
+for s in USDC WETH cbBTC AERO HYDX; do
+  ADDRESS=$(jq -j ".deployments.$s.address" $H)
+  ARGS=$(jq -j ".deployments.$s.constructorArgs" $H)
+  forge verify-contract $ADDRESS src/ImmutableSwapper.sol:ImmutableSwapper --chain base \
+    --constructor-args $ARGS --license-type MIT --watch
+  forge verify-contract $ADDRESS src/ImmutableSwapper.sol:ImmutableSwapper --chain base \
+    --constructor-args $ARGS --verifier sourcify
+done
 ```
 
 ## Verification
 
-To check that the deployed contract is this repository's code, compare its code hash with the one recorded in
-`verification/bytecode-hashes.json`, which `script/check-verification.sh` checks against a build of this repository:
+To check that a deployed swapper is this repository's code, compare its code hash with the one recorded in
+`verification/bytecode-hashes.json`, which `script/check-verification.sh` checks against a build of this repository.
+Each swapper's code holds its output token, so each has its own hash:
 
 ```
-cast keccak $(cast code 0xcB62D0323A063eEDD2b438C9A45378755f0Ee84A --rpc-url $BASE_RPC_URL)
-jq -j .deployment.runtimeKeccak verification/bytecode-hashes.json
+cast keccak $(cast code 0x6771f2E0Ed03031389DE3c58993858Ebfd84cf25 --rpc-url $BASE_RPC_URL)
+jq -j .deployments.USDC.runtimeKeccak verification/bytecode-hashes.json
 ```
 
 ## Development
@@ -217,8 +238,8 @@ You need [Foundry](https://getfoundry.sh). The fork tests and `test/fixtures/gen
 in `BASE_RPC_URL`.
 
 - `forge test` runs the unit tests, and the fork tests too when `BASE_RPC_URL` is set. The fork tests run against
-  Base at the block recorded in [`test/fixtures/fork.json`](test/fixtures/fork.json), and swap through a real pool of
-  each exchange. Aero's factories have no pools yet, so the fork tests create their own.
+  Base at the block recorded in [`test/fixtures/fork.json`](test/fixtures/fork.json). They swap through a real pool of
+  each exchange, and into each output token. Aero's factories have no pools yet, so the fork tests create their own.
 - `test/fixtures/generate.py [block]` rewrites that fixture: a pool of each exchange, a holder of each token, and each
   route's quote at that block, from the exchanges' own quotes.
 - `script/check-signatures.sh` checks the interfaces in `src/interfaces/` against the exchanges' sources vendored in

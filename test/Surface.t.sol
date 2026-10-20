@@ -40,7 +40,7 @@ contract SurfaceTest is SwapperTestBase {
         for (uint256 i; i < w; ++i) {
             assertEq(writers[i], expectedWriters[i]);
         }
-        string[5] memory expectedReaders = ["FEE_BPS", "MAX_HOPS", "TREASURY", "exchanges", "usdc"];
+        string[5] memory expectedReaders = ["FEE_BPS", "MAX_HOPS", "TREASURY", "exchanges", "outputToken"];
         assertEq(r, expectedReaders.length);
         for (uint256 i; i < r; ++i) {
             assertEq(readers[i], expectedReaders[i]);
@@ -54,7 +54,7 @@ contract SurfaceTest is SwapperTestBase {
     }
 
     function test_constructor_storesConfiguration() public view {
-        assertEq(swapper.usdc(), address(usdc));
+        assertEq(swapper.outputToken(), address(usdc));
         address[] memory list = swapper.exchanges();
         address[EXCHANGES] memory expected = _exchanges();
         assertEq(list.length, EXCHANGES);

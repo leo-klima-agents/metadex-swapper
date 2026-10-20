@@ -8,6 +8,12 @@ import {ImmutableSwapper} from "../src/ImmutableSwapper.sol";
 
 contract Deploy is Script {
     address public constant USDC = 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913;
+    address public constant WETH = 0x4200000000000000000000000000000000000006;
+    address public constant CBBTC = 0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf;
+    // Aero's token since its v3, not Aerodrome's AERO.
+    address public constant AERO = 0x3f5bF3EdAc59d650D8fDf9657a71F2f904A3a4Ee;
+    address public constant HYDX = 0x00000e7efa313F4E11Bfff432471eD9423AC6B30;
+
     address public constant HYDREX_ALGEBRA = 0x36077D39cdC65E1e3FB65810430E5b2c4D5fA29E;
     address public constant HYDREX_CLASSIC = 0xC47F17c4fd96F50eFD2A2448ceDe5C185c084bf0;
     address public constant AERO_VOLATILE = 0x9bc8b3F60D349d687Fb44A018967025E3741F9a5;
@@ -23,6 +29,15 @@ contract Deploy is Script {
 
     string public constant SALT_PREIMAGE = "metadex.cafe/ImmutableSwapper/v1";
     bytes32 public constant SALT = keccak256(bytes(SALT_PREIMAGE));
+
+    // One swapper for each output token.
+    function outputs() public pure returns (address[5] memory) {
+        return [USDC, WETH, CBBTC, AERO, HYDX];
+    }
+
+    function symbols() public pure returns (string[5] memory) {
+        return ["USDC", "WETH", "cbBTC", "AERO", "HYDX"];
+    }
 
     // In the order of ImmutableSwapper.Exchange.
     function exchanges() public pure returns (address[12] memory) {
@@ -42,35 +57,41 @@ contract Deploy is Script {
         ];
     }
 
-    function constructorArgs() public pure returns (bytes memory) {
-        return abi.encode(USDC, exchanges());
+    function constructorArgs(address outputToken) public pure returns (bytes memory) {
+        return abi.encode(outputToken, exchanges());
     }
 
-    function initCode() public pure returns (bytes memory) {
-        return bytes.concat(type(ImmutableSwapper).creationCode, constructorArgs());
+    function initCode(address outputToken) public pure returns (bytes memory) {
+        return bytes.concat(type(ImmutableSwapper).creationCode, constructorArgs(outputToken));
     }
 
-    function predict() public pure returns (address) {
-        return vm.computeCreate2Address(SALT, keccak256(initCode()), CREATE2_FACTORY);
+    function predict(address outputToken) public pure returns (address) {
+        return vm.computeCreate2Address(SALT, keccak256(initCode(outputToken)), CREATE2_FACTORY);
     }
 
-    function run() external returns (address deployed) {
+    function run() external returns (address[5] memory deployed) {
         require(block.chainid == 8453, "not Base");
         require(CREATE2_FACTORY.code.length != 0, "CREATE2 deployer not present");
-        deployed = predict();
-        console.log("ImmutableSwapper", deployed);
-        require(
-            deployed == vm.parseJsonAddress(vm.readFile("verification/bytecode-hashes.json"), ".deployment.address"),
-            "build differs from verification/bytecode-hashes.json"
-        );
-        if (deployed.code.length != 0) {
-            console.log("already deployed");
-            return deployed;
+        string memory recorded = vm.readFile("verification/bytecode-hashes.json");
+        address[5] memory o = outputs();
+        string[5] memory s = symbols();
+        for (uint256 i; i < o.length; ++i) {
+            deployed[i] = predict(o[i]);
+            console.log(s[i], deployed[i]);
+            require(
+                deployed[i] == vm.parseJsonAddress(recorded, string.concat(".deployments.", s[i], ".address")),
+                "build differs from verification/bytecode-hashes.json"
+            );
         }
-        vm.startBroadcast();
-        (bool ok,) = CREATE2_FACTORY.call(bytes.concat(SALT, initCode()));
-        vm.stopBroadcast();
-        require(ok && deployed.code.length != 0, "CREATE2 deploy failed");
-        console.log("deployed");
+        for (uint256 i; i < o.length; ++i) {
+            if (deployed[i].code.length != 0) {
+                console.log(s[i], "already deployed");
+                continue;
+            }
+            vm.broadcast();
+            (bool ok,) = CREATE2_FACTORY.call(bytes.concat(SALT, initCode(o[i])));
+            require(ok && deployed[i].code.length != 0, "CREATE2 deploy failed");
+            console.log(s[i], "deployed");
+        }
     }
 }

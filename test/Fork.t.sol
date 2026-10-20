@@ -97,10 +97,11 @@ contract ForkTest is Test {
     address internal constant AERO_STABLE_FEES = 0x39CF8E719bae01C9ab6F9eA5b97DC7D74C76e422;
     address internal constant AERO_STABLE_TAX = 0xA9Af4985CD8456d9aFf3185c31d9D66e53184d7B;
     address internal constant AERO_SWAP_HOOK = 0xaAf164008441F112eB2858d9F7A2dB1B84b1E415;
+    address internal constant AERO_MIGRATION = 0x22a2F7340a3fB4C7C389D91eE954766B12476721;
 
     string internal fx;
     Deploy internal d;
-    ImmutableSwapper internal swapper;
+    mapping(address output => ImmutableSwapper) internal swappers;
 
     function setUp() public {
         string memory rpc = vm.envOr("BASE_RPC_URL", string(""));
@@ -109,10 +110,19 @@ contract ForkTest is Test {
         vm.createSelectFork(rpc, fx.readUint(".block"));
         assertEq(block.chainid, 8453);
         d = new Deploy();
-        swapper = ImmutableSwapper(d.run());
+        address[5] memory deployed = d.run();
+        address[5] memory o = d.outputs();
+        for (uint256 i; i < o.length; ++i) {
+            swappers[o[i]] = ImmutableSwapper(deployed[i]);
+        }
     }
 
-    function _pins() internal view returns (address[28] memory a, bytes32[28] memory h) {
+    // The swapper that pays out in the route's last token.
+    function _swapperFor(ImmutableSwapper.Route memory r) internal view returns (ImmutableSwapper) {
+        return swappers[r.hops[r.hops.length - 1].tokenOut];
+    }
+
+    function _pins() internal view returns (address[29] memory a, bytes32[29] memory h) {
         address[12] memory e = d.exchanges();
         for (uint256 i; i < e.length; ++i) {
             a[i] = e[i];
@@ -123,6 +133,7 @@ contract ForkTest is Test {
         (AERODROME_POOL_IMPL, AERODROME_CL_IMPL, AERODROME_CL_IMPL_2, AERODROME_CL_IMPL_3, AERO_REGISTRY);
         (a[22], a[23], a[24], a[25], a[26], a[27]) =
         (AERODROME_REGISTRY, AERO_VOLATILE_FEES, AERO_VOLATILE_TAX, AERO_STABLE_FEES, AERO_STABLE_TAX, AERO_SWAP_HOOK);
+        a[28] = d.AERO();
         h = [
             bytes32(0x6f54720c3eb4326e8cf846308b98ab0c0d070a441ca11ba8cd00be0256af7084),
             0xe9254068c76f9b19f4ab63f7a83b9f82f412362d41609faa232daa65f987bbac,
@@ -151,12 +162,13 @@ contract ForkTest is Test {
             0x59de6c7ead685b6295ef7dccb7ee30cd2881c697267d09718790f998db3cf016,
             0xf247ee419fe1dcfedf09c9939822a2276de0c9d2d45fd30330998a448345e803,
             0x59de6c7ead685b6295ef7dccb7ee30cd2881c697267d09718790f998db3cf016,
-            0xbc4dcb6544ee340d248fd21ccf8bc9c22261cdc7a011b053cfdca9b77981841f
+            0xbc4dcb6544ee340d248fd21ccf8bc9c22261cdc7a011b053cfdca9b77981841f,
+            0x4a7a844a493b672816a8adadf8500083dd100dd25976803f3964c079a819d0b9
         ];
     }
 
     function test_pin_codeHashes() public view {
-        (address[28] memory a, bytes32[28] memory h) = _pins();
+        (address[29] memory a, bytes32[29] memory h) = _pins();
         for (uint256 i; i < a.length; ++i) {
             assertEq(a[i].codehash, h[i], vm.toString(a[i]));
         }
@@ -177,6 +189,16 @@ contract ForkTest is Test {
         assertEq(IAeroModules(d.AERO_STABLE()).feeModule(), AERO_STABLE_FEES);
         assertEq(IAeroModules(d.AERO_STABLE()).mevTaxModule(), AERO_STABLE_TAX);
         assertEq(ISwapHooks(d.AERO_SLIPSTREAM()).defaultSwapHook(), AERO_SWAP_HOOK);
+
+        // The new AERO is the token of Aero's root Voter, reached from its FactoryRegistry.
+        address voter = _address(
+            _address(
+                _address(_address(_address(AERO_REGISTRY, "leafVoter()"), "ORCHESTRATOR()"), "adapter()"),
+                "ROOT_MESSAGE_ORCHESTRATOR()"
+            ),
+            "VOTER()"
+        );
+        assertEq(_address(voter, "TOKEN()"), d.AERO());
 
         // The registries list exactly the factories the swapper fixes.
         address[] memory aero = IAeroRegistry(AERO_REGISTRY).targetFactories();
@@ -259,8 +281,32 @@ contract ForkTest is Test {
         _check("hydxThroughWeth");
     }
 
+    function test_fork_usdcToWeth() public {
+        _check("usdcToWeth");
+    }
+
+    function test_fork_cbBtcToWeth() public {
+        _check("cbBtcToWeth");
+    }
+
+    function test_fork_wethToCbBtc() public {
+        _check("wethToCbBtc");
+    }
+
+    function test_fork_usdcToCbBtc() public {
+        _check("usdcToCbBtc");
+    }
+
+    function test_fork_wethToHydx() public {
+        _check("wethToHydx");
+    }
+
+    function test_fork_usdcToHydx() public {
+        _check("usdcToHydx");
+    }
+
     function test_fork_quoteMatchesThePoolsOwnQuotes() public {
-        string[11] memory names = [
+        string[17] memory names = [
             "hydrexAlgebra",
             "hydrexClassic",
             "aerodromeClassic",
@@ -271,18 +317,33 @@ contract ForkTest is Test {
             "uniswapV3",
             "uniswapV4",
             "uniswapV4Native",
-            "hydxThroughWeth"
+            "hydxThroughWeth",
+            "usdcToWeth",
+            "cbBtcToWeth",
+            "wethToCbBtc",
+            "usdcToCbBtc",
+            "wethToHydx",
+            "usdcToHydx"
         ];
-        ImmutableSwapper.Route[] memory routes = new ImmutableSwapper.Route[](names.length);
-        uint256[] memory expected = new uint256[](names.length);
         for (uint256 i; i < names.length; ++i) {
-            (routes[i],, expected[i]) = _route(names[i]);
+            (ImmutableSwapper.Route memory r,, uint256 expected) = _route(names[i]);
+            ImmutableSwapper.Route[] memory routes = new ImmutableSwapper.Route[](1);
+            routes[0] = r;
+            ImmutableSwapper.Result memory quoted = _swapperFor(r).quote(routes)[0];
+            assertTrue(quoted.done, names[i]);
+            assertEq(quoted.amountOut, expected, names[i]);
         }
-        ImmutableSwapper.Result[] memory quoted = swapper.quote(routes);
-        for (uint256 i; i < names.length; ++i) {
-            assertTrue(quoted[i].done, names[i]);
-            assertEq(quoted[i].usdcOut, expected[i], names[i]);
-        }
+    }
+
+    // Aero's new token has no pool yet: the test creates one against WETH, at about the old AERO's price.
+    function test_fork_wethToAero() public {
+        address aero = d.AERO();
+        address pool = IAeroPoolFactory(d.AERO_VOLATILE()).createPool(aero, WETH);
+        _fund(WETH, pool, 100e18);
+        vm.prank(AERO_MIGRATION);
+        IERC20(aero).transfer(pool, 296_000e18);
+        IClassicMint(pool).mint(address(this));
+        _checkCreated("wethToAero");
     }
 
     function test_fork_aeroVolatile() public {
@@ -326,8 +387,8 @@ contract ForkTest is Test {
         r.amount = 1e18;
         r.hops[0].pool = pool;
         (ImmutableSwapper.Result memory res,) = _swapAs(holder, r);
-        assertTrue(res.usdcOut < plain, "the tax applies");
-        console.log("Aero volatile, 1 WETH with a 2 gwei tip:", res.usdcOut, "USDC, untaxed:", plain);
+        assertTrue(res.amountOut < plain, "the tax applies");
+        console.log("Aero volatile, 1 WETH with a 2 gwei tip:", res.amountOut, "USDC, untaxed:", plain);
     }
 
     // No limit on routes: Base's cap on a transaction's gas is the limit.
@@ -349,6 +410,7 @@ contract ForkTest is Test {
         for (uint256 i; i < n; ++i) {
             routes[i] = r;
         }
+        ImmutableSwapper swapper = _swapperFor(r);
         vm.startPrank(holder);
         IApprove(r.token).approve(address(swapper), r.amount * n);
         uint256 before = gasleft();
@@ -364,7 +426,7 @@ contract ForkTest is Test {
         (ImmutableSwapper.Route memory r, address holder, uint256 expected) = _route(name);
         (ImmutableSwapper.Result memory res, uint256 gasUsed) = _swapAs(holder, r);
         console.log(name, "gas:", gasUsed);
-        assertEq(res.usdcOut, expected, "the pools' own quote at the block");
+        assertEq(res.amountOut, expected, "the pools' own quote at the block");
     }
 
     function _checkCreated(string memory name) internal {
@@ -373,17 +435,18 @@ contract ForkTest is Test {
         ImmutableSwapper.Route[] memory routes = new ImmutableSwapper.Route[](1);
         routes[0] = r;
         vm.prank(holder);
-        ImmutableSwapper.Result memory quoted = swapper.quote(routes)[0];
+        ImmutableSwapper.Result memory quoted = _swapperFor(r).quote(routes)[0];
         (ImmutableSwapper.Result memory res, uint256 gasUsed) = _swapAs(holder, r);
         console.log(name, "gas:", gasUsed);
-        assertGt(res.usdcOut, 0);
-        assertEq(res.usdcOut, quoted.usdcOut, "swap matches quote");
+        assertGt(res.amountOut, 0);
+        assertEq(res.amountOut, quoted.amountOut, "swap matches quote");
         assertEq(res.amountIn, quoted.amountIn);
     }
 
     function _poolOf(string memory name) internal view returns (address) {
         if (keccak256(bytes(name)) == keccak256("aeroVolatile")) return _getPool(d.AERO_VOLATILE(), WETH, USDC);
         if (keccak256(bytes(name)) == keccak256("aeroStable")) return _getPool(d.AERO_STABLE(), EURC, USDC);
+        if (keccak256(bytes(name)) == keccak256("wethToAero")) return _getPool(d.AERO_VOLATILE(), WETH, d.AERO());
         (bool ok, bytes memory ret) = d.AERO_SLIPSTREAM()
             .staticcall(abi.encodeWithSignature("getPool(address,address,int24)", WETH, USDC, int24(100)));
         assertTrue(ok);
@@ -396,15 +459,18 @@ contract ForkTest is Test {
         return abi.decode(ret, (address));
     }
 
-    // Swaps one route as holder, and checks the split of the USDC and that the swapper keeps nothing.
+    // Swaps one route as holder, through the swapper for its last token, and checks the split of that token and that
+    // the swapper keeps nothing.
     function _swapAs(address holder, ImmutableSwapper.Route memory r)
         internal
         returns (ImmutableSwapper.Result memory res, uint256 gasUsed)
     {
         ImmutableSwapper.Route[] memory routes = new ImmutableSwapper.Route[](1);
         routes[0] = r;
-        uint256 holderBefore = IERC20(USDC).balanceOf(holder);
-        uint256 treasuryBefore = IERC20(USDC).balanceOf(TREASURY);
+        ImmutableSwapper swapper = _swapperFor(r);
+        IERC20 output = IERC20(swapper.outputToken());
+        uint256 holderBefore = output.balanceOf(holder);
+        uint256 treasuryBefore = output.balanceOf(TREASURY);
         vm.startPrank(holder);
         IApprove(r.token).approve(address(swapper), r.amount);
         gasUsed = gasleft();
@@ -414,11 +480,11 @@ contract ForkTest is Test {
         vm.stopPrank();
         res = results[0];
         assertEq(res.amountIn, r.amount);
-        assertEq(fee, res.usdcOut / 100, "exactly 1%");
-        assertEq(paid, res.usdcOut - fee);
-        assertEq(IERC20(USDC).balanceOf(holder) - holderBefore, paid);
-        assertEq(IERC20(USDC).balanceOf(TREASURY) - treasuryBefore, fee);
-        assertEq(IERC20(USDC).balanceOf(address(swapper)), 0);
+        assertEq(fee, res.amountOut / 100, "exactly 1%");
+        assertEq(paid, res.amountOut - fee);
+        assertEq(output.balanceOf(holder) - holderBefore, paid);
+        assertEq(output.balanceOf(TREASURY) - treasuryBefore, fee);
+        assertEq(output.balanceOf(address(swapper)), 0);
         assertEq(IERC20(r.token).balanceOf(address(swapper)), 0);
     }
 
@@ -468,6 +534,12 @@ contract ForkTest is Test {
     function uniswapV3MintCallback(uint256 amount0, uint256 amount1, bytes calldata) external {
         if (amount0 != 0) IERC20(WETH).transfer(msg.sender, amount0);
         if (amount1 != 0) IERC20(USDC).transfer(msg.sender, amount1);
+    }
+
+    function _address(address target, string memory signature) internal view returns (address) {
+        (bool ok, bytes memory ret) = target.staticcall(abi.encodeWithSignature(signature));
+        assertTrue(ok, signature);
+        return abi.decode(ret, (address));
     }
 
     // EIP-1167's minimal proxy for impl.

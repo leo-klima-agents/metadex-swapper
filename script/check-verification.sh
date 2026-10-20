@@ -26,10 +26,15 @@ expect .creationCodeKeccak "$(cast keccak "$creation")"
 expect .solc "$(jq -j '.metadata.compiler.version' "$ARTIFACT")"
 expect .salt "$(cast keccak "$(jq -j .saltPreimage "$HASHES")")"
 
-args=$(cast abi-encode 'constructor(address,address[12])' \
-  "$(jq -j .deployment.usdc "$HASHES")" "[$(jq -j '.deployment.exchanges | join(",")' "$HASHES")]")
-expect .deployment.constructorArgs "$args"
-expect .deployment.address "$(cast create2 --deployer "$(jq -j .create2Deployer "$HASHES")" --salt "$(jq -j .salt "$HASHES")" --init-code "${creation}${args#0x}" | grep -oE '0x[0-9a-fA-F]{40}' | head -n1)"
+exchanges="[$(jq -j '.exchanges | join(",")' "$HASHES")]"
+deployer=$(jq -j .create2Deployer "$HASHES")
+salt=$(jq -j .salt "$HASHES")
+for symbol in $(jq -r '.deployments | keys[]' "$HASHES"); do
+  d=".deployments.$symbol"
+  args=$(cast abi-encode 'constructor(address,address[12])' "$(jq -j "$d.outputToken" "$HASHES")" "$exchanges")
+  expect "$d.constructorArgs" "$args"
+  expect "$d.address" "$(cast create2 --deployer "$deployer" --salt "$salt" --init-code "${creation}${args#0x}" | grep -oE '0x[0-9a-fA-F]{40}' | head -n1)"
+done
 
 projection='del(.settings.outputSelection)'
 current=$(forge verify-contract --show-standard-json-input 0x0000000000000000000000000000000000000001 src/ImmutableSwapper.sol:ImmutableSwapper | jq -S "$projection")
@@ -40,12 +45,13 @@ else
   echo "$INPUT ok"
 fi
 
-address=$(jq -j .deployment.address "$HASHES")
-if grep -qF "\`$address\`" README.md; then
-  echo "README.md address ok"
-else
-  echo "::error::README.md does not show $address" >&2
-  status=1
-fi
+for address in $(jq -r '.deployments[].address' "$HASHES"); do
+  if grep -qF "\`$address\`" README.md; then
+    echo "README.md shows $address"
+  else
+    echo "::error::README.md does not show $address" >&2
+    status=1
+  fi
+done
 
 exit $status

@@ -94,8 +94,9 @@ this repository:
   `AlgebraPool`; Uniswap v3's `UniswapV3Pool` and `UniswapV3Factory`; Uniswap v4's `PoolManager`. Aerodrome's classic
   pools declare the same functions as Aero's and Hydrex's, which `script/check-signatures.sh` checks, and
   `test/Fork.t.sol` swaps through one.
-- `LicenseRef-Dromos-Restricted-Use-1.0`: Aero's `FactoryRegistry`, fee modules, MEV tax modules and swap hook. The
-  swapper never calls them.
+- `LicenseRef-Dromos-Restricted-Use-1.0`: Aero's `FactoryRegistry`, fee modules, MEV tax modules and swap hook, which
+  the swapper never calls; and Aero's new AERO token, an ERC-20 the AERO swapper pays out, with no fee or hook on
+  transfers.
 - Aero's CLPool implementation is verified only on Basescan, not on Sourcify.
 
 ## Addresses
@@ -133,6 +134,11 @@ this repository:
 | UniswapV3Factory, `UniswapV3` | `0x33128a8fC17869897dcE68Ed026d694621f6FDfD` | `0x95707a4ac71f20181a63ef7d180e3c625be5d20fc8f6f980befa966bad568132` |
 | PoolManager, `UniswapV4` | `0x498581fF718922c3f8e6A244956aF099B2652b2b` | `0x83b2af6e9f3158defc2811cbcb0db71ecf8b2ba2abea39c39e370ac5c6f43eb6` |
 | Algebra factory owner, an account without code | `0x74266f2b206D1359B83fc74949EF07176FB3AE03` | |
+| AERO, Aero's token since its v3 (`Token`), the AERO swapper's output | `0x3f5bF3EdAc59d650D8fDf9657a71F2f904A3a4Ee` | `0x4a7a844a493b672816a8adadf8500083dd100dd25976803f3964c079a819d0b9` |
+
+Aero's new AERO is the `TOKEN` of its root `Voter`, `0x49d7d4f17Ec56Ef8fA04E464AF5D1A4942CC31e6`, reached from Aero's
+`FactoryRegistry` through its `LeafVoter`, the `LeafMessageOrchestrator`'s adapter and the `RootMessageOrchestrator`.
+At the pinned block, its 2.127 billion tokens sit with its two migration contracts, and it trades in no pool yet.
 
 Only the Hydrex pair factory has an ERC-1967 implementation slot set. Aero's and Aerodrome's pools are EIP-1167 clones
 of their factory's implementation: `test/Fork.t.sol` checks Aerodrome's four pools that it swaps through.

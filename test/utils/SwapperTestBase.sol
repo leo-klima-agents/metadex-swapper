@@ -189,8 +189,4 @@ abstract contract SwapperTestBase is Test {
         vm.prank(holder);
         return swapper.quote(routes);
     }
-
-    function _fee(uint256 usdcOut) internal pure returns (uint256) {
-        return usdcOut / 100;
-    }
 }

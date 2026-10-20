@@ -15,6 +15,7 @@ WETH = "0x4200000000000000000000000000000000000006"
 CBBTC = "0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf"
 HYDX = "0x00000e7efa313F4E11Bfff432471eD9423AC6B30"
 EURC = "0x60a3E35Cc302bFA44Cb288Bc5a4F316Fdb1adb42"
+NEW_AERO = "0x3f5bF3EdAc59d650D8fDf9657a71F2f904A3a4Ee"
 ETH = "0x0000000000000000000000000000000000000000"
 MORPHO = "0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb"
 HYDX_VE = "0x25B2ED7149fb8A05f6eF9407d9c8F878f59cd1e1"
@@ -38,7 +39,7 @@ INDEX = {name: i for i, (name, _) in enumerate(EXCHANGES)}
 FACTORY = dict(EXCHANGES)
 CONCENTRATED = {"HydrexAlgebra", "AeroSlipstream", "AerodromeSlipstream", "AerodromeSlipstream2"}
 CONCENTRATED |= {"AerodromeSlipstream3", "UniswapV3"}
-AERO = {"AeroVolatile", "AeroStable", "AeroSlipstream"}
+AERO_V3 = {"AeroVolatile", "AeroStable", "AeroSlipstream"}
 
 # Where a pool is found: (factory call, arguments). Uniswap v4 hops are keys: (fee, tick spacing).
 LOOKUP = {
@@ -55,7 +56,8 @@ LOOKUP = {
     "UniswapV3": ("getPool(address,address,uint24)", [500]),
 }
 
-# name: (holder, token, amount, [(exchange, token out, (fee, tick spacing) for Uniswap v4)])
+# name: (holder, token, amount, [(exchange, token out, (fee, tick spacing) for Uniswap v4)]). Each route goes through the
+# swapper that pays out in its last token.
 ROUTES = {
     "hydrexAlgebra": (MORPHO, WETH, 10**16, [("HydrexAlgebra", USDC)]),
     "hydrexClassic": (HYDX_VE, HYDX, 10**21, [("HydrexClassic", USDC)]),
@@ -71,6 +73,13 @@ ROUTES = {
     "uniswapV4": (MORPHO, WETH, 10**17, [("UniswapV4", USDC, (3000, 60))]),
     "uniswapV4Native": (MORPHO, CBBTC, 10**5, [("UniswapV4", ETH, (500, 10)), ("UniswapV4", USDC, (3000, 60))]),
     "hydxThroughWeth": (HYDX_VE, HYDX, 10**21, [("HydrexAlgebra", WETH), ("UniswapV3", USDC)]),
+    "usdcToWeth": (MORPHO, USDC, 10**8, [("UniswapV3", WETH)]),
+    "cbBtcToWeth": (MORPHO, CBBTC, 10**5, [("AerodromeSlipstream", WETH)]),
+    "wethToCbBtc": (MORPHO, WETH, 10**17, [("UniswapV3", CBBTC)]),
+    "usdcToCbBtc": (MORPHO, USDC, 10**8, [("AerodromeSlipstream", CBBTC)]),
+    "wethToHydx": (MORPHO, WETH, 10**16, [("HydrexAlgebra", HYDX)]),
+    "usdcToHydx": (MORPHO, USDC, 10**7, [("HydrexClassic", HYDX)]),
+    "wethToAero": (MORPHO, WETH, 10**17, [("AeroVolatile", NEW_AERO)]),
     # For gas: three hops through the cheapest exchange, and through the dearest.
     "gasCheapest": (MORPHO, WETH, 10**12, [("UniswapV2", CBBTC), ("UniswapV2", WETH), ("UniswapV2", USDC)]),
     "gasDearest": (MORPHO, WETH, 10**12, [("HydrexAlgebra", CBBTC), ("HydrexAlgebra", WETH), ("HydrexAlgebra", USDC)]),
@@ -149,7 +158,7 @@ def quote_hop(block, exchange, pool, token_in, token_out, amount):
         r0, r1, _ = words(call(block, pool, "getReserves()"))
         r_in, r_out = (r0, r1) if zero_for_one else (r1, r0)
         return amount * 997 * r_out // (r_in * 1000 + amount * 997)
-    signature = "getAmountOutWithTotalFee" if exchange in AERO else "getAmountOut"
+    signature = "getAmountOutWithTotalFee" if exchange in AERO_V3 else "getAmountOut"
     return words(call(block, pool, signature + "(uint256,address)", amount, token_in))[0]
 
 
@@ -178,7 +187,7 @@ def main():
                 pool = pool_of(block, exchange, token_in, token_out)
                 if not has_liquidity(block, exchange, pool):
                     # Aero's pools are new: the fork test creates its own.
-                    assert exchange in AERO and len(hops) == 1, f"{name}: no pool"
+                    assert exchange in AERO_V3 and len(hops) == 1, f"{name}: no pool"
                     pools.append(ETH)
                     created = True
                     break

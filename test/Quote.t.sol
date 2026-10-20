@@ -15,7 +15,7 @@ contract QuoteTest is SwapperTestBase {
     function _assertSame(ImmutableSwapper.Result memory a, ImmutableSwapper.Result memory b) internal pure {
         assertEq(a.done, b.done);
         assertEq(a.amountIn, b.amountIn);
-        assertEq(a.usdcOut, b.usdcOut);
+        assertEq(a.amountOut, b.amountOut);
         assertEq(a.fee, b.fee);
         assertEq(a.reason, b.reason);
     }
@@ -51,7 +51,7 @@ contract QuoteTest is SwapperTestBase {
         ImmutableSwapper.Result[] memory quoted = _quote(routes);
         _give(address(tkn), 1e21);
         (ImmutableSwapper.Result[] memory results,,) = _swap(routes);
-        assertGt(quoted[0].usdcOut, 0);
+        assertGt(quoted[0].amountOut, 0);
         _assertSame(quoted[0], results[0]);
     }
 
@@ -74,9 +74,9 @@ contract QuoteTest is SwapperTestBase {
         ImmutableSwapper.Result[] memory quoted = _quote(_routes(r, all));
 
         assertEq(quoted[0].amountIn, 2e18);
-        assertEq(quoted[0].usdcOut, 2e18);
+        assertEq(quoted[0].amountOut, 2e18);
         assertEq(quoted[1].amountIn, 5e18, "the caller's whole balance");
-        assertEq(quoted[1].usdcOut, 5e18);
+        assertEq(quoted[1].amountOut, 5e18);
         assertEq(tkn.allowance(holder, address(swapper)), 0);
     }
 
@@ -90,7 +90,7 @@ contract QuoteTest is SwapperTestBase {
         assertTrue(quoted[0].done);
         assertFalse(quoted[1].done);
         assertEq(quoted[1].reason, abi.encodeWithSelector(ImmutableSwapper.PartialFill.selector, bad.hops[0].pool));
-        assertEq(quoted[1].usdcOut, 0);
+        assertEq(quoted[1].amountOut, 0);
     }
 
     function test_quote_checksLikeSwap() public {
@@ -124,9 +124,9 @@ contract QuoteTest is SwapperTestBase {
         _give(address(tkn), 2e27);
         (ImmutableSwapper.Result[] memory results,,) = _swap(routes);
 
-        assertEq(quoted[0].usdcOut, quoted[1].usdcOut);
-        assertEq(results[0].usdcOut, quoted[0].usdcOut);
-        assertLt(results[1].usdcOut, quoted[1].usdcOut, "the second route sees the first one's trade");
+        assertEq(quoted[0].amountOut, quoted[1].amountOut);
+        assertEq(results[0].amountOut, quoted[0].amountOut);
+        assertLt(results[1].amountOut, quoted[1].amountOut, "the second route sees the first one's trade");
     }
 
     function test_quote_leavesNoStateBehind() public {

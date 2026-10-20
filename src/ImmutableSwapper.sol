@@ -36,22 +36,22 @@ contract ImmutableSwapper is IAlgebraSwapCallback, IUniswapV3SwapCallback, IUnlo
     struct Hop {
         Exchange exchange; // picked by the caller
         address pool; // zero for Uniswap v4
-        address tokenOut; // the last hop's is USDC; zero is native ETH, between two Uniswap v4 hops only
+        address tokenOut; // the last hop's is the output token; zero is native ETH, between two Uniswap v4 hops only
         uint24 fee; // Uniswap v4 only
         int24 tickSpacing; // Uniswap v4 only
     }
 
     struct Route {
-        address token; // never USDC, never native ETH
+        address token; // never the output token, never native ETH
         uint256 amount; // type(uint256).max: the caller's balance, up to the allowance given
-        uint256 minPaid; // the least USDC this route must pay the caller, after the fee
+        uint256 minPaid; // the least of the output token this route must pay the caller, after the fee
         Hop[] hops;
     }
 
     struct Result {
         bool done;
         uint256 amountIn;
-        uint256 usdcOut; // before the fee
+        uint256 amountOut; // before the fee
         uint256 fee;
         bytes reason; // why the route failed, if it did
     }
@@ -63,7 +63,8 @@ contract ImmutableSwapper is IAlgebraSwapCallback, IUniswapV3SwapCallback, IUnlo
     uint160 private constant MIN_SQRT_RATIO = 4295128739;
     uint160 private constant MAX_SQRT_RATIO = 1461446703485210103287273052203988822378723970342;
 
-    address public immutable usdc;
+    // What every route ends in, and what the caller and the treasury are paid in.
+    address public immutable outputToken;
     address private immutable hydrexAlgebra;
     address private immutable hydrexClassic;
     address private immutable aeroVolatile;
@@ -86,7 +87,7 @@ contract ImmutableSwapper is IAlgebraSwapCallback, IUniswapV3SwapCallback, IUnlo
     bool private transient owedIsToken0;
 
     event Swapped(
-        address indexed caller, address[] tokens, uint256[] amountsIn, uint256[] usdcOut, uint256 paid, uint256 fee
+        address indexed caller, address[] tokens, uint256[] amountsIn, uint256[] amountsOut, uint256 paid, uint256 fee
     );
     event RouteFailed(address indexed caller, uint256 index, address token, bytes reason);
 
@@ -114,12 +115,12 @@ contract ImmutableSwapper is IAlgebraSwapCallback, IUniswapV3SwapCallback, IUnlo
     }
 
     // exchanges_ is in the order of Exchange.
-    constructor(address usdc_, address[EXCHANGES] memory exchanges_) {
-        if (usdc_ == address(0)) revert ZeroAddress();
+    constructor(address outputToken_, address[EXCHANGES] memory exchanges_) {
+        if (outputToken_ == address(0)) revert ZeroAddress();
         for (uint256 i; i < EXCHANGES; ++i) {
             if (exchanges_[i] == address(0)) revert ZeroAddress();
         }
-        usdc = usdc_;
+        outputToken = outputToken_;
         hydrexAlgebra = exchanges_[0];
         hydrexClassic = exchanges_[1];
         aeroVolatile = exchanges_[2];
@@ -149,27 +150,27 @@ contract ImmutableSwapper is IAlgebraSwapCallback, IUniswapV3SwapCallback, IUnlo
             if (r.done) {
                 ++done;
                 fee += r.fee;
-                paid += r.usdcOut - r.fee;
+                paid += r.amountOut - r.fee;
             } else if (skipFailed) {
                 emit RouteFailed(msg.sender, i, routes[i].token, r.reason);
             } else {
                 _bubble(r.reason);
             }
         }
-        if (fee != 0) _transfer(usdc, TREASURY, fee);
-        if (paid != 0) _transfer(usdc, msg.sender, paid);
+        if (fee != 0) _transfer(outputToken, TREASURY, fee);
+        if (paid != 0) _transfer(outputToken, msg.sender, paid);
 
         address[] memory tokens = new address[](done);
         uint256[] memory amountsIn = new uint256[](done);
-        uint256[] memory usdcOut = new uint256[](done);
+        uint256[] memory amountsOut = new uint256[](done);
         uint256 k;
         for (uint256 i; i < routes.length; ++i) {
             if (!results[i].done) continue;
             tokens[k] = routes[i].token;
             amountsIn[k] = results[i].amountIn;
-            usdcOut[k++] = results[i].usdcOut;
+            amountsOut[k++] = results[i].amountOut;
         }
-        emit Swapped(msg.sender, tokens, amountsIn, usdcOut, paid, fee);
+        emit Swapped(msg.sender, tokens, amountsIn, amountsOut, paid, fee);
     }
 
     // Called with eth_call: what swap would return now. It moves nothing, and needs no allowance: an amount of
@@ -195,7 +196,7 @@ contract ImmutableSwapper is IAlgebraSwapCallback, IUniswapV3SwapCallback, IUnlo
     // Runs one route in a call of its own, so that a route that fails undoes everything it did.
     function runRoute(address caller, uint256 index, Route calldata route)
         external
-        returns (uint256 amountIn, uint256 usdcOut)
+        returns (uint256 amountIn, uint256 amountOut)
     {
         if (msg.sender != address(this) || !locked) revert OnlySelf();
         _checkRoute(index, route);
@@ -210,8 +211,8 @@ contract ImmutableSwapper is IAlgebraSwapCallback, IUniswapV3SwapCallback, IUnlo
             _call(token, abi.encodeCall(IERC20.transferFrom, (caller, address(this), amountIn)));
             amountIn = _balance(token) - before;
         }
-        usdcOut = _runHops(index, route.hops, token, amountIn);
-        uint256 paid = usdcOut - _fee(usdcOut);
+        amountOut = _runHops(index, route.hops, token, amountIn);
+        uint256 paid = amountOut - _fee(amountOut);
         if (paid < route.minPaid) revert TooLittle(index, paid, route.minPaid);
     }
 
@@ -256,8 +257,8 @@ contract ImmutableSwapper is IAlgebraSwapCallback, IUniswapV3SwapCallback, IUnlo
     }
 
     function _try(uint256 index, Route calldata route) private returns (Result memory r) {
-        try this.runRoute(msg.sender, index, route) returns (uint256 amountIn, uint256 usdcOut) {
-            r = Result(true, amountIn, usdcOut, _fee(usdcOut), "");
+        try this.runRoute(msg.sender, index, route) returns (uint256 amountIn, uint256 amountOut) {
+            r = Result(true, amountIn, amountOut, _fee(amountOut), "");
         } catch (bytes memory reason) {
             r.reason = reason;
         }
@@ -267,10 +268,10 @@ contract ImmutableSwapper is IAlgebraSwapCallback, IUniswapV3SwapCallback, IUnlo
         uint256 n = route.hops.length;
         if (n == 0 || n > MAX_HOPS) revert BadHopCount(index);
         address tokenIn = route.token;
-        if (tokenIn == usdc || tokenIn == address(0)) revert BadPath(index, 0);
+        if (tokenIn == outputToken || tokenIn == address(0)) revert BadPath(index, 0);
         for (uint256 i; i < n; ++i) {
             Hop calldata hop = route.hops[i];
-            if ((hop.tokenOut == usdc) != (i == n - 1)) revert BadPath(index, i);
+            if ((hop.tokenOut == outputToken) != (i == n - 1)) revert BadPath(index, i);
             if (
                 hop.tokenOut == address(0)
                     && (hop.exchange != Exchange.UniswapV4 || route.hops[i + 1].exchange != Exchange.UniswapV4)
@@ -462,8 +463,8 @@ contract ImmutableSwapper is IAlgebraSwapCallback, IUniswapV3SwapCallback, IUnlo
         return zeroForOne ? MIN_SQRT_RATIO + 1 : MAX_SQRT_RATIO - 1;
     }
 
-    function _fee(uint256 usdcOut) private pure returns (uint256) {
-        return usdcOut * FEE_BPS / 10_000;
+    function _fee(uint256 amountOut) private pure returns (uint256) {
+        return amountOut * FEE_BPS / 10_000;
     }
 
     function _min(uint256 a, uint256 b) private pure returns (uint256) {

@@ -15,7 +15,19 @@ contract DeployTest is Test {
     }
 
     function test_canonicalValues() public view {
-        assertEq(d.USDC(), 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913);
+        address[5] memory o = d.outputs();
+        assertEq(o[0], 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913, "USDC");
+        assertEq(o[1], 0x4200000000000000000000000000000000000006, "WETH");
+        assertEq(o[2], 0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf, "cbBTC");
+        assertEq(o[3], 0x3f5bF3EdAc59d650D8fDf9657a71F2f904A3a4Ee, "AERO, Aero's v3 token");
+        assertEq(o[4], 0x00000e7efa313F4E11Bfff432471eD9423AC6B30, "HYDX");
+        string[5] memory s = d.symbols();
+        assertEq(s[0], "USDC");
+        assertEq(s[1], "WETH");
+        assertEq(s[2], "cbBTC");
+        assertEq(s[3], "AERO");
+        assertEq(s[4], "HYDX");
+
         address[12] memory e = d.exchanges();
         assertEq(e[0], 0x36077D39cdC65E1e3FB65810430E5b2c4D5fA29E, "Hydrex Algebra factory");
         assertEq(e[1], 0xC47F17c4fd96F50eFD2A2448ceDe5C185c084bf0, "Hydrex pair factory");
@@ -39,42 +51,68 @@ contract DeployTest is Test {
         assertEq(vm.parseJsonString(json, ".saltPreimage"), d.SALT_PREIMAGE());
         assertEq(vm.parseJsonBytes32(json, ".salt"), d.SALT());
         assertEq(vm.parseJsonBytes32(json, ".creationCodeKeccak"), keccak256(type(ImmutableSwapper).creationCode));
-
-        ImmutableSwapper local = new ImmutableSwapper(d.USDC(), d.exchanges());
-        assertEq(vm.parseJsonAddress(json, ".deployment.usdc"), d.USDC());
-        address[] memory recorded = vm.parseJsonAddressArray(json, ".deployment.exchanges");
+        address[] memory recorded = vm.parseJsonAddressArray(json, ".exchanges");
         address[12] memory e = d.exchanges();
         assertEq(recorded.length, e.length);
         for (uint256 i; i < e.length; ++i) {
             assertEq(recorded[i], e[i]);
         }
-        assertEq(vm.parseJsonBytes(json, ".deployment.constructorArgs"), d.constructorArgs());
-        assertEq(vm.parseJsonAddress(json, ".deployment.address"), d.predict());
-        assertEq(vm.parseJsonBytes32(json, ".deployment.runtimeKeccak"), keccak256(address(local).code));
+
+        address[5] memory o = d.outputs();
+        string[5] memory s = d.symbols();
+        assertEq(vm.parseJsonKeys(json, ".deployments").length, o.length);
+        for (uint256 i; i < o.length; ++i) {
+            string memory k = string.concat(".deployments.", s[i]);
+            ImmutableSwapper local = new ImmutableSwapper(o[i], e);
+            assertEq(vm.parseJsonAddress(json, string.concat(k, ".outputToken")), o[i]);
+            assertEq(vm.parseJsonBytes(json, string.concat(k, ".constructorArgs")), d.constructorArgs(o[i]));
+            assertEq(vm.parseJsonAddress(json, string.concat(k, ".address")), d.predict(o[i]));
+            assertEq(vm.parseJsonBytes32(json, string.concat(k, ".runtimeKeccak")), keccak256(address(local).code));
+        }
     }
 
-    function test_run_deploysAtPredictedAddress() public {
-        address predicted = d.predict();
-        assertEq(predicted.code.length, 0);
+    function test_run_deploysAtPredictedAddresses() public {
+        address[5] memory o = d.outputs();
+        for (uint256 i; i < o.length; ++i) {
+            assertEq(d.predict(o[i]).code.length, 0);
+        }
 
-        assertEq(d.run(), predicted);
+        address[5] memory deployed = d.run();
 
-        ImmutableSwapper s = ImmutableSwapper(predicted);
-        assertEq(s.usdc(), d.USDC());
-        address[] memory list = s.exchanges();
         address[12] memory e = d.exchanges();
-        assertEq(list.length, e.length);
-        for (uint256 i; i < e.length; ++i) {
-            assertEq(list[i], e[i]);
+        for (uint256 i; i < o.length; ++i) {
+            assertEq(deployed[i], d.predict(o[i]));
+            for (uint256 j; j < i; ++j) {
+                assertTrue(deployed[j] != deployed[i]);
+            }
+            ImmutableSwapper s = ImmutableSwapper(deployed[i]);
+            assertEq(s.outputToken(), o[i]);
+            address[] memory list = s.exchanges();
+            assertEq(list.length, e.length);
+            for (uint256 j; j < e.length; ++j) {
+                assertEq(list[j], e[j]);
+            }
         }
     }
 
     function test_run_isIdempotent() public {
-        address first = d.run();
-        bytes32 codehash = first.codehash;
+        address[5] memory first = d.run();
+        bytes32 codehash = first[2].codehash;
 
-        assertEq(d.run(), first);
-        assertEq(first.codehash, codehash);
+        address[5] memory again = d.run();
+        for (uint256 i; i < first.length; ++i) {
+            assertEq(again[i], first[i]);
+        }
+        assertEq(first[2].codehash, codehash);
+    }
+
+    function test_run_deploysTheOnesMissing() public {
+        address cbbtc = d.predict(d.CBBTC());
+        vm.etch(d.predict(d.USDC()), hex"00");
+        address[5] memory deployed = d.run();
+        assertEq(deployed[2], cbbtc);
+        assertEq(ImmutableSwapper(cbbtc).outputToken(), d.CBBTC());
+        assertEq(deployed[0].code, hex"00", "an existing deployment is left alone");
     }
 
     function test_run_failsWithoutDeployer() public {

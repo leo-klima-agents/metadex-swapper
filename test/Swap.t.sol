@@ -48,7 +48,7 @@ contract SwapTest is SwapperTestBase {
 
             assertTrue(results[0].done);
             assertEq(results[0].amountIn, 1e18);
-            assertEq(results[0].usdcOut, expected);
+            assertEq(results[0].amountOut, expected);
             assertEq(results[0].fee, expected / 100);
             assertEq(fee, expected / 100);
             assertEq(paid, expected - expected / 100);
@@ -78,12 +78,42 @@ contract SwapTest is SwapperTestBase {
                 _give(address(tkn), 1e18);
                 (ImmutableSwapper.Result[] memory results,,) = _swap(_routes(r));
                 assertTrue(results[0].done);
-                assertEq(results[0].usdcOut, quoted[0].usdcOut);
-                assertGt(results[0].usdcOut, 0.99e18);
+                assertEq(results[0].amountOut, quoted[0].amountOut);
+                assertGt(results[0].amountOut, 0.99e18);
                 _assertEmpty(address(tkn));
                 assertEq(weth.balanceOf(address(swapper)), 0);
             }
         }
+    }
+
+    function test_anotherOutputToken() public {
+        ImmutableSwapper wethSwapper = new ImmutableSwapper(address(weth), _exchanges());
+        address pool = _pool(V3, address(usdc), address(weth), 2, 1);
+        address other = _pool(V3, address(tkn), address(weth));
+        ImmutableSwapper.Route[] memory routes =
+            _routes(_route(address(usdc), 1e6, _hops(_hop(V3, pool, address(weth)))));
+        usdc.mint(holder, 1e6);
+        vm.startPrank(holder);
+        usdc.approve(address(wethSwapper), 1e6);
+        (ImmutableSwapper.Result[] memory results, uint256 paid, uint256 fee) =
+            wethSwapper.swap(routes, block.timestamp, false);
+
+        assertEq(results[0].amountOut, 2e6);
+        assertEq(fee, 2e4, "the fee is paid in the output token");
+        assertEq(paid, 2e6 - 2e4);
+        assertEq(weth.balanceOf(holder), paid);
+        assertEq(weth.balanceOf(treasury), fee);
+        assertEq(usdc.balanceOf(holder), 0);
+
+        // Its routes must end in WETH, and none may start with it.
+        routes =
+            _routes(_route(address(tkn), 1e18, _hops(_hop(V3, other, address(weth)), _hop(V3, pool, address(usdc)))));
+        vm.expectRevert(abi.encodeWithSelector(ImmutableSwapper.BadPath.selector, 0, 0));
+        wethSwapper.swap(routes, block.timestamp, false);
+        routes = _routes(_route(address(weth), 1e18, _hops(_hop(V3, pool, address(usdc)))));
+        vm.expectRevert(abi.encodeWithSelector(ImmutableSwapper.BadPath.selector, 0, 0));
+        wethSwapper.swap(routes, block.timestamp, false);
+        vm.stopPrank();
     }
 
     function test_threeHops_mixed() public {
@@ -105,7 +135,7 @@ contract SwapTest is SwapperTestBase {
 
         (ImmutableSwapper.Result[] memory results,,) = _swap(_routes(r));
 
-        assertEq(results[0].usdcOut, expected);
+        assertEq(results[0].amountOut, expected);
         _assertEmpty(address(tkn));
         assertEq(weth.balanceOf(address(swapper)), 0);
         assertEq(cbbtc.balanceOf(address(swapper)), 0);
@@ -121,13 +151,13 @@ contract SwapTest is SwapperTestBase {
 
         (ImmutableSwapper.Result[] memory results,,) = _swap(_routes(r));
 
-        assertEq(results[0].usdcOut, expected);
+        assertEq(results[0].amountOut, expected);
     }
 
     function test_v4_oneHop() public {
         _give(address(tkn), 1e18);
         (ImmutableSwapper.Result[] memory results,,) = _swap(_routes(_direct(V4, address(tkn), 1e18)));
-        assertEq(results[0].usdcOut, 1e18);
+        assertEq(results[0].amountOut, 1e18);
         _assertEmpty(address(tkn));
     }
 
@@ -142,7 +172,7 @@ contract SwapTest is SwapperTestBase {
         vm.expectCall(address(manager), abi.encodeWithSelector(IPoolManager.take.selector), 1);
         (ImmutableSwapper.Result[] memory results,,) = _swap(_routes(r));
 
-        assertEq(results[0].usdcOut, 1.5e18);
+        assertEq(results[0].amountOut, 1.5e18);
         assertEq(manager.swappedKeys().length, 2);
         assertEq(manager.deltas(address(weth)), 0);
         _assertEmpty(address(tkn));
@@ -158,7 +188,7 @@ contract SwapTest is SwapperTestBase {
 
         (ImmutableSwapper.Result[] memory results,,) = _swap(_routes(r));
 
-        assertEq(results[0].usdcOut, 6e18);
+        assertEq(results[0].amountOut, 6e18);
         assertEq(address(swapper).balance, 0);
         IPoolManager.PoolKey[] memory keys = manager.swappedKeys();
         assertEq(keys[0].currency0, ETH);
@@ -266,8 +296,8 @@ contract SwapTest is SwapperTestBase {
 
         (ImmutableSwapper.Result[] memory results, uint256 paid, uint256 fee) = _swap(_routes(a, b));
 
-        assertEq(results[0].usdcOut, 1e18);
-        assertEq(results[1].usdcOut, 2e18);
+        assertEq(results[0].amountOut, 1e18);
+        assertEq(results[1].amountOut, 2e18);
         assertEq(fee, 3e16);
         assertEq(paid, 3e18 - 3e16);
         assertEq(usdc.balanceOf(holder), paid);
@@ -339,7 +369,7 @@ contract SwapTest is SwapperTestBase {
         assertFalse(results[1].done);
         assertTrue(results[2].done);
         assertEq(results[1].reason, reason);
-        assertEq(results[1].usdcOut, 0);
+        assertEq(results[1].amountOut, 0);
         assertEq(bad.balanceOf(holder), 1e18, "the failed route's token stays with the caller");
         assertEq(usdc.balanceOf(holder), paid);
         assertEq(paid, 3e18 - 3e16);
@@ -574,7 +604,7 @@ contract SwapTest is SwapperTestBase {
         _give(address(tkn), 1e18);
         (ImmutableSwapper.Result[] memory results,,) = _swap(_routes(r));
         assertEq(results[0].amountIn, 0.99e18);
-        assertEq(results[0].usdcOut, expected);
+        assertEq(results[0].amountOut, expected);
     }
 
     function test_feeOnTransfer_revertsThroughConcentratedAndV4Pools() public {
@@ -612,7 +642,7 @@ contract SwapTest is SwapperTestBase {
         uint256 expectedFee;
         for (uint256 i; i < n; ++i) {
             if (!quoted[i].done) continue;
-            uint256 paid = quoted[i].usdcOut - quoted[i].fee;
+            uint256 paid = quoted[i].amountOut - quoted[i].fee;
             // Some minimums are met exactly, others missed by one unit.
             routes[i].minPaid = paid + (uint256(keccak256(abi.encode(seed, i, "min"))) % 2);
             if (routes[i].minPaid > paid) continue;
@@ -630,11 +660,11 @@ contract SwapTest is SwapperTestBase {
                 assertEq(IERC20(routes[i].token).balanceOf(holder), amounts[i]);
                 continue;
             }
-            assertEq(results[i].fee, results[i].usdcOut / 100);
-            assertGe(results[i].usdcOut - results[i].fee, routes[i].minPaid);
+            assertEq(results[i].fee, results[i].amountOut / 100);
+            assertGe(results[i].amountOut - results[i].fee, routes[i].minPaid);
             assertEq(IERC20(routes[i].token).balanceOf(holder), 0);
             assertEq(IERC20(routes[i].token).balanceOf(address(swapper)), 0);
-            sum += results[i].usdcOut;
+            sum += results[i].amountOut;
         }
         assertEq(paidOut, expectedPaid);
         assertEq(fee, expectedFee);

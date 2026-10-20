@@ -83,6 +83,8 @@ ROUTES = {
     "wethToHydx": (MORPHO, WETH, 10**16, [("HydrexAlgebra", HYDX)]),
     "usdcToHydx": (MORPHO, USDC, 10**7, [("HydrexClassic", HYDX)]),
     "wethToAero": (MORPHO, WETH, 10**17, [("AeroVolatile", NEW_AERO)]),
+    "usdcToEurc": (MORPHO, USDC, 10**7, [("UniswapV3", EURC)]),
+    "wethToEurc": (MORPHO, WETH, 10**16, [("AerodromeSlipstream", EURC)]),
     # For gas: three hops through the cheapest exchange, and through the dearest.
     "gasCheapest": (MORPHO, WETH, 10**12, [("UniswapV2", CBBTC), ("UniswapV2", WETH), ("UniswapV2", USDC)]),
     "gasDearest": (MORPHO, WETH, 10**12, [("HydrexAlgebra", CBBTC), ("HydrexAlgebra", WETH), ("HydrexAlgebra", USDC)]),

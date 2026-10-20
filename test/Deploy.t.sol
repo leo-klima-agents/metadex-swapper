@@ -28,8 +28,8 @@ contract DeployTest is Test {
             assertEq(recorded[i], e[i]);
         }
 
-        address[5] memory o = d.outputs();
-        string[5] memory s = d.symbols();
+        address[6] memory o = d.outputs();
+        string[6] memory s = d.symbols();
         assertEq(vm.parseJsonKeys(json, ".deployments").length, o.length);
         for (uint256 i; i < o.length; ++i) {
             string memory k = string.concat(".deployments.", s[i]);
@@ -42,12 +42,12 @@ contract DeployTest is Test {
     }
 
     function test_run_deploysAtPredictedAddresses() public {
-        address[5] memory o = d.outputs();
+        address[6] memory o = d.outputs();
         for (uint256 i; i < o.length; ++i) {
             assertEq(d.predict(o[i]).code.length, 0);
         }
 
-        address[5] memory deployed = d.run();
+        address[6] memory deployed = d.run();
 
         for (uint256 i; i < o.length; ++i) {
             assertEq(deployed[i], d.predict(o[i]));
@@ -58,7 +58,7 @@ contract DeployTest is Test {
     function test_run_deploysTheOnesMissing() public {
         address cbbtc = d.predict(d.CBBTC());
         vm.etch(d.predict(d.USDC()), hex"00");
-        address[5] memory deployed = d.run();
+        address[6] memory deployed = d.run();
         assertEq(deployed[2], cbbtc);
         assertEq(ImmutableSwapper(cbbtc).outputToken(), d.CBBTC());
         assertEq(deployed[0].code, hex"00", "an existing deployment is left alone");

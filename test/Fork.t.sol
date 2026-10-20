@@ -89,8 +89,8 @@ contract ForkTest is Test {
         vm.createSelectFork(rpc, fx.readUint(".block"));
         assertEq(block.chainid, 8453);
         d = new Deploy();
-        address[5] memory deployed = d.run();
-        address[5] memory o = d.outputs();
+        address[6] memory deployed = d.run();
+        address[6] memory o = d.outputs();
         for (uint256 i; i < o.length; ++i) {
             swappers[o[i]] = ImmutableSwapper(deployed[i]);
         }
@@ -258,6 +258,14 @@ contract ForkTest is Test {
 
     function test_usdcToHydx() public {
         _check("usdcToHydx", address(0));
+    }
+
+    function test_usdcToEurc() public {
+        _check("usdcToEurc", address(0));
+    }
+
+    function test_wethToEurc() public {
+        _check("wethToEurc", address(0));
     }
 
     // At these amounts the pair refuses its own quote; the swapper asks for one wei less, which it accepts.

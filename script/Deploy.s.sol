@@ -13,6 +13,7 @@ contract Deploy is Script {
     // Aero's token since its v3, not Aerodrome's AERO.
     address public constant AERO = 0x3f5bF3EdAc59d650D8fDf9657a71F2f904A3a4Ee;
     address public constant HYDX = 0x00000e7efa313F4E11Bfff432471eD9423AC6B30;
+    address public constant EURC = 0x60a3E35Cc302bFA44Cb288Bc5a4F316Fdb1adb42;
 
     address public constant HYDREX_ALGEBRA = 0x36077D39cdC65E1e3FB65810430E5b2c4D5fA29E;
     address public constant HYDREX_CLASSIC = 0xC47F17c4fd96F50eFD2A2448ceDe5C185c084bf0;
@@ -31,12 +32,12 @@ contract Deploy is Script {
     bytes32 public constant SALT = keccak256(bytes(SALT_PREIMAGE));
 
     // One swapper for each output token.
-    function outputs() public pure returns (address[5] memory) {
-        return [USDC, WETH, CBBTC, AERO, HYDX];
+    function outputs() public pure returns (address[6] memory) {
+        return [USDC, WETH, CBBTC, AERO, HYDX, EURC];
     }
 
-    function symbols() public pure returns (string[5] memory) {
-        return ["USDC", "WETH", "cbBTC", "AERO", "HYDX"];
+    function symbols() public pure returns (string[6] memory) {
+        return ["USDC", "WETH", "cbBTC", "AERO", "HYDX", "EURC"];
     }
 
     // In the order of ImmutableSwapper.Exchange.
@@ -69,12 +70,12 @@ contract Deploy is Script {
         return vm.computeCreate2Address(SALT, keccak256(initCode(outputToken)), CREATE2_FACTORY);
     }
 
-    function run() external returns (address[5] memory deployed) {
+    function run() external returns (address[6] memory deployed) {
         require(block.chainid == 8453, "not Base");
         require(CREATE2_FACTORY.code.length != 0, "CREATE2 deployer not present");
         string memory recorded = vm.readFile("verification/bytecode-hashes.json");
-        address[5] memory o = outputs();
-        string[5] memory s = symbols();
+        address[6] memory o = outputs();
+        string[6] memory s = symbols();
         for (uint256 i; i < o.length; ++i) {
             deployed[i] = predict(o[i]);
             console.log(s[i], deployed[i]);

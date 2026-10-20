@@ -7,8 +7,8 @@ import {Deploy} from "./Deploy.s.sol";
 contract Hashes is Deploy {
     function record() external {
         string memory artifact = vm.readFile("out/ImmutableSwapper.sol/ImmutableSwapper.json");
-        address[5] memory o = outputs();
-        string[5] memory s = symbols();
+        address[6] memory o = outputs();
+        string[6] memory s = symbols();
         string memory deployments;
         ImmutableSwapper local;
         for (uint256 i; i < o.length; ++i) {

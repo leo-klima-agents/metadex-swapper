@@ -7,7 +7,7 @@ that exchange's own factory. It sends 1% of the output to a fixed treasury.
 
 It is deployed once for each output token, which is fixed in that deployment's code. The contract has no owner, no
 settings and no upgrade path. All of it is in [`src/ImmutableSwapper.sol`](src/ImmutableSwapper.sol). It is not
-deployed yet. Deployed as described under [Deployment](#deployment), the five swappers will be at:
+deployed yet. Deployed as described under [Deployment](#deployment), the six swappers will be at:
 
 | Output | Token | Swapper |
 | --- | --- | --- |
@@ -16,11 +16,12 @@ deployed yet. Deployed as described under [Deployment](#deployment), the five sw
 | cbBTC | `0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf` | `0x255fD456E2078533867bd2e7e64e3436E84A87b3` |
 | AERO | `0x3f5bF3EdAc59d650D8fDf9657a71F2f904A3a4Ee` | `0x2fCf59260A857B43AB4CdB5204a60E9E6e412D55` |
 | HYDX | `0x00000e7efa313F4E11Bfff432471eD9423AC6B30` | `0x3b45620Df5Fac3A8D76fF2b918A5C4CA558D9A50` |
+| EURC | `0x60a3E35Cc302bFA44Cb288Bc5a4F316Fdb1adb42` | `0x8e560Fe7bac3219E059F2401C55f17C118574a9c` |
 
 AERO here is Aero's token since its v3, named by Aero's `Voter` on Base. Aerodrome's AERO,
 `0x940181a94A35A4569E4529A3CDfB74e38FD98631`, converts into it one for one through Aero's upgrade portal, from 21 October
 2026. At the block the fork tests pin, the new AERO has no pool on any of the twelve exchanges, so its swapper can swap
-into it only once pools exist. Aerodrome's AERO can still be swapped from, by any of the five.
+into it only once pools exist. Aerodrome's AERO can still be swapped from, by any of the six.
 
 ## How it works
 
@@ -189,7 +190,7 @@ results of `eth_call` at the limit you send.
   Uniswap v3 and v4 pools, its route reverts, though `quote` prices it.
 - `skipFailed` can't skip a token or pool that burns all the gas its route gets, 63/64 of what is left, or that
   reverts with a reason too big to copy. Either reverts the whole call, for the caller who included that route only.
-- USDC and cbBTC are upgradeable, and can block addresses. A caller that the output token blocks can't be paid, so
+- USDC, EURC and cbBTC are upgradeable, and can block addresses. A caller that the output token blocks can't be paid, so
   their swaps revert, and so would everyone's if it blocked the treasury. WETH, AERO and HYDX can't block anyone.
 - Tokens sent to the swapper by mistake stay there. Every amount is counted within the call, so they are never paid to
   anyone.
@@ -209,7 +210,7 @@ Deployment steps:
 1. Install Foundry v1.8.5, the version CI uses, with `foundryup --install v1.8.5`. Another version can compile
    different bytecode.
 2. Run `forge test` with `BASE_RPC_URL` set, then `script/check-verification.sh`.
-3. Do a dry run with `forge script script/Deploy.s.sol --rpc-url $BASE_RPC_URL`, and check that it logs the five
+3. Do a dry run with `forge script script/Deploy.s.sol --rpc-url $BASE_RPC_URL`, and check that it logs the six
    addresses in the table at the top. It skips any that is already deployed.
 4. Deploy, then verify each contract on Basescan and Sourcify, and commit
    `broadcast/Deploy.s.sol/8453/run-latest.json`:
@@ -217,7 +218,7 @@ Deployment steps:
 ```
 forge script script/Deploy.s.sol --rpc-url $BASE_RPC_URL --broadcast --ledger
 H=verification/bytecode-hashes.json
-for s in USDC WETH cbBTC AERO HYDX; do
+for s in USDC WETH cbBTC AERO HYDX EURC; do
   ADDRESS=$(jq -j ".deployments.$s.address" $H)
   ARGS=$(jq -j ".deployments.$s.constructorArgs" $H)
   forge verify-contract $ADDRESS src/ImmutableSwapper.sol:ImmutableSwapper --chain base \

@@ -1,0 +1,36 @@
+[profile.default]
+solc_version = "0.8.37"
+evm_version = "prague"
+optimizer = true
+optimizer_runs = 1_000_000
+via_ir = true
+bytecode_hash = "ipfs"
+cbor_metadata = true
+remappings = ["forge-std/=lib/forge-std/src/"]
+skip = ["test/upstream/**"]
+fs_permissions = [
+  { access = "read", path = "./test/upstream" },
+  { access = "read", path = "./test/fixtures" },
+  { access = "read", path = "./out" },
+  { access = "read-write", path = "./verification" },
+]
+
+[profile.ci.fuzz]
+runs = 10_000
+
+[fmt]
+ignore = ["./test/upstream/**"]
+
+[lint]
+ignore = ["test/upstream/**"]
+exclude_lints = [
+  "calls-loop",
+  "require-revert-in-loop",
+  "block-timestamp",
+  "reentrancy-no-eth",
+  "reentrancy-events",
+  "unused-return",
+  "uninitialized-local",
+  "unsafe-typecast",
+  "missing-events-access-control",
+]

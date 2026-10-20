@@ -7,7 +7,7 @@ exchange's own factory. It sends 1% of the USDC to a fixed treasury.
 
 The contract has no owner, no settings and no upgrade path. All of it is in
 [`src/ImmutableSwapper.sol`](src/ImmutableSwapper.sol). It is not deployed yet. Deployed as described under
-[Deployment](#deployment), it will be at `0xcF316fD47ECA89AC9662916CdE9420cc7694204B`.
+[Deployment](#deployment), it will be at `0xC61940460A1a0383f23985ffa50c4D00Cab25913`.
 
 ## How it works
 
@@ -165,13 +165,13 @@ The swapper is not deployed yet. Once it is, this section will record the transa
 | | |
 |---|---|
 | Network | Base |
-| Address | `0xcF316fD47ECA89AC9662916CdE9420cc7694204B` |
+| Address | `0xC61940460A1a0383f23985ffa50c4D00Cab25913` |
 | USDC | `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913` |
 | Exchanges | the table above, in the order of `Exchange` |
 | Treasury | `0x450c72de8c0079B49AcedF294a13011bd09D125B`, a 2-of-3 Safe, fixed in the source |
 | Fee | 1% (`FEE_BPS = 100`), fixed in the source |
 | Limits | 20 routes (`MAX_ROUTES`), 3 hops each (`MAX_HOPS`) |
-| Method | CREATE2 through `0x4e59b44847b379578588920cA78FbF26c0B4956C`, salt `keccak256("metadex-swapper/ImmutableSwapper/v1")` |
+| Method | CREATE2 through `0x4e59b44847b379578588920cA78FbF26c0B4956C`, salt `keccak256("metadex.cafe/ImmutableSwapper/v1")` |
 
 Deployment steps:
 
@@ -185,9 +185,9 @@ Deployment steps:
 ```
 forge script script/Deploy.s.sol --rpc-url $BASE_RPC_URL --broadcast --ledger
 ARGS=$(jq -j .deployment.constructorArgs verification/bytecode-hashes.json)
-forge verify-contract 0xcF316fD47ECA89AC9662916CdE9420cc7694204B src/ImmutableSwapper.sol:ImmutableSwapper --chain base \
+forge verify-contract 0xC61940460A1a0383f23985ffa50c4D00Cab25913 src/ImmutableSwapper.sol:ImmutableSwapper --chain base \
   --constructor-args $ARGS --license-type MIT --watch
-forge verify-contract 0xcF316fD47ECA89AC9662916CdE9420cc7694204B src/ImmutableSwapper.sol:ImmutableSwapper --chain base \
+forge verify-contract 0xC61940460A1a0383f23985ffa50c4D00Cab25913 src/ImmutableSwapper.sol:ImmutableSwapper --chain base \
   --constructor-args $ARGS --verifier sourcify
 ```
 
@@ -197,7 +197,7 @@ To check that the deployed contract is this repository's code, compare its code 
 `verification/bytecode-hashes.json`, which `script/check-verification.sh` checks against a build of this repository:
 
 ```
-cast keccak $(cast code 0xcF316fD47ECA89AC9662916CdE9420cc7694204B --rpc-url $BASE_RPC_URL)
+cast keccak $(cast code 0xC61940460A1a0383f23985ffa50c4D00Cab25913 --rpc-url $BASE_RPC_URL)
 jq -j .deployment.runtimeKeccak verification/bytecode-hashes.json
 ```
 

@@ -29,7 +29,7 @@ contract DeployTest is Test {
         assertEq(e[9], 0x8909Dc15e40173Ff4699343b6eB8132c65e18eC6, "UniswapV2Factory");
         assertEq(e[10], 0x33128a8fC17869897dcE68Ed026d694621f6FDfD, "UniswapV3Factory");
         assertEq(e[11], 0x498581fF718922c3f8e6A244956aF099B2652b2b, "Uniswap v4 PoolManager");
-        assertEq(d.SALT(), keccak256("metadex-swapper/ImmutableSwapper/v1"));
+        assertEq(d.SALT(), keccak256("metadex.cafe/ImmutableSwapper/v1"));
     }
 
     function test_recordMatchesScript() public {

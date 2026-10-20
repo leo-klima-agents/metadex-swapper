@@ -21,7 +21,7 @@ contract Deploy is Script {
     address public constant UNISWAP_V3 = 0x33128a8fC17869897dcE68Ed026d694621f6FDfD;
     address public constant UNISWAP_V4 = 0x498581fF718922c3f8e6A244956aF099B2652b2b;
 
-    string public constant SALT_PREIMAGE = "metadex-swapper/ImmutableSwapper/v1";
+    string public constant SALT_PREIMAGE = "metadex.cafe/ImmutableSwapper/v1";
     bytes32 public constant SALT = keccak256(bytes(SALT_PREIMAGE));
 
     // In the order of ImmutableSwapper.Exchange.

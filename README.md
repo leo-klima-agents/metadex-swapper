@@ -139,37 +139,39 @@ The fee is 1% of the output each route returns, rounded down, paid in the output
 fees, price impact and gas come on top.
 
 Keep the priority fee low. Above a tip of 1 gwei, or 2 gwei for stable pools, Aero's classic pools add an MEV tax, up to
-10%, that a quote from `eth_call` doesn't see. The swapper prices Aero's pools with the tax, so the swap goes through, at a worse price, down to
-your minimum: on the fork, with a 2 gwei tip, 1 WETH fetched 2,123 USDC instead of 2,357.
+10%, that a quote from `eth_call` doesn't see. The swapper prices Aero's pools with the tax, so the swap goes through,
+at a worse price, down to your minimum: on the fork, with a 2 gwei tip, 1 WETH fetched 2,123 USDC instead of 2,357.
 
-Gas, measured on a fork of Base for a whole call of one route, from a cold start. The output token makes little
-difference: USDC to WETH costs about the same as WETH to USDC.
+Gas of whole transactions on a fork of Base, intrinsic and calldata gas included. The caller and the treasury already
+held some of the output token: paying either of them for the first time costs up to 17,100 more. The pools and tokens
+matter more than the output: USDC to WETH costs about what WETH to USDC does.
 
 | Route | Gas |
 | --- | --- |
-| Uniswap v2, v3 or v4, WETH to USDC | ~230,000 |
-| Uniswap v4, cbBTC to ETH to USDC | ~292,000 |
-| Aerodrome, classic or Slipstream, WETH to USDC | 273,000 to 319,000 |
-| Hydrex classic, HYDX to USDC | ~312,000 |
-| Aero v3, on pools the test creates | 334,000 to 374,000 |
-| Hydrex Algebra, WETH to USDC | ~1,335,000 |
-| HYDX to WETH on Hydrex Algebra, then to USDC on Uniswap v3 | ~2,098,000 |
-| Each further token, to USDC on Aerodrome classic | ~252,000 |
-| Each further token, to WETH then USDC on Aerodrome classic | ~315,000 |
-| 20 routes of 3 Uniswap v2 hops | ~3,823,000 |
-| 20 routes of 3 Hydrex Algebra hops | ~62,020,000 |
+| Uniswap v2, v3 or v4, WETH to USDC | 162,000 to 167,000 |
+| Uniswap v4, cbBTC to ETH to USDC | ~225,000 |
+| Aerodrome, classic or Slipstream, WETH to USDC | 206,000 to 273,000 |
+| Hydrex classic, HYDX to USDC | ~225,000 |
+| Aero v3, on pools the test creates | 289,000 to 347,000 |
+| Hydrex Algebra, WETH to USDC | ~1,290,000 |
+| HYDX to WETH on Hydrex Algebra, then to USDC on Uniswap v3 | ~1,900,000 |
+| Each further token, to USDC on Aerodrome classic | 145,000 to 284,000, ~212,000 on average |
+| Each further token, to WETH then USDC on Aerodrome classic | 191,000 to 331,000, ~254,000 on average |
+| 20 routes of 3 Uniswap v2 hops | ~3,012,000 |
+| 5 routes of 3 Hydrex Algebra hops | ~14,902,000 |
 
-There is no limit on the number of routes: Base's cap of 16,777,216 gas on a transaction is the limit. About 66 tokens fit
-in one call when each has a pool against USDC, and about 52 when each goes through WETH. Hydrex's Algebra pools cost the
-most: after each swap, the pool's plugin looks for an arbitrage across other exchanges, and about 12 such hops fit. So
-estimate gas and split large batches.
+There is no limit on the number of routes: Base's cap of 16,777,216 gas on a transaction is the limit. About 78 tokens
+fit in one call when each has a pool against USDC, and about 65 when each goes through WETH. Hydrex's Algebra pools cost
+the most: after each swap, the pool's plugin looks for an arbitrage across other exchanges, and about 15 such hops fit.
+So estimate gas and split large batches.
 
 Send a generous gas limit: on Base, unused gas costs nothing. With `skipFailed`, a route that runs short of gas is
-skipped like any other failure, and the rest of the call goes through. Hydrex's plugin spends whatever gas it's given,
-so this can happen well below the gas the route normally uses: on the fork, HYDX to WETH on Hydrex Algebra then to USDC
-on Uniswap v3 uses 2.1M gas, and was skipped under limits from 1.2M to 1.84M. Geth's `eth_estimateGas` never returns
-less than the gas a call uses without a limit, which is above that range. Check a limit chosen any other way with
-`eth_call`, at that limit, first.
+skipped like any other failure, or the whole call reverts if too little is left to finish it. Hydrex's plugin does less
+when it gets less gas, so where this happens is hard to predict. On the fork, HYDX to WETH on Hydrex Algebra then to
+USDC on Uniswap v3 uses 1.87M gas under a high limit. Under limits up to 1.22M, the plugin skipped its search and the
+route went through for 0.4M. From 1.24M to 1.82M the route was skipped, except from 1.40M to 1.44M, where the whole
+call reverted. From 1.84M it went through. A gas estimate only looks for a limit at which the call doesn't revert, and
+a skipped route doesn't revert it. So check the results of `eth_call` at the limit you send.
 
 ## Trust and limitations
 

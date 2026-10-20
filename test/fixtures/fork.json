@@ -41,7 +41,7 @@
       "tickSpacings": [
         0
       ],
-      "quote": "21109750"
+      "quote": "21109749"
     },
     "aeroVolatile": {
       "holder": "0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb",
@@ -429,7 +429,7 @@
       "tickSpacings": [
         0
       ],
-      "quote": "463672767689143219776"
+      "quote": "463672767689143219775"
     },
     "wethToAero": {
       "holder": "0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb",

@@ -298,9 +298,7 @@ contract ImmutableSwapper is IAlgebraSwapCallback, IUniswapV3SwapCallback, IUnlo
             e == Exchange.HydrexClassic ? IPairFactory(factory).isPair(pool) : IPoolFactory(factory).isPool(pool);
         if (!listed) return false;
         (address token0, address token1) = tokenIn < hop.tokenOut ? (tokenIn, hop.tokenOut) : (hop.tokenOut, tokenIn);
-        if (_isConcentrated(e)) {
-            return IConcentratedPool(pool).token0() == token0 && IConcentratedPool(pool).token1() == token1;
-        }
+        // Classic and Slipstream pools both expose their sorted tokens.
         return IClassicPool(pool).token0() == token0 && IClassicPool(pool).token1() == token1;
     }
 
@@ -313,6 +311,8 @@ contract ImmutableSwapper is IAlgebraSwapCallback, IUniswapV3SwapCallback, IUnlo
                 while (next < hops.length && hops[next].exchange == Exchange.UniswapV4) {
                     ++next;
                 }
+                // The run pays its first token inside unlock, so its output can be counted only if it's another token.
+                if (hops[next - 1].tokenOut == token) revert BadPath(index, next - 1);
                 amount = _swapV4(index, i, hops[i:next], token, amount);
             } else if (_isConcentrated(e)) {
                 amount = _swapConcentrated(hops[i], token, amount);
@@ -380,6 +380,8 @@ contract ImmutableSwapper is IAlgebraSwapCallback, IUniswapV3SwapCallback, IUnlo
         } else {
             out = IClassicPool(pool).getAmountOut(amount, tokenIn);
         }
+        // Hydrex's pairs run Solidly's first stable curve, which can quote one wei more than the pair then accepts.
+        if (e == Exchange.HydrexClassic && out != 0) --out;
         if (quoting || out == 0) return out;
 
         (uint256 out0, uint256 out1) = zeroForOne ? (uint256(0), out) : (out, uint256(0));

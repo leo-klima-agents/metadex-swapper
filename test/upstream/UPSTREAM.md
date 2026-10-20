@@ -173,6 +173,10 @@ Line numbers are in the vendored files, unless a Sourcify link is given.
    `sync`, a transfer and `settle` pay; `take` collects; every currency's delta must be zero when the callback returns
    ([`IPoolManager.sol`](uniswap/v4/IPoolManager.sol)). A key with no hooks cannot have a dynamic fee, and `swap`
    reverts for a key that was never initialized.
+6. **Hydrex's stable pairs can quote one wei more than they accept.** `getAmountOut` solves the curve with `_get_y`,
+   which stops once a step is at most one wei, on either side of the solution
+   ([`Pair.sol`](hydrex/Pair.sol#L411-L433), [`Pair.sol`](hydrex/Pair.sol#L449-L463)). `swap` then reverts with `K`
+   if the invariant fell (line 384). So the swapper asks Hydrex's pairs for one wei less than they quote.
 
 ## Selectors
 
@@ -189,7 +193,7 @@ Line numbers are in the vendored files, unless a Sourcify link is given.
 | `isPool(address)` | `0x5b16ebb7` | `IPoolFactory.sol`, `ICLFactory.sol` |
 | `getPair(address,address)` | `0xe6a43905` | `IUniswapV2Factory.sol` |
 | `getPool(address,address,uint24)` | `0x1698ee82` | `IUniswapV3Factory.sol` |
-| `token0()` | `0x0dfe1681` | `IPair.sol`, `IPool.sol`, `ICLPoolConstants.sol`, `IUniswapV3PoolImmutables.sol` |
+| `token0()` | `0x0dfe1681` | `IPair.sol`, `IPool.sol`, `ICLPoolConstants.sol` |
 | `token1()` | `0xd21220a7` | the same |
 | `getReserves()` | `0x0902f1ac` | `IPair.sol`, `IPool.sol`, `IUniswapV2Pair.sol` |
 | `getAmountOut(uint256,address)` | `0xf140a35a` | `IPair.sol`, `IPool.sol` |

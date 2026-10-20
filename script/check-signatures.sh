@@ -92,9 +92,8 @@ check IUniswapV2Pair.sol getReserves uniswap/v2/IUniswapV2Pair.sol
 check IUniswapV2Pair.sol swap uniswap/v2/IUniswapV2Pair.sol
 
 for name in token0 token1; do
-  check IConcentratedPool.sol "$name" aero/slipstream/ICLPoolConstants.sol
-  check IConcentratedPool.sol "$name" aerodrome/slipstream/ICLPoolConstants.sol
-  check IConcentratedPool.sol "$name" uniswap/v3/IUniswapV3PoolImmutables.sol
+  check IClassicPool.sol "$name" aero/slipstream/ICLPoolConstants.sol
+  check IClassicPool.sol "$name" aerodrome/slipstream/ICLPoolConstants.sol
 done
 check IConcentratedPool.sol fee uniswap/v3/IUniswapV3PoolImmutables.sol
 check IConcentratedPool.sol swap algebra/IAlgebraPoolActions.sol

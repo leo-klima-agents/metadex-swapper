@@ -18,12 +18,6 @@ fs_permissions = [
 [profile.ci.fuzz]
 runs = 10_000
 
-[profile.default.invariant]
-depth = 100
-
-[profile.ci.invariant]
-runs = 1_000
-
 [fmt]
 ignore = ["./test/upstream/**"]
 

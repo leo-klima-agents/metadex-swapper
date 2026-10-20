@@ -11,11 +11,11 @@ deployed yet. Deployed as described under [Deployment](#deployment), the five sw
 
 | Output | Token | Swapper |
 | --- | --- | --- |
-| USDC | `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913` | `0x6771f2E0Ed03031389DE3c58993858Ebfd84cf25` |
-| WETH | `0x4200000000000000000000000000000000000006` | `0x674E3CE8831Eb0f1e5b79c4F6e9453dD32B96C22` |
-| cbBTC | `0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf` | `0x15A1c469cB473878913aBCa213C3aE9d843b11eE` |
-| AERO | `0x3f5bF3EdAc59d650D8fDf9657a71F2f904A3a4Ee` | `0xB8D4C10FE91C1Ff7C5Cf4C2B3ea20559d529791C` |
-| HYDX | `0x00000e7efa313F4E11Bfff432471eD9423AC6B30` | `0x92d82AfFB970054f030a443cb78650AEF6a0ed86` |
+| USDC | `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913` | `0x7e7212C38C80b9f453a379c2b5bac17B4ddEE2dD` |
+| WETH | `0x4200000000000000000000000000000000000006` | `0x127C37a927D550D3de59E7cf169F39eF713d7294` |
+| cbBTC | `0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf` | `0x9Da6A81317373DAa9eC27c765C83B5CfAC18e080` |
+| AERO | `0x3f5bF3EdAc59d650D8fDf9657a71F2f904A3a4Ee` | `0x7b8026c7aceaDd4c0d695331e27468f8A4AE344d` |
+| HYDX | `0x00000e7efa313F4E11Bfff432471eD9423AC6B30` | `0x625939C360F429baeff86A8B8033bF9874Ce3799` |
 
 AERO here is Aero's token since its v3, named by Aero's `Voter` on Base. Aerodrome's AERO,
 `0x940181a94A35A4569E4529A3CDfB74e38FD98631`, converts into it one for one through Aero's upgrade portal, from 21 October
@@ -64,12 +64,20 @@ the caller, so nobody's approval can be used by anyone else.
 
 ### Quoting
 
-`quote(routes)` runs the same checks and swaps, and returns what `swap` would. Call it with `eth_call`: it moves
-nothing, and needs no allowance. With `type(uint256).max`, it quotes the caller's whole balance. A route that fails
-comes back with `done` false and its reason.
+`quote(routes)` runs the same checks, and returns what `swap` would. Call it with `eth_call`: it moves nothing, and
+needs no allowance. With `type(uint256).max`, it quotes the caller's whole balance. A route that fails comes back with
+`done` false and its reason.
 
-Each route is quoted against the pools as they are. So two routes through the same pool both get the first one's
-price, and a token that charges a fee on transfers is quoted as if it didn't. Each route's minimum covers this.
+It asks the pools without trading: concentrated pools and Uniswap v4 run their swap up to the payment, and classic
+pools are only asked for their price. So `quote` misses some failures:
+
+- Each route is priced against the pools as they are, so two routes through the same pool both get the first one's
+  price. Each route's minimum covers this.
+- A classic pool that its exchange paused still quotes.
+- A token that charges a fee on transfers is quoted as if it didn't. Through Algebra, Slipstream and Uniswap v3 and v4
+  pools, its `swap` then always reverts.
+
+To see what a call will do, simulate `swap` itself, after its approvals, with `eth_simulateV1`.
 
 ### The exchanges
 
@@ -98,9 +106,11 @@ that their registries list.
   hop's token. A pool that takes less than the whole amount, a partial fill, reverts the route.
 - **Hydrex's pairs, Aero's and Aerodrome's classic pools, and Uniswap v2's pairs** are sent the input first. The
   swapper counts what the pool received, prices it with the pool's `getAmountOut`, Aero's `getAmountOutWithTotalFee`,
-  or Uniswap v2's 0.3% formula, and asks for that much.
+  or Uniswap v2's 0.3% formula, and asks for that much. Hydrex's stable pairs can quote one wei more than they accept,
+  so it asks Hydrex's pairs for one wei less.
 - **Uniswap v4:** consecutive hops run in one `unlock`. Each must take exactly the whole amount. Then the swapper pays
-  the first token and takes the last. Native ETH can only pass between two such hops, so it never leaves the manager.
+  the first token and takes the last, which must be another token. Native ETH can only pass between two such hops, so
+  it never leaves the manager.
 
 Uniswap v4 hops name no pool: the swapper builds every key with no hooks. Hooks run inside every swap and can do
 anything there, so tokens that trade only in pools with hooks, as many launchpad tokens do, are out of reach.
@@ -176,7 +186,10 @@ less than the gas a call uses without a limit, which is above that range. Check 
   upgradeable. Its arbitrage runs after the swapper is paid, so `quote` doesn't see it, and a later hop of the same
   route can find a pool it has moved. Its code even calls Foundry's console address on Base, which only costs gas.
 - A token that charges a fee on transfers works through classic pools and Uniswap v2. Through Algebra, Slipstream,
-  Uniswap v3 and v4 pools, its route reverts.
+  Uniswap v3 and v4 pools, its route reverts, though `quote` prices it.
+- `skipFailed` can't skip every failure. A route gets 63/64 of the gas left, so a token or pool that burns all of it
+  leaves too little for the rest of the call. One that reverts with a huge reason can cost more to copy than is left.
+  Either reverts the whole call, for the caller who included that route only.
 - USDC and cbBTC are upgradeable, and can block addresses. A caller that the output token blocks can't be paid, so
   their swaps revert, and so would everyone's if it blocked the treasury. WETH, AERO and HYDX can't block anyone.
 - Tokens sent to the swapper by mistake stay there. Every amount is counted within the call, so they are never paid to
@@ -228,7 +241,7 @@ To check that a deployed swapper is this repository's code, compare its code has
 Each swapper's code holds its output token, so each has its own hash:
 
 ```
-cast keccak $(cast code 0x6771f2E0Ed03031389DE3c58993858Ebfd84cf25 --rpc-url $BASE_RPC_URL)
+cast keccak $(cast code 0x7e7212C38C80b9f453a379c2b5bac17B4ddEE2dD --rpc-url $BASE_RPC_URL)
 jq -j .deployments.USDC.runtimeKeccak verification/bytecode-hashes.json
 ```
 

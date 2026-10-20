@@ -98,6 +98,7 @@ contract ForkTest is Test {
     address internal constant AERO_STABLE_TAX = 0xA9Af4985CD8456d9aFf3185c31d9D66e53184d7B;
     address internal constant AERO_SWAP_HOOK = 0xaAf164008441F112eB2858d9F7A2dB1B84b1E415;
     address internal constant AERO_MIGRATION = 0x22a2F7340a3fB4C7C389D91eE954766B12476721;
+    address internal constant HYDREX_STABLE_PAIR = 0xB0EAc8AA498845045229DFE9B68d023f3d019079;
 
     string internal fx;
     Deploy internal d;
@@ -303,6 +304,35 @@ contract ForkTest is Test {
 
     function test_fork_usdcToHydx() public {
         _check("usdcToHydx");
+    }
+
+    // At these amounts the pair refuses its own quote; the swapper asks for one wei less, which it accepts.
+    function test_fork_hydrexStablePair_asksOneWeiLess() public {
+        address pair = HYDREX_STABLE_PAIR;
+        address[2] memory tokens = [IClassicPool(pair).token0(), IClassicPool(pair).token1()];
+        uint256[2] memory amounts = [uint256(55_253_882_642_157_773), 128_170_400_719_120_340];
+        address holder = makeAddr("holder");
+        for (uint256 i; i < 2; ++i) {
+            (address tokenIn, address tokenOut) = (tokens[i], tokens[1 - i]);
+            uint256 quoted = IClassicPool(pair).getAmountOut(amounts[i], tokenIn);
+            uint256 snap = vm.snapshotState();
+            deal(tokenIn, address(this), amounts[i]);
+            IERC20(tokenIn).transfer(pair, amounts[i]);
+            (uint256 out0, uint256 out1) = i == 0 ? (uint256(0), quoted) : (quoted, uint256(0));
+            vm.expectRevert(bytes("K"));
+            IClassicPool(pair).swap(out0, out1, address(this), "");
+            vm.revertToState(snap);
+
+            swappers[tokenOut] = new ImmutableSwapper(tokenOut, d.exchanges());
+            ImmutableSwapper.Route memory r;
+            (r.token, r.amount) = (tokenIn, amounts[i]);
+            r.hops = new ImmutableSwapper.Hop[](1);
+            r.hops[0] = ImmutableSwapper.Hop(ImmutableSwapper.Exchange.HydrexClassic, pair, tokenOut, 0, 0);
+            deal(tokenIn, holder, amounts[i]);
+            (ImmutableSwapper.Result memory res,) = _swapAs(holder, r);
+            assertEq(res.amountOut, quoted - 1);
+            vm.revertToState(snap);
+        }
     }
 
     function test_fork_quoteMatchesThePoolsOwnQuotes() public {

@@ -5,6 +5,7 @@ import os
 import subprocess
 import sys
 import time
+import urllib.error
 import urllib.request
 
 RPC = os.environ["BASE_RPC_URL"]
@@ -93,14 +94,22 @@ PROBE_CODE = "0x6040600460003760406000fd"
 
 
 def rpc(method, params):
-    for attempt in range(5):
-        time.sleep(0.2 + 2 * attempt)
-        body = json.dumps({"jsonrpc": "2.0", "id": 1, "method": method, "params": params}).encode()
-        req = urllib.request.Request(RPC, body, {"content-type": "application/json"})
-        res = json.load(urllib.request.urlopen(req))
-        if "limit" not in res.get("error", {}).get("message", ""):
-            return res
-    raise RuntimeError(res)
+    body = json.dumps({"jsonrpc": "2.0", "id": 1, "method": method, "params": params}).encode()
+    for attempt in range(6):
+        try:
+            req = urllib.request.Request(RPC, body, {"content-type": "application/json"})
+            res = json.load(urllib.request.urlopen(req, timeout=60))
+            if "limit" not in res.get("error", {}).get("message", ""):
+                return res
+            failure = res
+        except urllib.error.HTTPError as e:
+            if e.code != 429 and e.code < 500:
+                raise
+            failure = e
+        except (urllib.error.URLError, TimeoutError, ConnectionError) as e:
+            failure = e
+        time.sleep(2**attempt)
+    raise RuntimeError(failure)
 
 
 @functools.cache
@@ -159,7 +168,9 @@ def quote_hop(block, exchange, pool, token_in, token_out, amount):
         r_in, r_out = (r0, r1) if zero_for_one else (r1, r0)
         return amount * 997 * r_out // (r_in * 1000 + amount * 997)
     signature = "getAmountOutWithTotalFee" if exchange in AERO_V3 else "getAmountOut"
-    return words(call(block, pool, signature + "(uint256,address)", amount, token_in))[0]
+    out = words(call(block, pool, signature + "(uint256,address)", amount, token_in))[0]
+    # The swapper asks Hydrex's pairs for one wei less than they quote.
+    return out - 1 if exchange == "HydrexClassic" and out else out
 
 
 def quote_v4(block, token_in, amount, hops):

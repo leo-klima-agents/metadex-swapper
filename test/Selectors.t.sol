@@ -75,8 +75,6 @@ contract SelectorsTest is Test {
     }
 
     function test_selectors_sharedAcrossInterfaces() public pure {
-        assertEq(IConcentratedPool.token0.selector, IClassicPool.token0.selector);
-        assertEq(IConcentratedPool.token1.selector, IClassicPool.token1.selector);
         assertEq(IUniswapV2Pair.getReserves.selector, IClassicPool.getReserves.selector);
         assertEq(IUniswapV2Pair.swap.selector, IClassicPool.swap.selector);
     }

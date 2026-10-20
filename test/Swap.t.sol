@@ -26,7 +26,8 @@ contract SwapTest is SwapperTestBase {
         returns (uint256)
     {
         if (e == V4 || _isConcentrated(e)) return amount;
-        return MockClassicPool(pool).getAmountOut(amount, token);
+        uint256 out = MockClassicPool(pool).getAmountOut(amount, token);
+        return e == HYDREX_CLASSIC && out != 0 ? out - 1 : out;
     }
 
     function _assertEmpty(address token) internal view {
@@ -213,6 +214,21 @@ contract SwapTest is SwapperTestBase {
 
         r = _route(address(tkn), 1e18, _hops(_hop(V4, address(0), ETH)));
         _expectRouteRevert(r, abi.encodeWithSelector(ImmutableSwapper.BadPath.selector, 0, 0));
+    }
+
+    function test_v4_runBackToItsFirstToken() public {
+        _pool(V4, address(tkn), address(weth));
+        address pool = _pool(V3, address(tkn), address(usdc));
+        ImmutableSwapper.Route memory r = _route(
+            address(tkn),
+            1e18,
+            _hops(
+                _hop(V4, address(0), address(weth)), _hop(V4, address(0), address(tkn)), _hop(V3, pool, address(usdc))
+            )
+        );
+        bytes memory reason = abi.encodeWithSelector(ImmutableSwapper.BadPath.selector, 0, 1);
+        assertEq(_quote(_routes(r))[0].reason, reason);
+        _expectRouteRevert(r, reason);
     }
 
     function test_v4_hopWithAPoolReverts() public {
@@ -551,26 +567,35 @@ contract SwapTest is SwapperTestBase {
     }
 
     function test_reentrancy_throughATokenHook() public {
-        ImmutableSwapper.Route[] memory routes = _routes(_direct(V2, address(tkn), 1e18));
-        bytes[4] memory calls = [
-            abi.encodeCall(ImmutableSwapper.swap, (routes, block.timestamp, false)),
-            abi.encodeCall(ImmutableSwapper.quote, (routes)),
-            abi.encodeCall(ImmutableSwapper.runRoute, (holder, 0, routes[0])),
-            abi.encodeCall(ImmutableSwapper.uniswapV3SwapCallback, (1, -1, ""))
-        ];
-        bytes[4] memory reasons = [
-            abi.encodeWithSelector(ImmutableSwapper.Reentrancy.selector),
-            abi.encodeWithSelector(ImmutableSwapper.Reentrancy.selector),
-            abi.encodeWithSelector(ImmutableSwapper.OnlySelf.selector),
-            abi.encodeWithSelector(ImmutableSwapper.NotExpectedCaller.selector, address(usdc))
-        ];
-        for (uint256 i; i < calls.length; ++i) {
-            // The pair's transfer of USDC to the swapper calls back into it.
-            usdc.arm(address(swapper), calls[i]);
-            _give(address(tkn), 1e18);
-            vm.prank(holder);
-            vm.expectRevert(reasons[i]);
-            swapper.swap(routes, block.timestamp, false);
+        ImmutableSwapper.Exchange[4] memory es = [V2, V3, ALGEBRA, V4];
+        for (uint256 e; e < es.length; ++e) {
+            ImmutableSwapper.Route[] memory routes = _routes(_direct(es[e], address(tkn), 1e18));
+            bytes[6] memory calls = [
+                abi.encodeCall(ImmutableSwapper.swap, (routes, block.timestamp, false)),
+                abi.encodeCall(ImmutableSwapper.quote, (routes)),
+                abi.encodeCall(ImmutableSwapper.runRoute, (holder, 0, routes[0])),
+                abi.encodeCall(ImmutableSwapper.uniswapV3SwapCallback, (1, -1, "")),
+                abi.encodeCall(ImmutableSwapper.algebraSwapCallback, (1, -1, "")),
+                abi.encodeCall(ImmutableSwapper.unlockCallback, (""))
+            ];
+            bytes memory notExpected =
+                abi.encodeWithSelector(ImmutableSwapper.NotExpectedCaller.selector, address(usdc));
+            bytes[6] memory reasons = [
+                abi.encodeWithSelector(ImmutableSwapper.Reentrancy.selector),
+                abi.encodeWithSelector(ImmutableSwapper.Reentrancy.selector),
+                abi.encodeWithSelector(ImmutableSwapper.OnlySelf.selector),
+                notExpected,
+                notExpected,
+                notExpected
+            ];
+            for (uint256 i; i < calls.length; ++i) {
+                // The pool's transfer of USDC to the swapper calls back into it.
+                usdc.arm(address(swapper), calls[i]);
+                _give(address(tkn), 1e18);
+                vm.prank(holder);
+                vm.expectRevert(reasons[i]);
+                swapper.swap(routes, block.timestamp, false);
+            }
         }
     }
 
@@ -600,7 +625,7 @@ contract SwapTest is SwapperTestBase {
     function test_feeOnTransfer_worksThroughClassicPools() public {
         tkn.setTax(100);
         ImmutableSwapper.Route memory r = _direct(HYDREX_CLASSIC, address(tkn), 1e18);
-        uint256 expected = MockClassicPool(r.hops[0].pool).getAmountOut(0.9801e18, address(tkn));
+        uint256 expected = MockClassicPool(r.hops[0].pool).getAmountOut(0.9801e18, address(tkn)) - 1;
         _give(address(tkn), 1e18);
         (ImmutableSwapper.Result[] memory results,,) = _swap(_routes(r));
         assertEq(results[0].amountIn, 0.99e18);

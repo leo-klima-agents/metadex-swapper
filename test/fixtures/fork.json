@@ -1,0 +1,371 @@
+{
+  "block": 52855000,
+  "routes": {
+    "hydrexAlgebra": {
+      "holder": "0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb",
+      "token": "0x4200000000000000000000000000000000000006",
+      "amount": "10000000000000000",
+      "exchanges": [
+        0
+      ],
+      "pools": [
+        "0x82dbe18346a8656dbb5e76f74bf3ae279cc16b29"
+      ],
+      "tokensOut": [
+        "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
+      ],
+      "fees": [
+        0
+      ],
+      "tickSpacings": [
+        0
+      ],
+      "quote": "23879395"
+    },
+    "hydrexClassic": {
+      "holder": "0x25B2ED7149fb8A05f6eF9407d9c8F878f59cd1e1",
+      "token": "0x00000e7efa313F4E11Bfff432471eD9423AC6B30",
+      "amount": "1000000000000000000000",
+      "exchanges": [
+        1
+      ],
+      "pools": [
+        "0x605abd1873737ca9a9ec1cfa52cdfc8ef62c2e1d"
+      ],
+      "tokensOut": [
+        "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
+      ],
+      "fees": [
+        0
+      ],
+      "tickSpacings": [
+        0
+      ],
+      "quote": "21109750"
+    },
+    "aeroVolatile": {
+      "holder": "0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb",
+      "token": "0x4200000000000000000000000000000000000006",
+      "amount": "100000000000000000",
+      "exchanges": [
+        2
+      ],
+      "pools": [
+        "0x0000000000000000000000000000000000000000"
+      ],
+      "tokensOut": [
+        "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
+      ],
+      "fees": [
+        0
+      ],
+      "tickSpacings": [
+        0
+      ],
+      "quote": "0"
+    },
+    "aeroStable": {
+      "holder": "0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb",
+      "token": "0x60a3E35Cc302bFA44Cb288Bc5a4F316Fdb1adb42",
+      "amount": "100000000",
+      "exchanges": [
+        3
+      ],
+      "pools": [
+        "0x0000000000000000000000000000000000000000"
+      ],
+      "tokensOut": [
+        "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
+      ],
+      "fees": [
+        0
+      ],
+      "tickSpacings": [
+        0
+      ],
+      "quote": "0"
+    },
+    "aeroSlipstream": {
+      "holder": "0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb",
+      "token": "0x4200000000000000000000000000000000000006",
+      "amount": "100000000000000000",
+      "exchanges": [
+        4
+      ],
+      "pools": [
+        "0x0000000000000000000000000000000000000000"
+      ],
+      "tokensOut": [
+        "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
+      ],
+      "fees": [
+        0
+      ],
+      "tickSpacings": [
+        0
+      ],
+      "quote": "0"
+    },
+    "aerodromeClassic": {
+      "holder": "0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb",
+      "token": "0x4200000000000000000000000000000000000006",
+      "amount": "100000000000000000",
+      "exchanges": [
+        5
+      ],
+      "pools": [
+        "0xcdac0d6c6c59727a65f871236188350531885c43"
+      ],
+      "tokensOut": [
+        "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
+      ],
+      "fees": [
+        0
+      ],
+      "tickSpacings": [
+        0
+      ],
+      "quote": "238101384"
+    },
+    "aerodromeSlipstream": {
+      "holder": "0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb",
+      "token": "0x4200000000000000000000000000000000000006",
+      "amount": "100000000000000000",
+      "exchanges": [
+        6
+      ],
+      "pools": [
+        "0xb2cc224c1c9fee385f8ad6a55b4d94e92359dc59"
+      ],
+      "tokensOut": [
+        "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
+      ],
+      "fees": [
+        0
+      ],
+      "tickSpacings": [
+        0
+      ],
+      "quote": "238807667"
+    },
+    "aerodromeSlipstream2": {
+      "holder": "0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb",
+      "token": "0x4200000000000000000000000000000000000006",
+      "amount": "10000000000000000",
+      "exchanges": [
+        7
+      ],
+      "pools": [
+        "0xc758d81b9b81a6fcdad075bd471874a2c46b54e0"
+      ],
+      "tokensOut": [
+        "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
+      ],
+      "fees": [
+        0
+      ],
+      "tickSpacings": [
+        0
+      ],
+      "quote": "23861124"
+    },
+    "aerodromeSlipstream3": {
+      "holder": "0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb",
+      "token": "0x4200000000000000000000000000000000000006",
+      "amount": "100000000000000000",
+      "exchanges": [
+        8
+      ],
+      "pools": [
+        "0x3fe04a59ebd38cf06080a6f60a98d124eb59392a"
+      ],
+      "tokensOut": [
+        "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
+      ],
+      "fees": [
+        0
+      ],
+      "tickSpacings": [
+        0
+      ],
+      "quote": "238797479"
+    },
+    "uniswapV2": {
+      "holder": "0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb",
+      "token": "0x4200000000000000000000000000000000000006",
+      "amount": "100000000000000000",
+      "exchanges": [
+        9
+      ],
+      "pools": [
+        "0x88a43bbdf9d098eec7bceda4e2494615dfd9bb9c"
+      ],
+      "tokensOut": [
+        "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
+      ],
+      "fees": [
+        0
+      ],
+      "tickSpacings": [
+        0
+      ],
+      "quote": "237925695"
+    },
+    "uniswapV3": {
+      "holder": "0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb",
+      "token": "0x4200000000000000000000000000000000000006",
+      "amount": "100000000000000000",
+      "exchanges": [
+        10
+      ],
+      "pools": [
+        "0xd0b53d9277642d899df5c87a3966a349a798f224"
+      ],
+      "tokensOut": [
+        "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
+      ],
+      "fees": [
+        0
+      ],
+      "tickSpacings": [
+        0
+      ],
+      "quote": "238796926"
+    },
+    "uniswapV4": {
+      "holder": "0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb",
+      "token": "0x4200000000000000000000000000000000000006",
+      "amount": "100000000000000000",
+      "exchanges": [
+        11
+      ],
+      "pools": [
+        "0x0000000000000000000000000000000000000000"
+      ],
+      "tokensOut": [
+        "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
+      ],
+      "fees": [
+        3000
+      ],
+      "tickSpacings": [
+        60
+      ],
+      "quote": "237807444"
+    },
+    "uniswapV4Native": {
+      "holder": "0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb",
+      "token": "0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf",
+      "amount": "100000",
+      "exchanges": [
+        11,
+        11
+      ],
+      "pools": [
+        "0x0000000000000000000000000000000000000000",
+        "0x0000000000000000000000000000000000000000"
+      ],
+      "tokensOut": [
+        "0x0000000000000000000000000000000000000000",
+        "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
+      ],
+      "fees": [
+        500,
+        3000
+      ],
+      "tickSpacings": [
+        10,
+        60
+      ],
+      "quote": "81033047"
+    },
+    "hydxThroughWeth": {
+      "holder": "0x25B2ED7149fb8A05f6eF9407d9c8F878f59cd1e1",
+      "token": "0x00000e7efa313F4E11Bfff432471eD9423AC6B30",
+      "amount": "1000000000000000000000",
+      "exchanges": [
+        0,
+        10
+      ],
+      "pools": [
+        "0x89f29dd355d74e57389374a2aa5f9518a1e497ac",
+        "0xd0b53d9277642d899df5c87a3966a349a798f224"
+      ],
+      "tokensOut": [
+        "0x4200000000000000000000000000000000000006",
+        "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
+      ],
+      "fees": [
+        0,
+        0
+      ],
+      "tickSpacings": [
+        0,
+        0
+      ],
+      "quote": "21101284"
+    },
+    "gasCheapest": {
+      "holder": "0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb",
+      "token": "0x4200000000000000000000000000000000000006",
+      "amount": "1000000000000",
+      "exchanges": [
+        9,
+        9,
+        9
+      ],
+      "pools": [
+        "0x4fe4a5f570b046e3704acd72fef6c508a310d3aa",
+        "0x4fe4a5f570b046e3704acd72fef6c508a310d3aa",
+        "0x88a43bbdf9d098eec7bceda4e2494615dfd9bb9c"
+      ],
+      "tokensOut": [
+        "0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf",
+        "0x4200000000000000000000000000000000000006",
+        "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
+      ],
+      "fees": [
+        0,
+        0,
+        0
+      ],
+      "tickSpacings": [
+        0,
+        0,
+        0
+      ],
+      "quote": "1619"
+    },
+    "gasDearest": {
+      "holder": "0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb",
+      "token": "0x4200000000000000000000000000000000000006",
+      "amount": "1000000000000",
+      "exchanges": [
+        0,
+        0,
+        0
+      ],
+      "pools": [
+        "0x3f9b863ef4b295d6ba370215bcca3785fcc44f44",
+        "0x3f9b863ef4b295d6ba370215bcca3785fcc44f44",
+        "0x82dbe18346a8656dbb5e76f74bf3ae279cc16b29"
+      ],
+      "tokensOut": [
+        "0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf",
+        "0x4200000000000000000000000000000000000006",
+        "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
+      ],
+      "fees": [
+        0,
+        0,
+        0
+      ],
+      "tickSpacings": [
+        0,
+        0,
+        0
+      ],
+      "quote": "814"
+    }
+  }
+}

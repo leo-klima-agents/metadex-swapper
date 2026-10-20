@@ -71,13 +71,15 @@ needs no allowance. With `type(uint256).max`, it quotes the caller's whole balan
 `done` false and its reason.
 
 It asks the pools without trading: concentrated pools and Uniswap v4 run their swap up to the payment, and classic
-pools are only asked for their price. So `quote` misses some failures:
+pools are only asked for their price. So `quote` and `swap` can differ:
 
 - Each route is priced against the pools as they are, so two routes through the same pool both get the first one's
   price. Each route's minimum covers this.
 - A classic pool that its exchange paused still quotes.
 - A token that charges a fee on transfers is quoted as if it didn't. Through Algebra, Slipstream and Uniswap v3 and v4
   pools, its `swap` then always reverts.
+- A classic pool also pays for any of the input token it holds beyond its reserves, which anyone could take with its
+  `skim`. So `swap` can pay more than `quote`, even for a route that pulls nothing.
 
 To see what a call will do, simulate `swap` itself, after its approvals, with `eth_simulateV1`.
 
@@ -143,9 +145,10 @@ Keep the priority fee low. Above a tip of 1 gwei, or 2 gwei for stable pools, Ae
 10%, that a quote from `eth_call` doesn't see. The swapper prices Aero's pools with the tax, so the swap goes through,
 at a worse price, down to your minimum: on the fork, with a 2 gwei tip, 1 WETH fetched 2,123 USDC instead of 2,357.
 
-Gas of whole transactions on a fork of Base, intrinsic and calldata gas included. The caller and the treasury already
-held some of the output token: paying either of them for the first time costs up to 17,100 more. The pools and tokens
-matter more than the output: USDC to WETH costs about what WETH to USDC does.
+Gas used by whole transactions on a fork of Base, intrinsic and calldata gas included. It is counted after refunds, so a
+transaction's limit must cover up to a quarter more. The caller and the treasury already held some of the output token:
+paying either of them for the first time costs up to 17,100 more. The pools and tokens matter more than the output: USDC
+to WETH costs about what WETH to USDC does.
 
 | Route | Gas |
 | --- | --- |
@@ -231,7 +234,7 @@ done
 ## Verification
 
 To check that a deployed swapper is this repository's code, compare its code hash with the one recorded in
-`verification/bytecode-hashes.json`, which `script/check-verification.sh` checks against a build of this repository.
+`verification/bytecode-hashes.json`, which `forge test` checks against a build of this repository.
 Each swapper's code holds its output token, so each has its own hash:
 
 ```
@@ -251,7 +254,8 @@ in `BASE_RPC_URL`.
   route's quote at that block, from the exchanges' own quotes.
 - `script/check-signatures.sh` checks the interfaces in `src/interfaces/` against the exchanges' sources vendored in
   `test/upstream/`.
-- `script/check-verification.sh` checks that `verification/` matches the build.
+- `script/check-verification.sh` checks that `verification/` matches the build, all but the runtime hashes, which
+  `forge test` checks.
 - `script/refresh-verification.sh` regenerates `verification/` after a change to the source or the deploy script.
 
 [`test/upstream/UPSTREAM.md`](test/upstream/UPSTREAM.md) records the contracts the swapper is written against, their

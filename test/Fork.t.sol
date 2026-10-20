@@ -47,7 +47,6 @@ contract ForkTest is Test {
 
     // EIP-7825's cap on a transaction's gas, which Base enforces.
     uint256 internal constant TX_GAS_CAP = 2 ** 24;
-    uint256 internal constant GAS_ROUTES = 20;
     // EIP-1967's implementation and admin slots.
     bytes32 internal constant IMPL_SLOT = 0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc;
     bytes32 internal constant ADMIN_SLOT = 0xb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d6103;
@@ -347,20 +346,19 @@ contract ForkTest is Test {
         console.log("Aero volatile, 1 WETH with a 2 gwei tip:", res.amountOut, "USDC, untaxed:", plain);
     }
 
-    // No limit on routes: Base's cap on a transaction's gas is the limit.
-    function test_gas_routesOfMaxHops() public {
-        uint256 cheapest = _gasOfRoutes("gasCheapest");
-        uint256 dearest = _gasOfRoutes("gasDearest");
-        console.log(
-            "20 routes of 3 Uniswap v2 hops:", cheapest, "so about this many fit:", TX_GAS_CAP * GAS_ROUTES / cheapest
-        );
-        console.log("20 routes of 3 Hydrex Algebra hops:", dearest, "against the cap of", TX_GAS_CAP);
+    // No limit on routes: Base's cap on a transaction's gas is the limit. The gas measured here leaves out the
+    // transaction's base and calldata cost.
+    function test_gas_batchesFitUnderTheCap() public {
+        uint256 cheapest = _gasOfRoutes("gasCheapest", 20);
+        uint256 dearest = _gasOfRoutes("gasDearest", 5);
+        console.log("20 routes of 3 Uniswap v2 hops:", cheapest);
+        console.log("5 routes of 3 Hydrex Algebra hops:", dearest);
         assertLt(cheapest, TX_GAS_CAP);
+        assertLt(dearest, TX_GAS_CAP);
     }
 
-    function _gasOfRoutes(string memory name) internal returns (uint256 gasUsed) {
+    function _gasOfRoutes(string memory name, uint256 n) internal returns (uint256 gasUsed) {
         (ImmutableSwapper.Route memory r, address holder,) = _fixture(name);
-        uint256 n = GAS_ROUTES;
         ImmutableSwapper.Route[] memory routes = new ImmutableSwapper.Route[](n);
         for (uint256 i; i < n; ++i) {
             routes[i] = r;

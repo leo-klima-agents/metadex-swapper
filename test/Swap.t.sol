@@ -275,24 +275,21 @@ contract SwapTest is SwapperTestBase {
         _assertEmpty(address(tkn));
     }
 
-    function test_maxRoutes() public {
-        uint256 max = swapper.MAX_ROUTES();
-        ImmutableSwapper.Route[] memory routes = new ImmutableSwapper.Route[](max);
-        for (uint256 i; i < max; ++i) {
+    function test_anyNumberOfRoutes() public {
+        uint256 n = 40;
+        ImmutableSwapper.Route[] memory routes = new ImmutableSwapper.Route[](n);
+        for (uint256 i; i < n; ++i) {
             MockToken t = new MockToken(18);
             routes[i] = _direct(_all()[i % EXCHANGES], address(t), 1e18);
             _give(address(t), 1e18);
         }
         (ImmutableSwapper.Result[] memory results,,) = _swap(routes);
-        for (uint256 i; i < max; ++i) {
+        for (uint256 i; i < n; ++i) {
             assertTrue(results[i].done);
         }
 
         vm.prank(holder);
-        vm.expectRevert(ImmutableSwapper.BadRouteCount.selector);
-        swapper.swap(new ImmutableSwapper.Route[](max + 1), block.timestamp, true);
-        vm.prank(holder);
-        vm.expectRevert(ImmutableSwapper.BadRouteCount.selector);
+        vm.expectRevert(ImmutableSwapper.NoRoutes.selector);
         swapper.swap(new ImmutableSwapper.Route[](0), block.timestamp, true);
     }
 

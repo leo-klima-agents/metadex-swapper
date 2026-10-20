@@ -7,14 +7,14 @@ exchange's own factory. It sends 1% of the USDC to a fixed treasury.
 
 The contract has no owner, no settings and no upgrade path. All of it is in
 [`src/ImmutableSwapper.sol`](src/ImmutableSwapper.sol). It is not deployed yet. Deployed as described under
-[Deployment](#deployment), it will be at `0xC61940460A1a0383f23985ffa50c4D00Cab25913`.
+[Deployment](#deployment), it will be at `0xcB62D0323A063eEDD2b438C9A45378755f0Ee84A`.
 
 ## How it works
 
 ### Swapping
 
-`swap(routes, deadline, skipFailed)` takes 1 to 20 routes (`MAX_ROUTES`). Each route sells one token for USDC, in 1 to
-3 hops (`MAX_HOPS`):
+`swap(routes, deadline, skipFailed)` takes as many routes as fit in one transaction. Each route sells one token for USDC,
+in 1 to 3 hops (`MAX_HOPS`):
 
 ```solidity
 struct Hop {
@@ -129,12 +129,22 @@ Gas, measured on a fork of Base for a whole call of one route, from a cold start
 | Aero v3, on pools the test creates | 334,000 to 374,000 |
 | Hydrex Algebra, WETH to USDC | ~1,335,000 |
 | HYDX to WETH on Hydrex Algebra, then to USDC on Uniswap v3 | ~2,098,000 |
+| Each further token, to USDC on Aerodrome classic | ~252,000 |
+| Each further token, to WETH then USDC on Aerodrome classic | ~315,000 |
 | 20 routes of 3 Uniswap v2 hops | ~3,823,000 |
 | 20 routes of 3 Hydrex Algebra hops | ~62,020,000 |
 
-Hydrex's Algebra pools cost the most: after each swap, the pool's plugin looks for an arbitrage across other exchanges.
-The limits on routes and hops don't keep a call under Base's cap of 16,777,216 gas, so estimate gas and split large
-batches.
+There is no limit on the number of routes: Base's cap of 16,777,216 gas on a transaction is the limit. About 66 tokens fit
+in one call when each has a pool against USDC, and about 52 when each goes through WETH. Hydrex's Algebra pools cost the
+most: after each swap, the pool's plugin looks for an arbitrage across other exchanges, and about 12 such hops fit. So
+estimate gas and split large batches.
+
+Send a generous gas limit: on Base, unused gas costs nothing. With `skipFailed`, a route that runs short of gas is
+skipped like any other failure, and the rest of the call goes through. Hydrex's plugin spends whatever gas it's given,
+so this can happen well below the gas the route normally uses: on the fork, HYDX to WETH on Hydrex Algebra then to USDC
+on Uniswap v3 uses 2.1M gas, and was skipped under limits from 1.2M to 1.84M. Geth's `eth_estimateGas` never returns
+less than the gas a call uses without a limit, which is above that range. Check a limit chosen any other way with
+`eth_call`, at that limit, first.
 
 ## Trust and limitations
 
@@ -165,12 +175,12 @@ The swapper is not deployed yet. Once it is, this section will record the transa
 | | |
 |---|---|
 | Network | Base |
-| Address | `0xC61940460A1a0383f23985ffa50c4D00Cab25913` |
+| Address | `0xcB62D0323A063eEDD2b438C9A45378755f0Ee84A` |
 | USDC | `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913` |
 | Exchanges | the table above, in the order of `Exchange` |
 | Treasury | `0x450c72de8c0079B49AcedF294a13011bd09D125B`, a 2-of-3 Safe, fixed in the source |
 | Fee | 1% (`FEE_BPS = 100`), fixed in the source |
-| Limits | 20 routes (`MAX_ROUTES`), 3 hops each (`MAX_HOPS`) |
+| Limits | 3 hops per route (`MAX_HOPS`); no limit on routes |
 | Method | CREATE2 through `0x4e59b44847b379578588920cA78FbF26c0B4956C`, salt `keccak256("metadex.cafe/ImmutableSwapper/v1")` |
 
 Deployment steps:
@@ -185,9 +195,9 @@ Deployment steps:
 ```
 forge script script/Deploy.s.sol --rpc-url $BASE_RPC_URL --broadcast --ledger
 ARGS=$(jq -j .deployment.constructorArgs verification/bytecode-hashes.json)
-forge verify-contract 0xC61940460A1a0383f23985ffa50c4D00Cab25913 src/ImmutableSwapper.sol:ImmutableSwapper --chain base \
+forge verify-contract 0xcB62D0323A063eEDD2b438C9A45378755f0Ee84A src/ImmutableSwapper.sol:ImmutableSwapper --chain base \
   --constructor-args $ARGS --license-type MIT --watch
-forge verify-contract 0xC61940460A1a0383f23985ffa50c4D00Cab25913 src/ImmutableSwapper.sol:ImmutableSwapper --chain base \
+forge verify-contract 0xcB62D0323A063eEDD2b438C9A45378755f0Ee84A src/ImmutableSwapper.sol:ImmutableSwapper --chain base \
   --constructor-args $ARGS --verifier sourcify
 ```
 
@@ -197,7 +207,7 @@ To check that the deployed contract is this repository's code, compare its code 
 `verification/bytecode-hashes.json`, which `script/check-verification.sh` checks against a build of this repository:
 
 ```
-cast keccak $(cast code 0xC61940460A1a0383f23985ffa50c4D00Cab25913 --rpc-url $BASE_RPC_URL)
+cast keccak $(cast code 0xcB62D0323A063eEDD2b438C9A45378755f0Ee84A --rpc-url $BASE_RPC_URL)
 jq -j .deployment.runtimeKeccak verification/bytecode-hashes.json
 ```
 

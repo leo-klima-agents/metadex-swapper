@@ -110,11 +110,8 @@ contract QuoteTest is SwapperTestBase {
         );
         assertEq(quoted[1].reason, abi.encodeWithSelector(ImmutableSwapper.TooLittle.selector, 1, 0.99e18, 1e18));
 
-        uint256 tooMany = swapper.MAX_ROUTES() + 1;
-        vm.expectRevert(ImmutableSwapper.BadRouteCount.selector);
+        vm.expectRevert(ImmutableSwapper.NoRoutes.selector);
         swapper.quote(new ImmutableSwapper.Route[](0));
-        vm.expectRevert(ImmutableSwapper.BadRouteCount.selector);
-        swapper.quote(new ImmutableSwapper.Route[](tooMany));
     }
 
     function test_quote_pricesEachRouteAgainstThePoolsAsTheyAre() public {

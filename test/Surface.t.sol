@@ -40,7 +40,7 @@ contract SurfaceTest is SwapperTestBase {
         for (uint256 i; i < w; ++i) {
             assertEq(writers[i], expectedWriters[i]);
         }
-        string[6] memory expectedReaders = ["FEE_BPS", "MAX_HOPS", "MAX_ROUTES", "TREASURY", "exchanges", "usdc"];
+        string[5] memory expectedReaders = ["FEE_BPS", "MAX_HOPS", "TREASURY", "exchanges", "usdc"];
         assertEq(r, expectedReaders.length);
         for (uint256 i; i < r; ++i) {
             assertEq(readers[i], expectedReaders[i]);
@@ -50,7 +50,6 @@ contract SurfaceTest is SwapperTestBase {
     function test_constants() public view {
         assertEq(swapper.TREASURY(), 0x450c72de8c0079B49AcedF294a13011bd09D125B);
         assertEq(swapper.FEE_BPS(), 100);
-        assertEq(swapper.MAX_ROUTES(), 20);
         assertEq(swapper.MAX_HOPS(), 3);
     }
 

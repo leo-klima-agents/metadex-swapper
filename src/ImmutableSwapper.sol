@@ -58,7 +58,6 @@ contract ImmutableSwapper is IAlgebraSwapCallback, IUniswapV3SwapCallback, IUnlo
 
     address public constant TREASURY = 0x450c72de8c0079B49AcedF294a13011bd09D125B;
     uint256 public constant FEE_BPS = 100;
-    uint256 public constant MAX_ROUTES = 20;
     uint256 public constant MAX_HOPS = 3;
     uint256 private constant EXCHANGES = 12;
     uint160 private constant MIN_SQRT_RATIO = 4295128739;
@@ -92,7 +91,7 @@ contract ImmutableSwapper is IAlgebraSwapCallback, IUniswapV3SwapCallback, IUnlo
     event RouteFailed(address indexed caller, uint256 index, address token, bytes reason);
 
     error Expired();
-    error BadRouteCount();
+    error NoRoutes();
     error BadHopCount(uint256 route);
     error BadPath(uint256 route, uint256 hop);
     error NotExchangePool(Exchange exchange, address pool);
@@ -141,7 +140,7 @@ contract ImmutableSwapper is IAlgebraSwapCallback, IUniswapV3SwapCallback, IUnlo
         returns (Result[] memory results, uint256 paid, uint256 fee)
     {
         if (block.timestamp > deadline) revert Expired();
-        _checkRouteCount(routes.length);
+        if (routes.length == 0) revert NoRoutes();
         results = new Result[](routes.length);
         uint256 done;
         for (uint256 i; i < routes.length; ++i) {
@@ -176,7 +175,7 @@ contract ImmutableSwapper is IAlgebraSwapCallback, IUniswapV3SwapCallback, IUnlo
     // Called with eth_call: what swap would return now. It moves nothing, and needs no allowance: an amount of
     // type(uint256).max quotes the caller's whole balance.
     function quote(Route[] calldata routes) external nonReentrant returns (Result[] memory results) {
-        _checkRouteCount(routes.length);
+        if (routes.length == 0) revert NoRoutes();
         quoting = true;
         results = new Result[](routes.length);
         for (uint256 i; i < routes.length; ++i) {
@@ -461,10 +460,6 @@ contract ImmutableSwapper is IAlgebraSwapCallback, IUniswapV3SwapCallback, IUnlo
     // No price limit.
     function _limit(bool zeroForOne) private pure returns (uint160) {
         return zeroForOne ? MIN_SQRT_RATIO + 1 : MAX_SQRT_RATIO - 1;
-    }
-
-    function _checkRouteCount(uint256 n) private pure {
-        if (n == 0 || n > MAX_ROUTES) revert BadRouteCount();
     }
 
     function _fee(uint256 usdcOut) private pure returns (uint256) {

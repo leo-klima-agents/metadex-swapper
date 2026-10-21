@@ -44,7 +44,6 @@ AERO_V3 = {"AeroVolatile", "AeroStable", "AeroSlipstream"}
 
 V3_FEE = 500
 
-# Where a pool is found: (factory call, arguments). Uniswap v4 hops are keys: (fee, tick spacing).
 LOOKUP = {
     "HydrexAlgebra": ("poolByPair(address,address)", []),
     "HydrexClassic": ("getPair(address,address,bool)", [False]),
@@ -59,8 +58,7 @@ LOOKUP = {
     "UniswapV3": ("getPool(address,address,uint24)", [V3_FEE]),
 }
 
-# name: (holder, token, amount, [(exchange, token out, (fee, tick spacing) for Uniswap v4)]). Each route goes through the
-# swapper that pays out in its last token.
+# name: (holder, token, amount, [(exchange, token out, (fee, tick spacing) for Uniswap v4)])
 ROUTES = {
     "hydrexAlgebra": (MORPHO, WETH, 10**16, [("HydrexAlgebra", USDC)]),
     "hydrexClassic": (HYDX_VE, HYDX, 10**21, [("HydrexClassic", USDC)]),
@@ -85,7 +83,6 @@ ROUTES = {
     "wethToAero": (MORPHO, WETH, 10**17, [("AeroVolatile", NEW_AERO)]),
     "wethToHydx": (MORPHO, WETH, 10**16, [("HydrexAlgebra", HYDX)]),
     "usdcToHydx": (MORPHO, USDC, 10**7, [("HydrexClassic", HYDX)]),
-    # For gas: three hops through the cheapest exchange, and through the dearest.
     "gasCheapest": (MORPHO, WETH, 10**12, [("UniswapV2", CBBTC), ("UniswapV2", WETH), ("UniswapV2", USDC)]),
     "gasDearest": (MORPHO, WETH, 10**12, [("HydrexAlgebra", CBBTC), ("HydrexAlgebra", WETH), ("HydrexAlgebra", USDC)]),
 }
@@ -173,11 +170,9 @@ def quote_hop(block, exchange, pool, token_in, token_out, amount):
         return amount * 997 * r_out // (r_in * 1000 + amount * 997)
     signature = "getAmountOutWithTotalFee" if exchange in AERO_V3 else "getAmountOut"
     out = words(call(block, pool, signature + "(uint256,address)", amount, token_in))[0]
-    # The swapper asks Hydrex's pairs for one wei less than they quote.
     return out - 1 if exchange == "HydrexClassic" and out else out
 
 
-# Uniswap v3 hops name their pool's fee, and Uniswap v4 hops their key's.
 def fee(hop):
     if hop[0] == "UniswapV3":
         return V3_FEE
@@ -208,7 +203,6 @@ def main():
             for exchange, token_out in hops:
                 pool = pool_of(block, exchange, token_in, token_out)
                 if not has_liquidity(block, exchange, pool):
-                    # Aero's pools are new: the fork test creates its own.
                     assert exchange in AERO_V3 and len(hops) == 1, f"{name}: no pool"
                     pools.append(ETH)
                     created = True

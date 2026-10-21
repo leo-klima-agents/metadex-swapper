@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.37;
 
-// Hydrex's Algebra pools, Aero's and Aerodrome's Slipstream pools, and Uniswap v3's pools.
 interface IConcentratedPool {
     function swap(
         address recipient,

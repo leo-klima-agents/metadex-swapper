@@ -5,8 +5,6 @@ import {IERC20} from "../../src/interfaces/IERC20.sol";
 import {IAlgebraSwapCallback} from "../../src/interfaces/IAlgebraSwapCallback.sol";
 import {IUniswapV3SwapCallback} from "../../src/interfaces/IUniswapV3SwapCallback.sol";
 
-// A pool at a fixed price that swaps like Algebra, Slipstream and Uniswap v3 pools: it sends the output, then asks
-// the caller for the input in a callback. Each knob makes it misbehave.
 contract MockConcentratedPool {
     uint160 internal constant MIN_SQRT_RATIO = 4295128739;
     uint160 internal constant MAX_SQRT_RATIO = 1461446703485210103287273052203988822378723970342;
@@ -14,7 +12,6 @@ contract MockConcentratedPool {
     address public immutable token0;
     address public immutable token1;
     bool public immutable algebra;
-    // token1 per token0
     uint256 public immutable num;
     uint256 public immutable den;
 

@@ -11,12 +11,12 @@ deployed yet. Deployed as described under [Deployment](#deployment), the six swa
 
 | Output | Token | Swapper |
 | --- | --- | --- |
-| USDC | `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913` | `0x6D2f6Cd8493ffc92e759335aDe16186Ea535D3f9` |
-| EURC | `0x60a3E35Cc302bFA44Cb288Bc5a4F316Fdb1adb42` | `0x6A5b0e550aBcbc4f95443DADeCDBeC37bf354263` |
-| WETH | `0x4200000000000000000000000000000000000006` | `0x2aA0b0a33567f3A5bB72783111886a5aE0863d76` |
-| cbBTC | `0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf` | `0xffCB5ebAfB324D7243fB586A9EE8dA5b55Ea3F4a` |
-| AERO | `0x3f5bF3EdAc59d650D8fDf9657a71F2f904A3a4Ee` | `0xB74d8Ff610c44251A05d6F7b1b701142729Fc3DD` |
-| HYDX | `0x00000e7efa313F4E11Bfff432471eD9423AC6B30` | `0x621D75156e884AeCd4bC38d2478F8ab4DD5EE1F1` |
+| USDC | `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913` | `0x972560a38E12C94d18e44A8Fa559741888E47350` |
+| EURC | `0x60a3E35Cc302bFA44Cb288Bc5a4F316Fdb1adb42` | `0x938E4e9F1C2E64de830FCE28438fb6577cD0093e` |
+| WETH | `0x4200000000000000000000000000000000000006` | `0xC903915B8b3d848093A2f14E4910Fd4c2F8FF3bA` |
+| cbBTC | `0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf` | `0xF2cd40e7d6C911421dfFe23e797415d7D581a18b` |
+| AERO | `0x3f5bF3EdAc59d650D8fDf9657a71F2f904A3a4Ee` | `0xfc1bA9F956608635661A4CA47A26C77f3bf8EF18` |
+| HYDX | `0x00000e7efa313F4E11Bfff432471eD9423AC6B30` | `0x7e4C8127fB40582e3A4e8CA84fF60B05457117F4` |
 
 ## How it works
 
@@ -71,12 +71,11 @@ pools are only asked for their price. So `quote` and `swap` can differ:
 - Each route is priced against the pools as they are, so two routes through the same pool both get the first one's
   price. Each route's minimum covers this.
 - A classic pool that its exchange paused still quotes.
-- A token that charges a fee on transfers is quoted as if it didn't. Through Algebra, Slipstream and Uniswap v3 and v4
-  pools, its `swap` then always reverts.
+- A token that charges a fee on transfers is quoted as if it didn't.
 - `swap` syncs a classic pool before sending it the input, so what the pool holds beyond its reserves joins them.
   `quote` prices with the reserves as they are, so the two differ when a pool holds such tokens.
 - Code that an exchange's admins control runs inside the swap, for `quote` as for `swap`: Hydrex's plugins and Aero's
-  swap hook. It can skew a quote through those pools, so check such a quote against another price.
+  swap hook. It can skew a quote through those pools.
 
 To see what a call will do, simulate `swap` itself, after its approvals, with `eth_simulateV1`.
 
@@ -126,7 +125,7 @@ anything there, so tokens that trade only in pools with hooks, as many launchpad
 | Uniswap | The owners of the v3 factory, `0xaBEA76658b205696d49B5F91b2a03536cB8A3bE1`, and of the v4 manager, `0x31FAfd4889FA1269F7a13A66eE0fB458f27D72A9` | v2 and v3: nothing that changes what a swap costs. v4: a protocol fee of up to 0.1%. |
 
 None of them can take the swapper's tokens, given how it pays pools. The worst they can do is a worse price, down to the
-route's minimum, or a revert, and, through a plugin or hook, a wrong quote.
+route's minimum, a wrong quote, or a revert.
 
 ## For holders
 
@@ -196,7 +195,7 @@ results of `eth_call` at the limit you send.
 - Tokens sent to the swapper by mistake stay there. Every amount is counted within the call, so they are never paid to
   anyone.
 - Left out on purpose: native ETH in or out of a route; signatures; routers and aggregators; a recipient other than
-  the caller; Algebra's custom pools; Uniswap v4 pools with hooks; choosing routes; claiming rewards.
+  the caller; Algebra's custom pools; choosing routes; claiming rewards.
 
 ## Deployment
 
@@ -236,7 +235,7 @@ To check that a deployed swapper is this repository's code, compare its code has
 Each swapper's code holds its output token, so each has its own hash:
 
 ```
-cast keccak $(cast code 0x6D2f6Cd8493ffc92e759335aDe16186Ea535D3f9 --rpc-url $BASE_RPC_URL)
+cast keccak $(cast code 0x972560a38E12C94d18e44A8Fa559741888E47350 --rpc-url $BASE_RPC_URL)
 jq -j .deployments.USDC.runtimeKeccak verification/bytecode-hashes.json
 ```
 

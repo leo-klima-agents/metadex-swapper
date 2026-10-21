@@ -31,4 +31,6 @@ exclude_lints = [
   "reentrancy-events",
   "unused-return",
   "uninitialized-local",
+  "unsafe-typecast",
+  "missing-events-access-control",
 ]

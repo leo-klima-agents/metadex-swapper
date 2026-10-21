@@ -9,7 +9,6 @@ import {Deploy} from "../script/Deploy.s.sol";
 import {ImmutableSwapper} from "../src/ImmutableSwapper.sol";
 import {IClassicPool} from "../src/interfaces/IClassicPool.sol";
 
-// What the tests read from the exchanges' contracts.
 interface IViews {
     function implementation() external view returns (address);
     function poolImplementation() external view returns (address);
@@ -29,7 +28,6 @@ interface IViews {
     function slot0() external view returns (uint160 sqrtPriceX96, int24 tick, uint16, uint16, uint16, uint8, bool);
 }
 
-// How the tests create Aero's pools and add liquidity.
 interface IPoolSetup {
     function createPool(address tokenA, address tokenB) external returns (address);
     function createPool(address tokenA, address tokenB, int24 tickSpacing, uint160 sqrtPriceX96)
@@ -41,13 +39,10 @@ interface IPoolSetup {
         returns (uint256, uint256);
 }
 
-// Every pin holds at the fixture's block only.
 contract ForkTest is Test {
     using stdJson for string;
 
-    // EIP-7825's cap on a transaction's gas, which Base enforces.
     uint256 internal constant TX_GAS_CAP = 2 ** 24;
-    // EIP-1967's implementation and admin slots.
     bytes32 internal constant IMPL_SLOT = 0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc;
     bytes32 internal constant ADMIN_SLOT = 0xb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d6103;
 
@@ -95,7 +90,6 @@ contract ForkTest is Test {
         }
     }
 
-    // From cast keccak $(cast code <address> --block <the fixture's block>). Aero's two MEV tax modules share code.
     function test_pin_codeHashes() public view {
         assertEq(d.HYDREX_ALGEBRA().codehash, 0x6f54720c3eb4326e8cf846308b98ab0c0d070a441ca11ba8cd00be0256af7084);
         assertEq(d.HYDREX_CLASSIC().codehash, 0xe9254068c76f9b19f4ab63f7a83b9f82f412362d41609faa232daa65f987bbac);
@@ -141,21 +135,18 @@ contract ForkTest is Test {
         assertEq(IViews(d.AERODROME_SLIPSTREAM_2()).poolImplementation(), AERODROME_CL_IMPL_2);
         assertEq(IViews(d.AERODROME_SLIPSTREAM_3()).poolImplementation(), AERODROME_CL_IMPL_3);
 
-        // Aero's fees: set by its admins, and outside this repository's reach.
         assertEq(IViews(d.AERO_VOLATILE()).feeModule(), AERO_VOLATILE_FEES);
         assertEq(IViews(d.AERO_VOLATILE()).mevTaxModule(), AERO_VOLATILE_TAX);
         assertEq(IViews(d.AERO_STABLE()).feeModule(), AERO_STABLE_FEES);
         assertEq(IViews(d.AERO_STABLE()).mevTaxModule(), AERO_STABLE_TAX);
         assertEq(IViews(d.AERO_SLIPSTREAM()).defaultSwapHook(), AERO_SWAP_HOOK);
 
-        // The new AERO is the token of Aero's root Voter, reached from its FactoryRegistry.
         address leafVoter = IViews(AERO_REGISTRY).leafVoter();
         address orchestrator = IViews(leafVoter).ORCHESTRATOR();
         address adapter = IViews(orchestrator).adapter();
         address rootVoter = IViews(IViews(adapter).ROOT_MESSAGE_ORCHESTRATOR()).VOTER();
         assertEq(IViews(rootVoter).TOKEN(), d.AERO());
 
-        // The registries list exactly the factories the swapper fixes.
         address[] memory aero = IViews(AERO_REGISTRY).targetFactories();
         assertEq(aero.length, 3);
         assertEq(aero[0], d.AERO_VOLATILE());
@@ -168,7 +159,6 @@ contract ForkTest is Test {
         assertEq(aerodrome[2], d.AERODROME_SLIPSTREAM_2());
         assertEq(aerodrome[3], d.AERODROME_SLIPSTREAM_3());
 
-        // Only Hydrex's pair factory is an upgradeable proxy, behind a one-day timelock.
         address[12] memory e = d.exchanges();
         for (uint256 i; i < e.length; ++i) {
             address impl = address(uint160(uint256(vm.load(e[i], IMPL_SLOT))));
@@ -267,7 +257,6 @@ contract ForkTest is Test {
         _check("usdcToHydx", address(0));
     }
 
-    // At these amounts the pair refuses its own quote; the swapper asks for one wei less, which it accepts.
     function test_hydrexStablePair_asksOneWeiLess() public {
         address pair = HYDREX_STABLE_PAIR;
         address[2] memory tokens = [IClassicPool(pair).token0(), IClassicPool(pair).token1()];
@@ -295,7 +284,6 @@ contract ForkTest is Test {
         }
     }
 
-    // Aero's new token has no pool yet: the test creates one against WETH, at about the old AERO's price.
     function test_wethToAero() public {
         address pool = IPoolSetup(d.AERO_VOLATILE()).createPool(d.AERO(), WETH);
         deal(WETH, pool, 100e18);
@@ -326,7 +314,6 @@ contract ForkTest is Test {
         _check("aeroSlipstream", pool);
     }
 
-    // Aero's MEV tax: above a 1 gwei tip, a swap priced without the caller's fee is refused.
     function test_aeroTax_onlyTheTotalFeePricesASwap() public {
         address pool = _aeroVolatilePool();
         vm.txGasPrice(block.basefee + 2 gwei);
@@ -346,8 +333,6 @@ contract ForkTest is Test {
         console.log("Aero volatile, 1 WETH with a 2 gwei tip:", res.amountOut, "USDC, untaxed:", plain);
     }
 
-    // No limit on routes: Base's cap on a transaction's gas is the limit. The gas measured here leaves out the
-    // transaction's base and calldata cost.
     function test_gas_batchesFitUnderTheCap() public {
         uint256 cheapest = _gasOfRoutes("gasCheapest", 20);
         uint256 dearest = _gasOfRoutes("gasDearest", 5);
@@ -375,8 +360,6 @@ contract ForkTest is Test {
         }
     }
 
-    // Quotes and swaps a fixture route, through pool if one is given. Both must pay the same, and that must be the
-    // pools' own quote at the block, unless the test created the pool.
     function _check(string memory name, address pool) internal {
         (ImmutableSwapper.Route memory r, address holder, uint256 expected) = _fixture(name);
         if (pool != address(0)) r.hops[0].pool = pool;
@@ -391,13 +374,10 @@ contract ForkTest is Test {
         if (pool == address(0)) assertEq(res.amountOut, expected, "the pools' own quote at the block");
     }
 
-    // The swapper that pays out in the route's last token.
     function _swapperFor(ImmutableSwapper.Route memory r) internal view returns (ImmutableSwapper) {
         return swappers[r.hops[r.hops.length - 1].tokenOut];
     }
 
-    // Swaps one route as holder, through the swapper for its last token, and checks the split of that token and that
-    // the swapper keeps nothing.
     function _swapAs(address holder, ImmutableSwapper.Route memory r)
         internal
         returns (ImmutableSwapper.Result memory res, uint256 gasUsed)
@@ -443,18 +423,11 @@ contract ForkTest is Test {
         r.hops = new ImmutableSwapper.Hop[](exchanges.length);
         for (uint256 i; i < exchanges.length; ++i) {
             r.hops[i] = ImmutableSwapper.Hop(
-                ImmutableSwapper.Exchange(exchanges[i]),
-                pools[i],
-                tokensOut[i],
-                // forge-lint: disable-next-line(unsafe-typecast)
-                uint24(fees[i]),
-                // forge-lint: disable-next-line(unsafe-typecast)
-                int24(spacings[i])
+                ImmutableSwapper.Exchange(exchanges[i]), pools[i], tokensOut[i], uint24(fees[i]), int24(spacings[i])
             );
         }
     }
 
-    // Priced like Uniswap v3's pool: 1,000 times the fixture's quote for 0.1 WETH, against 100 WETH.
     function _aeroVolatilePool() internal returns (address pool) {
         pool = IPoolSetup(d.AERO_VOLATILE()).createPool(WETH, USDC);
         (,, uint256 usdcPerTenthWeth) = _fixture("uniswapV3");
@@ -468,7 +441,6 @@ contract ForkTest is Test {
         if (amount1 != 0) IERC20(USDC).transfer(msg.sender, amount1);
     }
 
-    // EIP-1167's minimal proxy for impl.
     function _clone(address impl) internal pure returns (bytes memory) {
         return abi.encodePacked(hex"363d3d373d3d3d363d73", impl, hex"5af43d82803e903d91602b57fd5bf3");
     }

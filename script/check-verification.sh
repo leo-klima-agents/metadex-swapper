@@ -2,17 +2,14 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-ARTIFACT=out/ImmutableSwapper.sol/ImmutableSwapper.json
 HASHES=verification/bytecode-hashes.json
 INPUT=verification/ImmutableSwapper.standard-input.json
-[ -f "$ARTIFACT" ] || { echo "::error::$ARTIFACT missing; run forge build" >&2; exit 1; }
 [ -f "$HASHES" ] || { echo "::error::$HASHES missing; run script/refresh-verification.sh" >&2; exit 1; }
 [ -f "$INPUT" ] || { echo "::error::$INPUT missing; run script/refresh-verification.sh" >&2; exit 1; }
 FRESH=verification/.fresh.json
 trap 'rm -f "$FRESH"' EXIT
 status=0
 
-# The record as this build and script/Deploy.s.sol make it now.
 forge script script/Hashes.s.sol --sig 'record(string)' "$FRESH" >/dev/null
 if ! diff <(jq -S . "$HASHES") <(jq -S . "$FRESH") >&2; then
   echo "::error::$HASHES is stale; run script/refresh-verification.sh" >&2

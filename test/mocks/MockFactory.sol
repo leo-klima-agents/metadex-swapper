@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.37;
 
-// Answers like each kind of factory: isPool, isPair, getPair, poolByPair and getPool. A real factory answers only some
-// of these, so only the fork tests catch the swapper asking the wrong one.
 contract MockFactory {
     mapping(address => bool) public isPool;
     mapping(address => mapping(address => address)) public getPair;

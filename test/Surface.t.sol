@@ -7,7 +7,6 @@ import {ImmutableSwapper} from "../src/ImmutableSwapper.sol";
 import {SwapperTestBase} from "./utils/SwapperTestBase.sol";
 
 contract SurfaceTest is SwapperTestBase {
-    // Every ABI entry but events and errors, in the artifact's order: no receive, no fallback, nothing payable.
     function test_abi() public view {
         string memory json = vm.readFile("out/ImmutableSwapper.sol/ImmutableSwapper.json");
         string[12] memory expected = [

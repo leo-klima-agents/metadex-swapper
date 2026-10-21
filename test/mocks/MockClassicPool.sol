@@ -3,14 +3,11 @@ pragma solidity 0.8.37;
 
 import {IERC20} from "../../src/interfaces/IERC20.sol";
 
-// A constant-product pool, priced like Solidly pools and Uniswap v2 pairs. taxBps is an extra fee that only
-// getAmountOutWithTotalFee and swap see, as Aero's MEV tax. A real pool lacks one or both getAmountOut functions, so
-// only the fork tests catch the swapper asking the wrong one.
 contract MockClassicPool {
     address public immutable token0;
     address public immutable token1;
     uint256 public immutable feeBps;
-    uint256 public taxBps;
+    uint256 public mevTaxBps;
     uint256 public reserve0;
     uint256 public reserve1;
 
@@ -19,8 +16,8 @@ contract MockClassicPool {
         feeBps = feeBps_;
     }
 
-    function setTax(uint256 bps) external {
-        taxBps = bps;
+    function setMevTax(uint256 bps) external {
+        mevTaxBps = bps;
     }
 
     function sync() public {
@@ -37,7 +34,7 @@ contract MockClassicPool {
     }
 
     function getAmountOutWithTotalFee(uint256 amountIn, address tokenIn) external view returns (uint256) {
-        return _amountOut(amountIn, tokenIn, feeBps + taxBps);
+        return _amountOut(amountIn, tokenIn, feeBps + mevTaxBps);
     }
 
     function swap(uint256 amount0Out, uint256 amount1Out, address to, bytes calldata) external {
@@ -51,7 +48,7 @@ contract MockClassicPool {
         uint256 in0 = b0 > r0 - amount0Out ? b0 - (r0 - amount0Out) : 0;
         uint256 in1 = b1 > r1 - amount1Out ? b1 - (r1 - amount1Out) : 0;
         require(in0 != 0 || in1 != 0, "no input");
-        uint256 fee = feeBps + taxBps;
+        uint256 fee = feeBps + mevTaxBps;
         require((b0 * 10_000 - in0 * fee) * (b1 * 10_000 - in1 * fee) >= r0 * r1 * 1e8, "K");
         sync();
     }

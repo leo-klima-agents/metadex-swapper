@@ -65,7 +65,6 @@ abstract contract SwapperTestBase is Test {
         list[EXCHANGES - 1] = address(manager);
     }
 
-    // A route of one hop to USDC, through a new pool of exchange e.
     function _direct(ImmutableSwapper.Exchange e, address token, uint256 amount)
         internal
         returns (ImmutableSwapper.Route memory)
@@ -102,8 +101,6 @@ abstract contract SwapperTestBase is Test {
             || e == AERODROME_SLIPSTREAM_3 || e == UNISWAP_V3;
     }
 
-    // A pool of exchange e that pays num/den of b for each unit of a. Zero for Uniswap v4, whose pools are keys. In the
-    // mock factory, it replaces any earlier pool of e for the same tokens.
     function _pool(ImmutableSwapper.Exchange e, address a, address b, uint256 num, uint256 den)
         internal
         returns (address pool)
@@ -173,7 +170,6 @@ abstract contract SwapperTestBase is Test {
         h[2] = c;
     }
 
-    // Mints amount of token to the holder, who approves exactly that.
     function _give(address token, uint256 amount) internal {
         MockToken(token).mint(holder, amount);
         vm.prank(holder);

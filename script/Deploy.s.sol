@@ -31,7 +31,6 @@ contract Deploy is Script {
     string public constant SALT_PREIMAGE = "metadex.cafe/ImmutableSwapper/v1";
     bytes32 public constant SALT = keccak256(bytes(SALT_PREIMAGE));
 
-    // One swapper for each output token: stablecoins, then ETH and BTC, then the exchanges' tokens.
     function outputs() public pure returns (address[6] memory) {
         return [USDC, EURC, WETH, CBBTC, AERO, HYDX];
     }
@@ -40,7 +39,6 @@ contract Deploy is Script {
         return ["USDC", "EURC", "WETH", "cbBTC", "AERO", "HYDX"];
     }
 
-    // In the order of ImmutableSwapper.Exchange.
     function exchanges() public pure returns (address[12] memory) {
         return [
             HYDREX_ALGEBRA,

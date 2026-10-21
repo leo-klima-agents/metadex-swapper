@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.37;
 
-// Hydrex's pairs, and Aero's and Aerodrome's classic pools. Uniswap v2's pairs have the same swap and sync, and
-// getReserves with narrower types in the same words. Slipstream pools have the same token0 and token1.
+// Also fits Uniswap v2's pairs, whose narrower getReserves types fill the same words, and Slipstream's token0, token1.
 interface IClassicPool {
     function token0() external view returns (address);
     function token1() external view returns (address);

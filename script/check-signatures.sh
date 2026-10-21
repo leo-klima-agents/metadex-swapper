@@ -7,7 +7,6 @@ I=src/interfaces
 status=0
 checked=()
 
-# Prints name(argument types)(return types) and the state mutability, as declared in a Solidity file.
 sig() {
   awk -v name="$2" '
     { gsub(/\r/, ""); sub(/\/\/.*/, ""); src = src " " $0 }
@@ -48,7 +47,6 @@ sig() {
     }' "$1"
 }
 
-# Prints a struct's field types.
 fields() {
   tr -d '\r' < "$1" | sed 's://.*$::' | tr -s '[:space:]' ' ' | grep -oE "struct $2 \{[^}]*\}" | sed -E "s/struct $2 \{//; s/\}//" |
     tr ';' '\n' | sed -E 's/^ +//; s/ .*//; s/^(Currency|IHooks)$/address/' | grep -v '^$' | paste -sd, -

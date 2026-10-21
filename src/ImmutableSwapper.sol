@@ -15,7 +15,6 @@ import {IUniswapV3SwapCallback} from "./interfaces/IUniswapV3SwapCallback.sol";
 import {IUnlockCallback} from "./interfaces/IUnlockCallback.sol";
 
 contract ImmutableSwapper is IAlgebraSwapCallback, IUniswapV3SwapCallback, IUnlockCallback {
-    // Each names a factory, or Uniswap v4's PoolManager, fixed at deployment.
     enum Exchange {
         HydrexAlgebra,
         HydrexClassic,
@@ -31,27 +30,26 @@ contract ImmutableSwapper is IAlgebraSwapCallback, IUniswapV3SwapCallback, IUnlo
         UniswapV4
     }
 
-    // One swap, from the previous hop's token, or the route's.
     struct Hop {
-        Exchange exchange; // picked by the caller
-        address pool; // zero for Uniswap v4
-        address tokenOut; // the last hop's is the output token; zero is native ETH, between two Uniswap v4 hops only
-        uint24 fee; // Uniswap v3 and v4 only
-        int24 tickSpacing; // Uniswap v4 only
+        Exchange exchange;
+        address pool;
+        address tokenOut;
+        uint24 fee;
+        int24 tickSpacing;
     }
 
     struct Route {
-        address token; // never the output token, never native ETH
-        uint256 amount; // type(uint256).max: the caller's balance, up to the allowance given
-        uint256 minPaid; // the least of the output token this route must pay the caller, after the fee
+        address token;
+        uint256 amount;
+        uint256 minPaid;
         Hop[] hops;
     }
 
     struct Result {
         bool done;
         uint256 amountIn;
-        uint256 amountOut; // before the fee
-        bytes reason; // why the route failed, if it did
+        uint256 amountOut;
+        bytes reason;
     }
 
     address public constant TREASURY = 0x450c72de8c0079B49AcedF294a13011bd09D125B;
@@ -61,7 +59,6 @@ contract ImmutableSwapper is IAlgebraSwapCallback, IUniswapV3SwapCallback, IUnlo
     uint160 private constant MIN_SQRT_RATIO = 4295128739;
     uint160 private constant MAX_SQRT_RATIO = 1461446703485210103287273052203988822378723970342;
 
-    // What every route ends in, and what the caller and the treasury are paid in.
     address public immutable outputToken;
     address private immutable hydrexAlgebra;
     address private immutable hydrexClassic;
@@ -78,7 +75,6 @@ contract ImmutableSwapper is IAlgebraSwapCallback, IUniswapV3SwapCallback, IUnlo
 
     bool private transient locked;
     bool private transient quoting;
-    // The pool, or Uniswap v4's manager, that may call back during the current hop, and what it is owed.
     address private transient expectedCaller;
     address private transient owedToken;
     uint256 private transient owedAmount;
@@ -110,7 +106,6 @@ contract ImmutableSwapper is IAlgebraSwapCallback, IUniswapV3SwapCallback, IUnlo
         locked = false;
     }
 
-    // exchanges_ is in the order of Exchange.
     constructor(address outputToken_, address[EXCHANGES] memory exchanges_) {
         if (outputToken_ == address(0)) revert ZeroAddress();
         for (uint256 i; i < EXCHANGES; ++i) {
@@ -157,9 +152,7 @@ contract ImmutableSwapper is IAlgebraSwapCallback, IUniswapV3SwapCallback, IUnlo
         emit Swapped(msg.sender, paid, fee);
     }
 
-    // Called with eth_call: what swap would return now. It moves nothing, and needs no allowance: an amount of
-    // type(uint256).max quotes the caller's whole balance. The lock matters: a swap nested in a quote would pull nothing,
-    // yet pay out.
+    // The lock matters: a swap nested in a quote would pull nothing, yet pay out.
     function quote(Route[] calldata routes) external nonReentrant returns (Result[] memory results) {
         quoting = true;
         results = new Result[](routes.length);
@@ -169,7 +162,6 @@ contract ImmutableSwapper is IAlgebraSwapCallback, IUniswapV3SwapCallback, IUnlo
         quoting = false;
     }
 
-    // Each Exchange's factory, or manager, in the enum's order.
     function exchanges() external view returns (address[] memory list) {
         list = new address[](EXCHANGES);
         for (uint256 i; i < EXCHANGES; ++i) {
@@ -177,7 +169,6 @@ contract ImmutableSwapper is IAlgebraSwapCallback, IUniswapV3SwapCallback, IUnlo
         }
     }
 
-    // Runs one route in a call of its own, so that a route that fails undoes everything it did.
     function runRoute(address caller, uint256 index, Route calldata route)
         external
         returns (uint256 amountIn, uint256 amountOut)
@@ -221,7 +212,6 @@ contract ImmutableSwapper is IAlgebraSwapCallback, IUniswapV3SwapCallback, IUnlo
             address tokenOut = hops[i].tokenOut;
             bool zeroForOne = token < tokenOut;
             (address currency0, address currency1) = zeroForOne ? (token, tokenOut) : (tokenOut, token);
-            // forge-lint: disable-next-line(unsafe-typecast)
             int256 amountSpecified = -int256(amount);
             int256 delta = manager.swap(
                 IPoolManager.PoolKey(currency0, currency1, hops[i].fee, hops[i].tickSpacing, address(0)),
@@ -231,7 +221,6 @@ contract ImmutableSwapper is IAlgebraSwapCallback, IUniswapV3SwapCallback, IUnlo
             (int256 owed, int256 out) = _split(delta, zeroForOne);
             if (owed != amountSpecified) revert PartialFill(msg.sender);
             // Never negative: an exact input swap through a pool without hooks only owes the swapper.
-            // forge-lint: disable-next-line(unsafe-typecast)
             amount = uint256(out);
             token = tokenOut;
         }
@@ -259,7 +248,6 @@ contract ImmutableSwapper is IAlgebraSwapCallback, IUniswapV3SwapCallback, IUnlo
         for (uint256 i; i < n; ++i) {
             Hop calldata hop = route.hops[i];
             if ((hop.tokenOut == outputToken) != (i == n - 1)) revert BadPath(index, i);
-            // A hop out to native ETH is not the last, which ends in the output token, so hops[i + 1] exists.
             if (
                 hop.tokenOut == address(0)
                     && (hop.exchange != Exchange.UniswapV4 || route.hops[i + 1].exchange != Exchange.UniswapV4)
@@ -283,7 +271,6 @@ contract ImmutableSwapper is IAlgebraSwapCallback, IUniswapV3SwapCallback, IUnlo
             e == Exchange.HydrexClassic ? IPairFactory(factory).isPair(pool) : IPoolFactory(factory).isPool(pool);
         if (!listed) return false;
         (address token0, address token1) = tokenIn < hop.tokenOut ? (tokenIn, hop.tokenOut) : (hop.tokenOut, tokenIn);
-        // Classic and Slipstream pools both expose their sorted tokens.
         return IClassicPool(pool).token0() == token0 && IClassicPool(pool).token1() == token1;
     }
 
@@ -318,9 +305,7 @@ contract ImmutableSwapper is IAlgebraSwapCallback, IUniswapV3SwapCallback, IUnlo
         (bool ok, bytes memory ret) = hop.pool
             .call(
                 abi.encodeCall(
-                    IConcentratedPool.swap,
-                    // forge-lint: disable-next-line(unsafe-typecast)
-                    (address(this), zeroForOne, int256(amount), _limit(zeroForOne), "")
+                    IConcentratedPool.swap, (address(this), zeroForOne, int256(amount), _limit(zeroForOne), "")
                 )
             );
         expectedCaller = address(0);
@@ -341,13 +326,13 @@ contract ImmutableSwapper is IAlgebraSwapCallback, IUniswapV3SwapCallback, IUnlo
         IClassicPool pool = IClassicPool(hop.pool);
         bool zeroForOne = tokenIn < hop.tokenOut;
         if (!quoting) {
-            // Synced first, the pool counts only this hop's input as input, which is all its price assumes.
+            // Synced first, the pool counts only what this hop sends as input.
             pool.sync();
             _transfer(tokenIn, address(pool), amount);
         }
         (uint256 reserveIn, uint256 reserveOut,) = pool.getReserves();
         if (!zeroForOne) (reserveIn, reserveOut) = (reserveOut, reserveIn);
-        // What the pool received: a token that charges a fee on transfers sends it less.
+        // A token that charges a fee on transfers sends the pool less.
         if (!quoting) amount = IERC20(tokenIn).balanceOf(address(pool)) - reserveIn;
 
         uint256 out;
@@ -369,7 +354,6 @@ contract ImmutableSwapper is IAlgebraSwapCallback, IUniswapV3SwapCallback, IUnlo
         return _balance(hop.tokenOut) - before;
     }
 
-    // Records who may call back during this hop, and what it is owed.
     function _expect(address caller, address token, uint256 amount, bool isToken0) private {
         expectedCaller = caller;
         owedToken = token;
@@ -379,25 +363,19 @@ contract ImmutableSwapper is IAlgebraSwapCallback, IUniswapV3SwapCallback, IUnlo
 
     function _checkCaller() private {
         if (msg.sender != expectedCaller) revert NotExpectedCaller(msg.sender);
-        // forge-lint: disable-next-line(missing-events-access-control)
         expectedCaller = address(0);
     }
 
     function _pay(int256 amount0Delta, int256 amount1Delta) private {
         _checkCaller();
         (int256 owed, int256 out) = owedIsToken0 ? (amount0Delta, amount1Delta) : (amount1Delta, amount0Delta);
-        // Exactly the hop's amount, of the hop's token: no partial fill, and nothing more.
-        // forge-lint: disable-next-line(unsafe-typecast)
         if (owed != int256(owedAmount)) revert PartialFill(msg.sender);
-        // forge-lint: disable-next-line(unsafe-typecast)
         if (quoting) revert Quoted(out < 0 ? uint256(-out) : 0);
         _transfer(owedToken, msg.sender, owedAmount);
     }
 
-    // What a hop returned: the difference in the swapper's balance, or the amount carried by Quoted while quoting.
     function _output(bool ok, bytes memory ret, address token, uint256 before) private view returns (uint256 amount) {
         if (!ok) {
-            // forge-lint: disable-next-line(unsafe-typecast)
             if (!quoting || ret.length != 36 || bytes4(ret) != Quoted.selector) _bubble(ret);
             assembly ("memory-safe") {
                 amount := mload(add(ret, 36))
@@ -410,7 +388,6 @@ contract ImmutableSwapper is IAlgebraSwapCallback, IUniswapV3SwapCallback, IUnlo
     // A BalanceDelta holds amount0 in its upper 128 bits and amount1 in its lower 128.
     function _split(int256 delta, bool zeroForOne) private pure returns (int256 owed, int256 out) {
         int256 amount0 = delta >> 128;
-        // forge-lint: disable-next-line(unsafe-typecast)
         int256 amount1 = int128(delta);
         (owed, out) = zeroForOne ? (amount0, amount1) : (amount1, amount0);
     }
@@ -435,7 +412,6 @@ contract ImmutableSwapper is IAlgebraSwapCallback, IUniswapV3SwapCallback, IUnlo
             || e == Exchange.AerodromeSlipstream2 || e == Exchange.AerodromeSlipstream3 || e == Exchange.UniswapV3;
     }
 
-    // No price limit.
     function _limit(bool zeroForOne) private pure returns (uint160) {
         return zeroForOne ? MIN_SQRT_RATIO + 1 : MAX_SQRT_RATIO - 1;
     }
@@ -454,7 +430,6 @@ contract ImmutableSwapper is IAlgebraSwapCallback, IUniswapV3SwapCallback, IUnlo
 
     function _call(address token, bytes memory data) private {
         (bool ok, bytes memory ret) = token.call(data);
-        // Nothing, from a contract, or a word of 1: anything else is a failure.
         if (!ok || (ret.length == 0 ? token.code.length == 0 : ret.length < 32 || abi.decode(ret, (uint256)) != 1)) {
             revert TokenCallFailed(token);
         }

@@ -10,7 +10,6 @@ import {MockToken} from "./mocks/MockToken.sol";
 import {SwapperTestBase} from "./utils/SwapperTestBase.sol";
 
 contract SwapTest is SwapperTestBase {
-    // What a hop through a new pool of e, at one for one, pays for amount.
     function _expected(ImmutableSwapper.Exchange e, address pool, address token, uint256 amount)
         internal
         view
@@ -100,7 +99,6 @@ contract SwapTest is SwapperTestBase {
         assertEq(weth.balanceOf(treasury), fee);
         assertEq(usdc.balanceOf(holder), 0);
 
-        // Its routes must end in WETH, and none may start with it.
         routes = _routes(
             _route(
                 address(tkn), 1e18, _hops(_hop(UNISWAP_V3, other, address(weth)), _hop(UNISWAP_V3, pool, address(usdc)))
@@ -142,7 +140,7 @@ contract SwapTest is SwapperTestBase {
     function test_aero_quotesAndSwapsWithTheTotalFee() public {
         ImmutableSwapper.Route memory r = _direct(AERO_VOLATILE, address(tkn), 1e18);
         MockClassicPool pool = MockClassicPool(r.hops[0].pool);
-        pool.setTax(500);
+        pool.setMevTax(500);
         uint256 expected = pool.getAmountOutWithTotalFee(1e18, address(tkn));
         assertLt(expected, pool.getAmountOut(1e18, address(tkn)));
         ImmutableSwapper.Result[] memory quoted = _quote(_routes(r));
@@ -248,7 +246,6 @@ contract SwapTest is SwapperTestBase {
         );
         assertEq(abi.encode(manager.swappedKeys()[0]), abi.encode(key));
 
-        // A pool that exists only with hooks is out of reach.
         key = _key(c0, c1);
         key.hooks = makeAddr("hooks");
         manager.initialize(key, 1, 1);
@@ -257,19 +254,17 @@ contract SwapTest is SwapperTestBase {
         );
     }
 
-    // Every exchange but Uniswap v4, whose hops name no pool, gets another's pool: the next one, wrapping before v4.
     function test_poolCheck_refusesAnotherExchangesPool() public {
-        for (uint256 i; i < EXCHANGES - 1; ++i) {
+        for (uint256 i; i < uint256(UNISWAP_V4); ++i) {
             ImmutableSwapper.Exchange e = ImmutableSwapper.Exchange(i);
-            address pool = _pool(ImmutableSwapper.Exchange((i + 1) % (EXCHANGES - 1)), address(tkn), address(usdc));
+            address pool = _pool(ImmutableSwapper.Exchange((i + 1) % uint256(UNISWAP_V4)), address(tkn), address(usdc));
             ImmutableSwapper.Route memory r = _route(address(tkn), 1e18, _hops(_hop(e, pool, address(usdc))));
             _expectRouteRevert(r, abi.encodeWithSelector(ImmutableSwapper.NotExchangePool.selector, e, pool));
         }
     }
 
-    // Every exchange but Uniswap v4, whose hops name no pool.
     function test_poolCheck_refusesAPoolForOtherTokens() public {
-        for (uint256 i; i < EXCHANGES - 1; ++i) {
+        for (uint256 i; i < uint256(UNISWAP_V4); ++i) {
             ImmutableSwapper.Exchange e = ImmutableSwapper.Exchange(i);
             address pool = _pool(e, address(weth), address(usdc));
             ImmutableSwapper.Route memory r = _route(address(tkn), 1e18, _hops(_hop(e, pool, address(usdc))));
@@ -277,10 +272,9 @@ contract SwapTest is SwapperTestBase {
         }
     }
 
-    // Every exchange but Uniswap v4, whose hops name no pool.
     function test_poolCheck_refusesAddressesNoFactoryMade() public {
         address[3] memory bad = [makeAddr("nobody"), address(usdc), address(0)];
-        for (uint256 i; i < EXCHANGES - 1; ++i) {
+        for (uint256 i; i < uint256(UNISWAP_V4); ++i) {
             ImmutableSwapper.Exchange e = ImmutableSwapper.Exchange(i);
             _pool(e, address(tkn), address(usdc));
             for (uint256 j; j < bad.length; ++j) {
@@ -372,17 +366,17 @@ contract SwapTest is SwapperTestBase {
     }
 
     function test_fee_onePercentOfEachRouteRoundedDown() public {
-        ImmutableSwapper.Route memory a = _direct(UNISWAP_V3, address(tkn), 199);
-        ImmutableSwapper.Route memory b = _direct(UNISWAP_V3, address(weth), 12_345);
-        _give(address(tkn), 199);
-        _give(address(weth), 12_345);
+        (uint256 x, uint256 y) = (199, 12_345);
+        ImmutableSwapper.Route memory a = _direct(UNISWAP_V3, address(tkn), x);
+        ImmutableSwapper.Route memory b = _direct(UNISWAP_V3, address(weth), y);
+        _give(address(tkn), x);
+        _give(address(weth), y);
 
         (, uint256 paid, uint256 fee) = _swap(_routes(a, b));
 
-        // 1 + 123, not 1% of the 12,544 in total.
-        assertEq(fee, 124);
-        assertEq(paid + fee, 199 + 12_345);
-        assertEq(usdc.balanceOf(treasury), 124);
+        assertEq(fee, x / 100 + y / 100);
+        assertEq(paid + fee, x + y);
+        assertEq(usdc.balanceOf(treasury), fee);
         assertEq(usdc.balanceOf(holder), paid);
     }
 
@@ -544,7 +538,6 @@ contract SwapTest is SwapperTestBase {
                 notExpected
             ];
             for (uint256 i; i < calls.length; ++i) {
-                // The pool's transfer of USDC to the swapper calls back into it.
                 usdc.arm(address(swapper), calls[i]);
                 _give(address(tkn), 1e18);
                 vm.prank(holder);
@@ -578,7 +571,6 @@ contract SwapTest is SwapperTestBase {
         assertEq(tkn.balanceOf(address(swapper)), 7e18);
     }
 
-    // Synced first, a classic pool counts what it holds beyond its reserves as no one's input.
     function test_classic_syncsThePoolFirst() public {
         ImmutableSwapper.Route memory r = _direct(AERODROME_CLASSIC, address(tkn), 1e18);
         MockClassicPool pool = MockClassicPool(r.hops[0].pool);
@@ -594,7 +586,6 @@ contract SwapTest is SwapperTestBase {
         (ImmutableSwapper.Result[] memory results,,) = _swap(_routes(r));
         assertEq(results[0].amountOut, expected);
 
-        // A route that pulls nothing gets nothing, whatever the pool holds.
         tkn.mint(address(pool), 5e18);
         r.amount = type(uint256).max;
         vm.prank(holder);
@@ -605,8 +596,7 @@ contract SwapTest is SwapperTestBase {
     function test_feeOnTransfer_worksThroughClassicPools() public {
         tkn.setTax(100);
         ImmutableSwapper.Route memory r = _direct(HYDREX_CLASSIC, address(tkn), 1e18);
-        // Taxed 1% on its way to the swapper, then 1% again on its way to the pool.
-        uint256 expected = MockClassicPool(r.hops[0].pool).getAmountOut(0.9801e18, address(tkn)) - 1;
+        uint256 expected = MockClassicPool(r.hops[0].pool).getAmountOut(1e18 * 99 / 100 * 99 / 100, address(tkn)) - 1;
         _give(address(tkn), 1e18);
         (ImmutableSwapper.Result[] memory results,,) = _swap(_routes(r));
         assertEq(results[0].amountIn, 0.99e18);
@@ -619,7 +609,7 @@ contract SwapTest is SwapperTestBase {
         _expectRouteRevert(_direct(UNISWAP_V4, address(tkn), 1e18), bytes("CurrencyNotSettled"));
     }
 
-    function test_tokens_returningNothingOrTrue_anythingElseFails() public {
+    function test_tokens_returnValues() public {
         tkn.setReturnData("");
         _give(address(tkn), 1e18);
         (ImmutableSwapper.Result[] memory results,,) = _swap(_routes(_direct(UNISWAP_V3, address(tkn), 1e18)));
@@ -658,7 +648,6 @@ contract SwapTest is SwapperTestBase {
             if (!quoted[i].done) continue;
             uint256 routeFee = quoted[i].amountOut / 100;
             uint256 routePaid = quoted[i].amountOut - routeFee;
-            // Each minimum is met exactly, or missed by one unit.
             routes[i].minPaid = missByOne[i] ? routePaid + 1 : routePaid;
             if (missByOne[i]) continue;
             expectedPaid += routePaid;
@@ -688,7 +677,6 @@ contract SwapTest is SwapperTestBase {
         assertEq(usdc.balanceOf(address(swapper)), 0);
     }
 
-    // Gives the holder the route's token, and expects the route to revert with reason, with skipFailed off.
     function _expectRouteRevert(ImmutableSwapper.Route memory r, bytes memory reason) internal {
         if (r.token != address(0)) _give(r.token, r.amount);
         vm.prank(holder);

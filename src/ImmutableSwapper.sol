@@ -340,7 +340,11 @@ contract ImmutableSwapper is IAlgebraSwapCallback, IUniswapV3SwapCallback, IUnlo
         Exchange e = hop.exchange;
         IClassicPool pool = IClassicPool(hop.pool);
         bool zeroForOne = tokenIn < hop.tokenOut;
-        if (!quoting) _transfer(tokenIn, address(pool), amount);
+        if (!quoting) {
+            // Synced first, the pool counts only this hop's input as input, which is all its price assumes.
+            pool.sync();
+            _transfer(tokenIn, address(pool), amount);
+        }
         (uint256 reserveIn, uint256 reserveOut,) = pool.getReserves();
         if (!zeroForOne) (reserveIn, reserveOut) = (reserveOut, reserveIn);
         // What the pool received: a token that charges a fee on transfers sends it less.
@@ -450,7 +454,8 @@ contract ImmutableSwapper is IAlgebraSwapCallback, IUniswapV3SwapCallback, IUnlo
 
     function _call(address token, bytes memory data) private {
         (bool ok, bytes memory ret) = token.call(data);
-        if (!ok || (ret.length == 0 ? token.code.length == 0 : !abi.decode(ret, (bool)))) {
+        // Nothing, from a contract, or a word of 1: anything else is a failure.
+        if (!ok || (ret.length == 0 ? token.code.length == 0 : ret.length < 32 || abi.decode(ret, (uint256)) != 1)) {
             revert TokenCallFailed(token);
         }
     }

@@ -162,9 +162,12 @@ Line numbers are in the vendored files, unless a Sourcify link is given.
    ([`Pair.sol`](hydrex/Pair.sol#L356-L389), [`Pool.sol`](aero/Pool.sol#L143-L199)). `to` cannot be either token
    (line 365, line 154). `getAmountOut` prices with the same fee and the same reserves
    ([`Pair.sol`](hydrex/Pair.sol#L443-L447)). Uniswap v2 takes 0.3%
-   ([`UniswapV2Pair.sol`](uniswap/v2/UniswapV2Pair.sol#L159-L187)).
+   ([`UniswapV2Pair.sol`](uniswap/v2/UniswapV2Pair.sol#L159-L187)). Anyone can call `sync`, which sets the reserves to
+   the balances ([`Pair.sol`](hydrex/Pair.sol#L399-L401), [`Pool.sol`](aero/Pool.sol#L260-L262),
+   [`UniswapV2Pair.sol`](uniswap/v2/UniswapV2Pair.sol#L198-L200)), so after it the only input is what is sent next.
 4. **Aero's fee depends on the caller.** `swap` and `getAmountOutWithTotalFee` both ask the factory's `getFee` with
-   `msg.sender`, so a quote the swapper asks for itself during its hop matches its swap
+   `msg.sender`, so a quote the swapper asks for itself during its hop matches its swap, once the pool is synced:
+   `swap` passes the fee module what it counts as input on both sides
    ([`Pool.sol`](aero/Pool.sol#L172), [`Pool.sol`](aero/Pool.sol#L389-L397),
    [`Pool.sol`](aero/Pool.sol#L548-L555)). `getAmountOut` asks `getBaseFee` with no caller and leaves the MEV tax out
    (lines 537-545). The MEV tax module reads the transaction's priority fee, and the total is capped at 20%
@@ -199,6 +202,7 @@ Line numbers are in the vendored files, unless a Sourcify link is given.
 | `getAmountOut(uint256,address)` | `0xf140a35a` | `IPair.sol`, `IPool.sol` |
 | `getAmountOutWithTotalFee(uint256,address)` | `0x0ea099c1` | Aero's `IPool.sol` |
 | `swap(uint256,uint256,address,bytes)` | `0x022c0d9f` | `IPair.sol`, `IPool.sol`, `IUniswapV2Pair.sol` |
+| `sync()` | `0xfff6cae9` | `Pair.sol`, `IPool.sol`, `IUniswapV2Pair.sol` |
 | `swap(address,bool,int256,uint160,bytes)` | `0x128acb08` | `IAlgebraPoolActions.sol`, `ICLPoolActions.sol`, `IUniswapV3PoolActions.sol` |
 | `unlock(bytes)` | `0x48c89491` | `IPoolManager.sol` |
 | `swap((address,address,uint24,int24,address),(bool,int256,uint160),bytes)` | `0xf3cd914c` | `IPoolManager.sol` |

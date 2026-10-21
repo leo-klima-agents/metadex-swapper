@@ -578,6 +578,30 @@ contract SwapTest is SwapperTestBase {
         assertEq(tkn.balanceOf(address(swapper)), 7e18);
     }
 
+    // Synced first, a classic pool counts what it holds beyond its reserves as no one's input.
+    function test_classic_syncsThePoolFirst() public {
+        ImmutableSwapper.Route memory r = _direct(AERODROME_CLASSIC, address(tkn), 1e18);
+        MockClassicPool pool = MockClassicPool(r.hops[0].pool);
+        tkn.mint(address(pool), 5e18);
+        usdc.mint(address(pool), 5e18);
+        uint256 snap = vm.snapshotState();
+        pool.sync();
+        uint256 expected = pool.getAmountOut(1e18, address(tkn));
+        vm.revertToState(snap);
+        _give(address(tkn), 1e18);
+
+        vm.expectCall(address(pool), abi.encodeCall(MockClassicPool.sync, ()));
+        (ImmutableSwapper.Result[] memory results,,) = _swap(_routes(r));
+        assertEq(results[0].amountOut, expected);
+
+        // A route that pulls nothing gets nothing, whatever the pool holds.
+        tkn.mint(address(pool), 5e18);
+        r.amount = type(uint256).max;
+        vm.prank(holder);
+        vm.expectRevert(abi.encodeWithSelector(ImmutableSwapper.NoOutput.selector, 0, 0));
+        swapper.swap(_routes(r), block.timestamp, false);
+    }
+
     function test_feeOnTransfer_worksThroughClassicPools() public {
         tkn.setTax(100);
         ImmutableSwapper.Route memory r = _direct(HYDREX_CLASSIC, address(tkn), 1e18);
@@ -595,18 +619,21 @@ contract SwapTest is SwapperTestBase {
         _expectRouteRevert(_direct(UNISWAP_V4, address(tkn), 1e18), bytes("CurrencyNotSettled"));
     }
 
-    function test_tokens_withoutReturnValueOrThatRevert() public {
-        tkn.setNoReturn(true);
+    function test_tokens_returningNothingOrTrue_anythingElseFails() public {
+        tkn.setReturnData("");
         _give(address(tkn), 1e18);
         (ImmutableSwapper.Result[] memory results,,) = _swap(_routes(_direct(UNISWAP_V3, address(tkn), 1e18)));
         assertTrue(results[0].done);
 
-        tkn.setNoReturn(false);
+        bytes memory failed = abi.encodeWithSelector(ImmutableSwapper.TokenCallFailed.selector, address(tkn));
+        bytes[3] memory bad = [abi.encode(false), abi.encode(uint256(2)), bytes(hex"01")];
+        for (uint256 i; i < bad.length; ++i) {
+            tkn.setReturnData(bad[i]);
+            _expectRouteRevert(_direct(UNISWAP_V3, address(tkn), 1e18), failed);
+        }
+        tkn.setReturnData(abi.encode(true));
         tkn.setReverts(true);
-        _expectRouteRevert(
-            _direct(UNISWAP_V3, address(tkn), 1e18),
-            abi.encodeWithSelector(ImmutableSwapper.TokenCallFailed.selector, address(tkn))
-        );
+        _expectRouteRevert(_direct(UNISWAP_V3, address(tkn), 1e18), failed);
     }
 
     function testFuzz_feeMinimumsAndBalances(

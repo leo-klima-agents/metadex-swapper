@@ -5,7 +5,7 @@ import {ImmutableSwapper} from "../src/ImmutableSwapper.sol";
 import {Deploy} from "./Deploy.s.sol";
 
 contract Hashes is Deploy {
-    function record() external {
+    function record(string memory path) external {
         string memory artifact = vm.readFile("out/ImmutableSwapper.sol/ImmutableSwapper.json");
         address[6] memory o = outputs();
         string[6] memory s = symbols();
@@ -29,6 +29,6 @@ contract Hashes is Deploy {
         json = vm.serializeBytes32(root, "creationCodeKeccak", keccak256(type(ImmutableSwapper).creationCode));
         json = vm.serializeAddress(root, "exchanges", local.exchanges());
         json = vm.serializeString(root, "deployments", deployments);
-        vm.writeJson(json, "verification/bytecode-hashes.json");
+        vm.writeJson(json, path);
     }
 }

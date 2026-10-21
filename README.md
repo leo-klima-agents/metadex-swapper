@@ -11,12 +11,12 @@ deployed yet. Deployed as described under [Deployment](#deployment), the six swa
 
 | Output | Token | Swapper |
 | --- | --- | --- |
-| USDC | `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913` | `0x990576B202c2a8A37271901A41575aD31BD1DBAf` |
-| EURC | `0x60a3E35Cc302bFA44Cb288Bc5a4F316Fdb1adb42` | `0x8e560Fe7bac3219E059F2401C55f17C118574a9c` |
-| WETH | `0x4200000000000000000000000000000000000006` | `0x75Be6A4E63B5797765AFCdCd2C5aC53937051E96` |
-| cbBTC | `0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf` | `0x255fD456E2078533867bd2e7e64e3436E84A87b3` |
-| AERO | `0x3f5bF3EdAc59d650D8fDf9657a71F2f904A3a4Ee` | `0x2fCf59260A857B43AB4CdB5204a60E9E6e412D55` |
-| HYDX | `0x00000e7efa313F4E11Bfff432471eD9423AC6B30` | `0x3b45620Df5Fac3A8D76fF2b918A5C4CA558D9A50` |
+| USDC | `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913` | `0x6D2f6Cd8493ffc92e759335aDe16186Ea535D3f9` |
+| EURC | `0x60a3E35Cc302bFA44Cb288Bc5a4F316Fdb1adb42` | `0x6A5b0e550aBcbc4f95443DADeCDBeC37bf354263` |
+| WETH | `0x4200000000000000000000000000000000000006` | `0x2aA0b0a33567f3A5bB72783111886a5aE0863d76` |
+| cbBTC | `0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf` | `0xffCB5ebAfB324D7243fB586A9EE8dA5b55Ea3F4a` |
+| AERO | `0x3f5bF3EdAc59d650D8fDf9657a71F2f904A3a4Ee` | `0xB74d8Ff610c44251A05d6F7b1b701142729Fc3DD` |
+| HYDX | `0x00000e7efa313F4E11Bfff432471eD9423AC6B30` | `0x621D75156e884AeCd4bC38d2478F8ab4DD5EE1F1` |
 
 ## How it works
 
@@ -73,8 +73,10 @@ pools are only asked for their price. So `quote` and `swap` can differ:
 - A classic pool that its exchange paused still quotes.
 - A token that charges a fee on transfers is quoted as if it didn't. Through Algebra, Slipstream and Uniswap v3 and v4
   pools, its `swap` then always reverts.
-- A classic pool also pays for any of the input token it holds beyond its reserves, which anyone could take with its
-  `skim`. So `swap` can pay more than `quote`, even for a route that pulls nothing.
+- `swap` syncs a classic pool before sending it the input, so what the pool holds beyond its reserves joins them.
+  `quote` prices with the reserves as they are, so the two differ when a pool holds such tokens.
+- Code that an exchange's admins control runs inside the swap, for `quote` as for `swap`: Hydrex's plugins and Aero's
+  swap hook. It can skew a quote through those pools, so check such a quote against another price.
 
 To see what a call will do, simulate `swap` itself, after its approvals, with `eth_simulateV1`.
 
@@ -103,7 +105,7 @@ that their registries list.
 - **Algebra, Slipstream and Uniswap v3 pools** send their output, then call the swapper back to be paid. The swapper
   pays only the pool it is swapping through, only during that swap, only once, and only exactly the hop's amount of the
   hop's token. A pool that takes less than the whole amount, a partial fill, reverts the route.
-- **Hydrex's pairs, Aero's and Aerodrome's classic pools, and Uniswap v2's pairs** are sent the input first. The
+- **Hydrex's pairs, Aero's and Aerodrome's classic pools, and Uniswap v2's pairs** are synced, then sent the input. The
   swapper counts what the pool received, prices it with the pool's `getAmountOut`, Aero's `getAmountOutWithTotalFee`,
   or Uniswap v2's 0.3% formula, and asks for that much. Hydrex's stable pairs can quote one wei more than they accept,
   so it asks Hydrex's pairs for one wei less.
@@ -124,13 +126,14 @@ anything there, so tokens that trade only in pools with hooks, as many launchpad
 | Uniswap | The owners of the v3 factory, `0xaBEA76658b205696d49B5F91b2a03536cB8A3bE1`, and of the v4 manager, `0x31FAfd4889FA1269F7a13A66eE0fB458f27D72A9` | v2 and v3: nothing that changes what a swap costs. v4: a protocol fee of up to 0.1%. |
 
 None of them can take the swapper's tokens, given how it pays pools. The worst they can do is a worse price, down to the
-route's minimum, or a revert.
+route's minimum, or a revert, and, through a plugin or hook, a wrong quote.
 
 ## For holders
 
 1. Quote your routes with `quote`, and leave out those that fail, or that are worth less than their gas.
 2. Approve each token for the exact amount. There is no `permit`, no Permit2 and no signature of any kind.
-3. Call `swap` with each route's `minPaid` a little under its quote, a deadline, and `skipFailed` set.
+3. Call `swap` with each route's `minPaid` a little under its quote, a deadline, and `skipFailed` set. Check quotes
+   through Hydrex's Algebra pools and Aero's Slipstream pools against another price first.
 
 The fee is 1% of the output each route returns, rounded down, paid in the output token to the 2-of-3 Safe
 `0x450c72de8c0079B49AcedF294a13011bd09D125B` on each swap. It is fixed in the code: nobody can change it. The pools'
@@ -229,11 +232,11 @@ done
 ## Verification
 
 To check that a deployed swapper is this repository's code, compare its code hash with the one recorded in
-`verification/bytecode-hashes.json`, which `forge test` checks against a build of this repository.
+`verification/bytecode-hashes.json`, which `script/check-verification.sh` checks against a build of this repository.
 Each swapper's code holds its output token, so each has its own hash:
 
 ```
-cast keccak $(cast code 0x990576B202c2a8A37271901A41575aD31BD1DBAf --rpc-url $BASE_RPC_URL)
+cast keccak $(cast code 0x6D2f6Cd8493ffc92e759335aDe16186Ea535D3f9 --rpc-url $BASE_RPC_URL)
 jq -j .deployments.USDC.runtimeKeccak verification/bytecode-hashes.json
 ```
 
@@ -249,8 +252,7 @@ in `BASE_RPC_URL`.
   route's quote at that block, from the exchanges' own quotes.
 - `script/check-signatures.sh` checks the interfaces in `src/interfaces/` against the exchanges' sources vendored in
   `test/upstream/`.
-- `script/check-verification.sh` checks that `verification/` matches the build, all but the runtime hashes, which
-  `forge test` checks.
+- `script/check-verification.sh` checks that `verification/` matches the build and `script/Deploy.s.sol`.
 - `script/refresh-verification.sh` regenerates `verification/` after a change to the source or the deploy script.
 
 [`test/upstream/UPSTREAM.md`](test/upstream/UPSTREAM.md) records the contracts the swapper is written against, their

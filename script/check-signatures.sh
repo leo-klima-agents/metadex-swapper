@@ -7,7 +7,7 @@ I=src/interfaces
 status=0
 checked=()
 
-# Prints name(argument types)(return types) as declared in a Solidity file.
+# Prints name(argument types)(return types) and the state mutability, as declared in a Solidity file.
 sig() {
   awk -v name="$2" '
     { gsub(/\r/, ""); sub(/\/\/.*/, ""); src = src " " $0 }
@@ -39,7 +39,12 @@ sig() {
         r = substr(r, index(r, "(") + 1)
         ret = substr(r, 1, index(r, ")") - 1)
       }
-      printf "%s(%s)(%s)\n", name, types(args), types(ret)
+      head = j ? substr(rest, 1, j - 1) : rest
+      m = "nonpayable"
+      if (head ~ /(^|[ \t])view([ \t]|$)/) m = "view"
+      else if (head ~ /(^|[ \t])pure([ \t]|$)/) m = "pure"
+      else if (head ~ /(^|[ \t])payable([ \t]|$)/) m = "payable"
+      printf "%s(%s)(%s) %s\n", name, types(args), types(ret), m
     }' "$1"
 }
 
@@ -64,8 +69,8 @@ check() {
 
 check_struct() {
   local name=$1 upstream=$2 ours theirs
-  ours=$(fields "$I/IPoolManager.sol" "$name")
-  theirs=$(fields "$U/$upstream" "$name")
+  ours=$(fields "$I/IPoolManager.sol" "$name") || true
+  theirs=$(fields "$U/$upstream" "$name") || true
   if [ -z "$ours" ] || [ "$ours" != "$theirs" ]; then
     echo "::error::struct $name: $I/IPoolManager.sol has ($ours), $upstream has ($theirs)" >&2
     status=1
@@ -88,10 +93,13 @@ for name in token0 token1 getReserves getAmountOut swap; do
   check IClassicPool.sol "$name" aero/IPool.sol
 done
 check IClassicPool.sol getAmountOutWithTotalFee aero/IPool.sol
+check IClassicPool.sol sync hydrex/Pair.sol
+check IClassicPool.sol sync aero/IPool.sol
+check IClassicPool.sol sync uniswap/v2/IUniswapV2Pair.sol
 check IClassicPool.sol swap uniswap/v2/IUniswapV2Pair.sol
 # Uniswap v2's getReserves returns narrower types, each in a word of its own, which IClassicPool reads as uint256.
-v2=$(sig "$U/uniswap/v2/IUniswapV2Pair.sol" getReserves)
-if [ "$v2" != "getReserves()(uint112,uint112,uint32)" ]; then
+v2=$(sig "$U/uniswap/v2/IUniswapV2Pair.sol" getReserves) || v2=missing
+if [ "$v2" != "getReserves()(uint112,uint112,uint32) view" ]; then
   echo "::error::uniswap/v2/IUniswapV2Pair.sol has $v2" >&2
   status=1
 else

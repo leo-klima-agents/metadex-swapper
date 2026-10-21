@@ -1,14 +1,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.37;
 
-// An ERC-20 that can charge a fee on transfers, call a hook on its next transfer, revert, or return nothing.
+// An ERC-20 that can charge a fee on transfers, call a hook on its next transfer, revert, or return any data.
 contract MockToken {
     mapping(address => uint256) public balanceOf;
     mapping(address => mapping(address => uint256)) public allowance;
 
     uint256 public taxBps;
     bool public reverts;
-    bool public noReturn;
+    bool public rawReturn;
+    bytes public returnData;
     address public hookTarget;
     bytes public hookData;
 
@@ -24,8 +25,10 @@ contract MockToken {
         reverts = reverts_;
     }
 
-    function setNoReturn(bool noReturn_) external {
-        noReturn = noReturn_;
+    // What transfer and transferFrom return from now on, instead of true.
+    function setReturnData(bytes calldata data) external {
+        rawReturn = true;
+        returnData = data;
     }
 
     // Calls target with data on the next transfer.
@@ -67,9 +70,10 @@ contract MockToken {
     }
 
     function _ok() internal view returns (bool) {
-        if (noReturn) {
+        if (rawReturn) {
+            bytes memory data = returnData;
             assembly ("memory-safe") {
-                return(0, 0)
+                return(add(data, 0x20), mload(data))
             }
         }
         return true;

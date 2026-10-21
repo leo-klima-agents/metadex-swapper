@@ -24,7 +24,7 @@ contract SelectorsTest is Test {
     }
 
     function _pins() internal pure returns (Pin[] memory p) {
-        p = new Pin[](24);
+        p = new Pin[](25);
         p[0] = Pin(IERC20.balanceOf.selector, "balanceOf(address)");
         p[1] = Pin(IERC20.allowance.selector, "allowance(address,address)");
         p[2] = Pin(IERC20.transfer.selector, "transfer(address,uint256)");
@@ -40,16 +40,17 @@ contract SelectorsTest is Test {
         p[12] = Pin(IClassicPool.getAmountOut.selector, "getAmountOut(uint256,address)");
         p[13] = Pin(IClassicPool.getAmountOutWithTotalFee.selector, "getAmountOutWithTotalFee(uint256,address)");
         p[14] = Pin(IClassicPool.swap.selector, "swap(uint256,uint256,address,bytes)");
-        p[15] = Pin(IConcentratedPool.swap.selector, "swap(address,bool,int256,uint160,bytes)");
-        p[16] = Pin(IPoolManager.unlock.selector, "unlock(bytes)");
-        p[17] =
+        p[15] = Pin(IClassicPool.sync.selector, "sync()");
+        p[16] = Pin(IConcentratedPool.swap.selector, "swap(address,bool,int256,uint160,bytes)");
+        p[17] = Pin(IPoolManager.unlock.selector, "unlock(bytes)");
+        p[18] =
             Pin(IPoolManager.swap.selector, "swap((address,address,uint24,int24,address),(bool,int256,uint160),bytes)");
-        p[18] = Pin(IPoolManager.sync.selector, "sync(address)");
-        p[19] = Pin(IPoolManager.settle.selector, "settle()");
-        p[20] = Pin(IPoolManager.take.selector, "take(address,address,uint256)");
-        p[21] = Pin(IAlgebraSwapCallback.algebraSwapCallback.selector, "algebraSwapCallback(int256,int256,bytes)");
-        p[22] = Pin(IUniswapV3SwapCallback.uniswapV3SwapCallback.selector, "uniswapV3SwapCallback(int256,int256,bytes)");
-        p[23] = Pin(IUnlockCallback.unlockCallback.selector, "unlockCallback(bytes)");
+        p[19] = Pin(IPoolManager.sync.selector, "sync(address)");
+        p[20] = Pin(IPoolManager.settle.selector, "settle()");
+        p[21] = Pin(IPoolManager.take.selector, "take(address,address,uint256)");
+        p[22] = Pin(IAlgebraSwapCallback.algebraSwapCallback.selector, "algebraSwapCallback(int256,int256,bytes)");
+        p[23] = Pin(IUniswapV3SwapCallback.uniswapV3SwapCallback.selector, "uniswapV3SwapCallback(int256,int256,bytes)");
+        p[24] = Pin(IUnlockCallback.unlockCallback.selector, "unlockCallback(bytes)");
     }
 
     function test_matchSignatures() public pure {

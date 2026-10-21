@@ -223,8 +223,6 @@ for s in USDC EURC WETH cbBTC AERO HYDX; do
   ARGS=$(jq -j ".deployments.$s.constructorArgs" $H)
   forge verify-contract $ADDRESS src/ImmutableSwapper.sol:ImmutableSwapper --chain base \
     --constructor-args $ARGS --license-type MIT --watch
-  forge verify-contract $ADDRESS src/ImmutableSwapper.sol:ImmutableSwapper --chain base \
-    --constructor-args $ARGS --verifier sourcify
 done
 ```
 

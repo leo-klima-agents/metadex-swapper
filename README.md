@@ -157,9 +157,9 @@ to WETH costs about what WETH to USDC does.
 | Hydrex Algebra, WETH to USDC | ~1,612,000 |
 | HYDX to WETH on Hydrex Algebra, then to USDC on Uniswap v3 | ~1,913,000 |
 | Each further token, to USDC on Aerodrome classic | 153,000 to 292,000, ~220,000 on average |
-| Each further token, to WETH then USDC on Aerodrome classic | 205,000 to 344,000, ~267,000 on average |
+| Each further token, to WETH then USDC on Aerodrome classic | 205,000 to 344,000, ~272,000 on average |
 | 20 routes of 3 Uniswap v2 hops | ~3,419,000 |
-| 5 routes of 3 Hydrex Algebra hops | ~14,913,000 |
+| 5 routes of 3 Hydrex Algebra hops | ~15,212,000 |
 
 There is no limit on the number of routes: Base's cap of 16,777,216 gas on a transaction is the limit. About 65 tokens
 fit in one call when each has a pool against USDC, and about 50 when each goes through WETH. Hydrex's Algebra pools cost

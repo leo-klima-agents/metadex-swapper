@@ -6,17 +6,17 @@ Aerodrome and Uniswap. The caller picks the exchange and the pool of every hop, 
 that exchange's own factory. It sends 1% of the output to a fixed treasury.
 
 It is deployed once for each output token, which is fixed in that deployment's code. The contract has no owner, no
-settings and no upgrade path. All of it is in [`src/ImmutableSwapper.sol`](src/ImmutableSwapper.sol). It is not
-deployed yet. Deployed as described under [Deployment](#deployment), the six swappers will be at:
+settings and no upgrade path. All of it is in [`src/ImmutableSwapper.sol`](src/ImmutableSwapper.sol). The six
+swappers are deployed on Base, and verified on Basescan and Sourcify with exact matches:
 
 | Output | Token | Swapper |
 | --- | --- | --- |
-| USDC | `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913` | `0x31791f453d2100e728E012c9e189C0828adf4b6F` |
-| EURC | `0x60a3E35Cc302bFA44Cb288Bc5a4F316Fdb1adb42` | `0x2cd8019d4F98e2fE2Ba705d8E7D38284c2a1450E` |
-| WETH | `0x4200000000000000000000000000000000000006` | `0xe5cbD828c2227E17f7FF8BD54C7A1e6012694Ff2` |
-| cbBTC | `0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf` | `0x54805B6E6266c952627E47B8ADe4ae65c5DEA7d0` |
-| AERO | `0x3f5bF3EdAc59d650D8fDf9657a71F2f904A3a4Ee` | `0xdd575A498C625AF96ac89efE578Dc68f4c9aB963` |
-| HYDX | `0x00000e7efa313F4E11Bfff432471eD9423AC6B30` | `0xC629B1A13a0E1d4F0C38cD80d22E4AAC363cc8bC` |
+| USDC | `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913` | [`0x31791f453d2100e728E012c9e189C0828adf4b6F`](https://basescan.org/address/0x31791f453d2100e728E012c9e189C0828adf4b6F#code) |
+| EURC | `0x60a3E35Cc302bFA44Cb288Bc5a4F316Fdb1adb42` | [`0x2cd8019d4F98e2fE2Ba705d8E7D38284c2a1450E`](https://basescan.org/address/0x2cd8019d4F98e2fE2Ba705d8E7D38284c2a1450E#code) |
+| WETH | `0x4200000000000000000000000000000000000006` | [`0xe5cbD828c2227E17f7FF8BD54C7A1e6012694Ff2`](https://basescan.org/address/0xe5cbD828c2227E17f7FF8BD54C7A1e6012694Ff2#code) |
+| cbBTC | `0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf` | [`0x54805B6E6266c952627E47B8ADe4ae65c5DEA7d0`](https://basescan.org/address/0x54805B6E6266c952627E47B8ADe4ae65c5DEA7d0#code) |
+| AERO | `0x3f5bF3EdAc59d650D8fDf9657a71F2f904A3a4Ee` | [`0xdd575A498C625AF96ac89efE578Dc68f4c9aB963`](https://basescan.org/address/0xdd575A498C625AF96ac89efE578Dc68f4c9aB963#code) |
+| HYDX | `0x00000e7efa313F4E11Bfff432471eD9423AC6B30` | [`0xC629B1A13a0E1d4F0C38cD80d22E4AAC363cc8bC`](https://basescan.org/address/0xC629B1A13a0E1d4F0C38cD80d22E4AAC363cc8bC#code) |
 
 ## How it works
 
@@ -199,21 +199,31 @@ results of `eth_call` at the limit you send.
 
 ## Deployment
 
-The swappers are not deployed yet. Once they are, this section will record the transactions.
+The six swappers were deployed on 21 October 2026, in Base block 52,894,916, from
+`0x85674b49dCD5976cF430D3F35f0AD45c4401A213`. The transactions are recorded in
+[`broadcast/Deploy.s.sol/8453/run-latest.json`](broadcast/Deploy.s.sol/8453/run-latest.json):
 
-Each swapper is created on Base through the CREATE2 deployer `0x4e59b44847b379578588920cA78FbF26c0B4956C`, with the salt
-`keccak256("metadex.cafe/ImmutableSwapper/v1")`. Their constructor arguments, the output token and then the exchanges in
-the order of `Exchange`, set their addresses apart.
+| Output | Transaction |
+| --- | --- |
+| USDC | [`0x4ef3fa97cc025a34bd03e08df9994781e25bef5ea182b90dab2deb9c1df9382a`](https://basescan.org/tx/0x4ef3fa97cc025a34bd03e08df9994781e25bef5ea182b90dab2deb9c1df9382a) |
+| EURC | [`0x87f61b2d13f77faa51da27d504f6158adc97d58f14fc6bf683025ee88500ec2a`](https://basescan.org/tx/0x87f61b2d13f77faa51da27d504f6158adc97d58f14fc6bf683025ee88500ec2a) |
+| WETH | [`0x7eb8d356413a4fe3a7f352c5cdac08dd4ec29271b883634461f0399dcea6940a`](https://basescan.org/tx/0x7eb8d356413a4fe3a7f352c5cdac08dd4ec29271b883634461f0399dcea6940a) |
+| cbBTC | [`0x642220ca25c5e2bc4df3dae8ba1ef0647d64f05daf6d8697f94372a2d208003d`](https://basescan.org/tx/0x642220ca25c5e2bc4df3dae8ba1ef0647d64f05daf6d8697f94372a2d208003d) |
+| AERO | [`0x4db43c8745609ff0bdd7393c7bcdfa453e7d66b64ce72886fbc145b7bcc6e46b`](https://basescan.org/tx/0x4db43c8745609ff0bdd7393c7bcdfa453e7d66b64ce72886fbc145b7bcc6e46b) |
+| HYDX | [`0x90051331fd42eefe7836da478e54468fc62b79d7dcfa7d54d2fce3377d83ef23`](https://basescan.org/tx/0x90051331fd42eefe7836da478e54468fc62b79d7dcfa7d54d2fce3377d83ef23) |
 
-Deployment steps:
+Each swapper was created on Base through the CREATE2 deployer `0x4e59b44847b379578588920cA78FbF26c0B4956C`, with the
+salt `keccak256("metadex.cafe/ImmutableSwapper/v1")`. Their constructor arguments, the output token and then the
+exchanges in the order of `Exchange`, set their addresses apart.
+
+They were deployed with these steps:
 
 1. Install Foundry v1.8.5, the version CI uses, with `foundryup --install v1.8.5`. Another version can compile
    different bytecode.
 2. Run `forge test` with `BASE_RPC_URL` set, then `script/check-verification.sh`.
 3. Do a dry run with `forge script script/Deploy.s.sol --rpc-url $BASE_RPC_URL`, and check that it logs the six
    addresses in the table at the top. It skips any that is already deployed.
-4. Deploy, then verify each contract on Basescan and Sourcify, and commit
-   `broadcast/Deploy.s.sol/8453/run-latest.json`:
+4. Deploy, verify each contract, and commit `broadcast/Deploy.s.sol/8453/run-latest.json`:
 
 ```
 forge script script/Deploy.s.sol --rpc-url $BASE_RPC_URL --broadcast --ledger

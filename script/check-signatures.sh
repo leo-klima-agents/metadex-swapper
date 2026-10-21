@@ -95,7 +95,7 @@ check IClassicPool.sol sync hydrex/Pair.sol
 check IClassicPool.sol sync aero/IPool.sol
 check IClassicPool.sol sync uniswap/v2/IUniswapV2Pair.sol
 check IClassicPool.sol swap uniswap/v2/IUniswapV2Pair.sol
-# Uniswap v2's getReserves returns narrower types, each in a word of its own, which IClassicPool reads as uint256.
+# Uniswap v2's getReserves returns smaller types, but each fills a whole word, so IClassicPool reads them as uint256.
 v2=$(sig "$U/uniswap/v2/IUniswapV2Pair.sol" getReserves) || v2=missing
 if [ "$v2" != "getReserves()(uint112,uint112,uint32) view" ]; then
   echo "::error::uniswap/v2/IUniswapV2Pair.sol has $v2" >&2

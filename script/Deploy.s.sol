@@ -11,7 +11,6 @@ contract Deploy is Script {
     address public constant EURC = 0x60a3E35Cc302bFA44Cb288Bc5a4F316Fdb1adb42;
     address public constant WETH = 0x4200000000000000000000000000000000000006;
     address public constant CBBTC = 0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf;
-    // Aero's token since its v3, not Aerodrome's AERO.
     address public constant AERO = 0x3f5bF3EdAc59d650D8fDf9657a71F2f904A3a4Ee;
     address public constant HYDX = 0x00000e7efa313F4E11Bfff432471eD9423AC6B30;
 

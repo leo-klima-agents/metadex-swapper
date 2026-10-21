@@ -547,6 +547,16 @@ contract SwapTest is SwapperTestBase {
         }
     }
 
+    function test_reentrancy_swapInsideAQuote() public {
+        ImmutableSwapper.Route[] memory routes = _routes(_direct(UNISWAP_V3, address(tkn), 1e18));
+        tkn.mint(holder, 1e18);
+        usdc.arm(address(swapper), abi.encodeCall(ImmutableSwapper.swap, (routes, block.timestamp, false)));
+
+        ImmutableSwapper.Result[] memory quoted = _quote(routes);
+
+        assertEq(quoted[0].reason, abi.encodeWithSelector(ImmutableSwapper.Reentrancy.selector));
+    }
+
     function test_pullsOnlyFromTheCaller() public {
         tkn.mint(stranger, 1e18);
         vm.prank(stranger);

@@ -152,7 +152,6 @@ contract ImmutableSwapper is IAlgebraSwapCallback, IUniswapV3SwapCallback, IUnlo
         emit Swapped(msg.sender, paid, fee);
     }
 
-    // The lock matters: a swap nested in a quote would pull nothing, yet pay out.
     function quote(Route[] calldata routes) external nonReentrant returns (Result[] memory results) {
         quoting = true;
         results = new Result[](routes.length);
@@ -220,7 +219,7 @@ contract ImmutableSwapper is IAlgebraSwapCallback, IUniswapV3SwapCallback, IUnlo
             );
             (int256 owed, int256 out) = _split(delta, zeroForOne);
             if (owed != amountSpecified) revert PartialFill(msg.sender);
-            // Never negative: an exact input swap through a pool without hooks only owes the swapper.
+            // Without hooks, an exact-input swap only ever pays the swapper, so out can't be negative.
             amount = uint256(out);
             token = tokenOut;
         }
@@ -261,7 +260,6 @@ contract ImmutableSwapper is IAlgebraSwapCallback, IUniswapV3SwapCallback, IUnlo
         Exchange e = hop.exchange;
         address pool = hop.pool;
         if (e == Exchange.UniswapV4) return pool == address(0);
-        // Factories answer zero for a pair they don't know.
         if (pool == address(0)) return false;
         address factory = _factory(e);
         if (e == Exchange.HydrexAlgebra) return IAlgebraFactory(factory).poolByPair(tokenIn, hop.tokenOut) == pool;
@@ -283,7 +281,6 @@ contract ImmutableSwapper is IAlgebraSwapCallback, IUniswapV3SwapCallback, IUnlo
                 while (next < hops.length && hops[next].exchange == Exchange.UniswapV4) {
                     ++next;
                 }
-                // The run pays its first token inside unlock, so its output can be counted only if it's another token.
                 if (hops[next - 1].tokenOut == token) revert BadPath(index, next - 1);
                 amount = _swapV4(hops[i:next], token, amount);
             } else if (_isConcentrated(e)) {
@@ -326,25 +323,22 @@ contract ImmutableSwapper is IAlgebraSwapCallback, IUniswapV3SwapCallback, IUnlo
         IClassicPool pool = IClassicPool(hop.pool);
         bool zeroForOne = tokenIn < hop.tokenOut;
         if (!quoting) {
-            // Synced first, the pool counts only what this hop sends as input.
             pool.sync();
             _transfer(tokenIn, address(pool), amount);
         }
         (uint256 reserveIn, uint256 reserveOut,) = pool.getReserves();
         if (!zeroForOne) (reserveIn, reserveOut) = (reserveOut, reserveIn);
-        // A token that charges a fee on transfers sends the pool less.
         if (!quoting) amount = IERC20(tokenIn).balanceOf(address(pool)) - reserveIn;
 
         uint256 out;
         if (e == Exchange.UniswapV2) {
             out = amount * 997 * reserveOut / (reserveIn * 1000 + amount * 997);
         } else if (e == Exchange.AeroVolatile || e == Exchange.AeroStable) {
-            // Aero's fee depends on the caller and on the transaction's priority fee, so the swapper asks itself.
             out = pool.getAmountOutWithTotalFee(amount, tokenIn);
         } else {
             out = pool.getAmountOut(amount, tokenIn);
         }
-        // Hydrex's pairs run Solidly's first stable curve, which can quote one wei more than the pair then accepts.
+        // Hydrex's stable pairs sometimes quote one wei more than their swap will accept.
         if (e == Exchange.HydrexClassic && out != 0) --out;
         if (quoting || out == 0) return out;
 
@@ -385,7 +379,6 @@ contract ImmutableSwapper is IAlgebraSwapCallback, IUniswapV3SwapCallback, IUnlo
         }
     }
 
-    // A BalanceDelta holds amount0 in its upper 128 bits and amount1 in its lower 128.
     function _split(int256 delta, bool zeroForOne) private pure returns (int256 owed, int256 out) {
         int256 amount0 = delta >> 128;
         int256 amount1 = int128(delta);

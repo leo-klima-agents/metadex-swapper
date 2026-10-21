@@ -58,7 +58,6 @@ LOOKUP = {
     "UniswapV3": ("getPool(address,address,uint24)", [V3_FEE]),
 }
 
-# name: (holder, token, amount, [(exchange, token out, (fee, tick spacing) for Uniswap v4)])
 ROUTES = {
     "hydrexAlgebra": (MORPHO, WETH, 10**16, [("HydrexAlgebra", USDC)]),
     "hydrexClassic": (HYDX_VE, HYDX, 10**21, [("HydrexClassic", USDC)]),
@@ -89,7 +88,7 @@ ROUTES = {
 
 MIN_SQRT_RATIO = 4295128739
 MAX_SQRT_RATIO = 1461446703485210103287273052203988822378723970342
-# Called back by a concentrated pool, it reverts with the two amounts: the pool's own quote.
+# A swap callback that reverts with the two amounts the pool passes it, which are the pool's own quote.
 PROBE = "0x00000000000000000000000000000000000c0de1"
 PROBE_CODE = "0x6040600460003760406000fd"
 

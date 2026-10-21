@@ -226,7 +226,7 @@ Deployment steps:
 2. Run `forge test` with `BASE_RPC_URL` set, then `script/check-verification.sh`.
 3. Do a dry run with `forge script script/Deploy.s.sol --rpc-url $BASE_RPC_URL`, and check that it logs the six
    addresses in the table at the top. It skips any that is already deployed.
-4. Deploy, then verify each contract on Basescan and Sourcify:
+4. Deploy, then verify each contract on BaseScan and Sourcify:
 
 ```
 forge script script/Deploy.s.sol --rpc-url $BASE_RPC_URL --broadcast --ledger

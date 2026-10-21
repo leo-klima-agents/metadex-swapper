@@ -97,7 +97,7 @@ this repository:
 - `LicenseRef-Dromos-Restricted-Use-1.0`: Aero's `FactoryRegistry`, fee modules, MEV tax modules and swap hook, which
   the swapper never calls; and Aero's new AERO token, an ERC-20 the AERO swapper pays out, with no fee or hook on
   transfers.
-- Aero's CLPool implementation is verified only on Basescan, not on Sourcify.
+- Aero's CLPool implementation is verified only on BaseScan, not on Sourcify.
 
 ## Addresses
 
@@ -114,7 +114,7 @@ this repository:
 | Aero stable factory, `AeroStable` | `0x78589E876edcEbdce72ee3436ab3c9AD3a7cEF2D` | `0x3b34cd7ed303be01986b097c49f1a29d211783ef63f5e920db0ffb9291396cc2` |
 | Aero stable pool implementation | `0xf525988f88B7D8b64631D86070FEC5BFDc50C174` | `0x9d1476a920eac769acf23251d79fd656f5566538080c06fc05573e5946b64a91` |
 | Aero CLFactory, `AeroSlipstream` | `0x9CB220581b91b0C83223012FE69688b92aD07a76` | `0x6c09090837ace0aefe6bfa24a3bc772d13a9775b7e3109c9fece534a0ce053a6` |
-| Aero CLPool implementation, verified on Basescan | `0x1642634C8CB1C9f1B84c9a1a08534F8c3F4E89f8` | `0x041172c7cbffc45627f9dd52727a0124cd6eeb2b5830ab392df54f71a6948693` |
+| Aero CLPool implementation, verified on BaseScan | `0x1642634C8CB1C9f1B84c9a1a08534F8c3F4E89f8` | `0x041172c7cbffc45627f9dd52727a0124cd6eeb2b5830ab392df54f71a6948693` |
 | Aero `FactoryRegistry`, listing the three Aero factories and no other | `0x7b2A2c12dC5Ea2a31455952a05031C3E4BB28F3E` | `0xcd0b88f96b36edf4d58c6b41119653e25d12bf52d1ea1cd7f636eab29cdb0bd1` |
 | Aero volatile fee module (`CustomFeeModule`) | `0x7949DE8d67E4F6b8509Bdbb43FF0503aF1247a7A` | `0xa56614fe447178e62c473ff1333d660c1dbb70965b4a059fae228bf52457c0f2` |
 | Aero volatile MEV tax module (`PriorityFeeMevTaxModule`) | `0x830D07BDe136752BCefe0B59a14c2C7af07814AF` | `0x59de6c7ead685b6295ef7dccb7ee30cd2881c697267d09718790f998db3cf016` |

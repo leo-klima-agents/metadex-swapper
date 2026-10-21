@@ -8,6 +8,41 @@ import {IPoolTape} from 'V3/interfaces/pools/tape/IPoolTape.sol';
  * @notice Interface for the PoolFactory contract, the abstract base shared by the Aerodrome V2 volatile and stable pool factories
  */
 interface IPoolFactory {
+  /// @notice Initial governance roles and modules of a pool factory.
+  /// @dev Every launch installs a pool tape, fee module and exact output fee quoter. Lite launches omit
+  ///      the discount registry and MEV tax module.
+  ///      Factory-bound fee modules and quoters must already be deployed with this factory's address.
+  /// @param poolAdmin Pool administrator.
+  /// @param pauser Factory pauser.
+  /// @param feeManager Manager of fees, fee modules and exact output quoting.
+  /// @param discountRegistryManager Manager of the discount registry.
+  /// @param poolTapeManager Manager of the pool tape.
+  /// @param factoryRegistry Registry that records pools created by this factory.
+  /// @param discountRegistry Initial discount registry, or zero for a lite launch.
+  /// @param poolTape Initial pool tape.
+  /// @param poolTapeGasLimit Nonzero gas forwarded to the pool tape.
+  /// @param feeModule Initial fee module.
+  /// @param feeModuleGasLimit Nonzero gas forwarded to the fee module.
+  /// @param mevTaxModule Initial MEV tax module, or zero for a lite launch.
+  /// @param mevTaxModuleGasLimit Gas forwarded to the MEV tax module; nonzero when it is configured.
+  /// @param exactOutFeeQuoter Initial exact output fee quoter.
+  struct PoolFactoryConfig {
+    address poolAdmin;
+    address pauser;
+    address feeManager;
+    address discountRegistryManager;
+    address poolTapeManager;
+    address factoryRegistry;
+    address discountRegistry;
+    address poolTape;
+    uint32 poolTapeGasLimit;
+    address feeModule;
+    uint32 feeModuleGasLimit;
+    address mevTaxModule;
+    uint32 mevTaxModuleGasLimit;
+    address exactOutFeeQuoter;
+  }
+
   /*////////////////////////////////////////////////////////////
                             EVENTS
   ////////////////////////////////////////////////////////////*/

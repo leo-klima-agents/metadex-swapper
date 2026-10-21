@@ -1,5 +1,5 @@
 {
-  "block": 52855000,
+  "block": 52889510,
   "routes": {
     "hydrexAlgebra": {
       "holder": "0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb",
@@ -20,7 +20,7 @@
       "tickSpacings": [
         0
       ],
-      "quote": "23879395"
+      "quote": "24458881"
     },
     "hydrexClassic": {
       "holder": "0x25B2ED7149fb8A05f6eF9407d9c8F878f59cd1e1",
@@ -41,7 +41,7 @@
       "tickSpacings": [
         0
       ],
-      "quote": "21109749"
+      "quote": "21423531"
     },
     "aeroVolatile": {
       "holder": "0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb",
@@ -51,7 +51,7 @@
         2
       ],
       "pools": [
-        "0x0000000000000000000000000000000000000000"
+        "0x800eb395b577b234c5065c8e0ccb0f3a1401b2c2"
       ],
       "tokensOut": [
         "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
@@ -93,7 +93,7 @@
         4
       ],
       "pools": [
-        "0x0000000000000000000000000000000000000000"
+        "0x2a430bebd2082d8e05d56d64dede8944279bbc24"
       ],
       "tokensOut": [
         "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
@@ -125,7 +125,7 @@
       "tickSpacings": [
         0
       ],
-      "quote": "238101384"
+      "quote": "243947370"
     },
     "aerodromeSlipstream": {
       "holder": "0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb",
@@ -146,7 +146,7 @@
       "tickSpacings": [
         0
       ],
-      "quote": "238807667"
+      "quote": "244723371"
     },
     "aerodromeSlipstream2": {
       "holder": "0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb",
@@ -167,7 +167,7 @@
       "tickSpacings": [
         0
       ],
-      "quote": "23861124"
+      "quote": "24448580"
     },
     "aerodromeSlipstream3": {
       "holder": "0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb",
@@ -188,7 +188,7 @@
       "tickSpacings": [
         0
       ],
-      "quote": "238797479"
+      "quote": "244701462"
     },
     "uniswapV2": {
       "holder": "0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb",
@@ -209,7 +209,7 @@
       "tickSpacings": [
         0
       ],
-      "quote": "237925695"
+      "quote": "243799732"
     },
     "uniswapV3": {
       "holder": "0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb",
@@ -230,7 +230,7 @@
       "tickSpacings": [
         0
       ],
-      "quote": "238796926"
+      "quote": "244737355"
     },
     "uniswapV4": {
       "holder": "0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb",
@@ -251,7 +251,7 @@
       "tickSpacings": [
         60
       ],
-      "quote": "237807444"
+      "quote": "243636076"
     },
     "uniswapV4Native": {
       "holder": "0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb",
@@ -277,7 +277,7 @@
         10,
         60
       ],
-      "quote": "81033047"
+      "quote": "82545043"
     },
     "hydxThroughWeth": {
       "holder": "0x25B2ED7149fb8A05f6eF9407d9c8F878f59cd1e1",
@@ -303,7 +303,7 @@
         0,
         0
       ],
-      "quote": "21101284"
+      "quote": "21471389"
     },
     "usdcToEurc": {
       "holder": "0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb",
@@ -324,7 +324,7 @@
       "tickSpacings": [
         0
       ],
-      "quote": "8906023"
+      "quote": "8906669"
     },
     "wethToEurc": {
       "holder": "0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb",
@@ -345,7 +345,7 @@
       "tickSpacings": [
         0
       ],
-      "quote": "21281879"
+      "quote": "21801082"
     },
     "usdcToWeth": {
       "holder": "0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb",
@@ -366,7 +366,7 @@
       "tickSpacings": [
         0
       ],
-      "quote": "41834452652633890"
+      "quote": "40819005564075827"
     },
     "cbBtcToWeth": {
       "holder": "0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb",
@@ -387,7 +387,7 @@
       "tickSpacings": [
         0
       ],
-      "quote": "34049404614938179"
+      "quote": "33769183496189019"
     },
     "wethToCbBtc": {
       "holder": "0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb",
@@ -408,7 +408,7 @@
       "tickSpacings": [
         0
       ],
-      "quote": "293165"
+      "quote": "294919"
     },
     "usdcToCbBtc": {
       "holder": "0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb",
@@ -429,7 +429,7 @@
       "tickSpacings": [
         0
       ],
-      "quote": "122675"
+      "quote": "120461"
     },
     "wethToAero": {
       "holder": "0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb",
@@ -439,7 +439,7 @@
         2
       ],
       "pools": [
-        "0x0000000000000000000000000000000000000000"
+        "0xc04ba378e83ff61cdb542ee4da88e1241cc54e60"
       ],
       "tokensOut": [
         "0x3f5bF3EdAc59d650D8fDf9657a71F2f904A3a4Ee"
@@ -471,7 +471,7 @@
       "tickSpacings": [
         0
       ],
-      "quote": "1100493925547992644553"
+      "quote": "1107237489841426005211"
     },
     "usdcToHydx": {
       "holder": "0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb",
@@ -492,7 +492,7 @@
       "tickSpacings": [
         0
       ],
-      "quote": "463672767689143219775"
+      "quote": "456859635512410054354"
     },
     "gasCheapest": {
       "holder": "0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb",
@@ -523,7 +523,7 @@
         0,
         0
       ],
-      "quote": "1619"
+      "quote": "1646"
     },
     "gasDearest": {
       "holder": "0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb",
@@ -554,7 +554,7 @@
         0,
         0
       ],
-      "quote": "814"
+      "quote": "830"
     }
   }
 }

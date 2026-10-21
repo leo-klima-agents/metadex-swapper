@@ -25,14 +25,11 @@ interface IViews {
     function TOKEN() external view returns (address);
     function owner() external view returns (address);
     function getMinDelay() external view returns (uint256);
-    function slot0() external view returns (uint160 sqrtPriceX96, int24 tick, uint16, uint16, uint16, uint8, bool);
+    function slot0() external view returns (uint160 sqrtPriceX96, int24 tick, uint16, uint16, uint16, bool);
 }
 
 interface IPoolSetup {
     function createPool(address tokenA, address tokenB) external returns (address);
-    function createPool(address tokenA, address tokenB, int24 tickSpacing, uint160 sqrtPriceX96)
-        external
-        returns (address);
     function mint(address to) external returns (uint256);
     function mint(address recipient, int24 tickLower, int24 tickUpper, uint128 amount, bytes calldata data)
         external
@@ -50,7 +47,6 @@ contract ForkTest is Test {
     address internal constant EURC = 0x60a3E35Cc302bFA44Cb288Bc5a4F316Fdb1adb42;
     address internal constant WETH = 0x4200000000000000000000000000000000000006;
     address internal constant TREASURY = 0x450c72de8c0079B49AcedF294a13011bd09D125B;
-    address internal constant UNISWAP_V3_WETH_USDC = 0xd0b53D9277642d899DF5C87A3966A349A798F224;
 
     address internal constant HYDREX_PAIR_FACTORY_IMPL = 0x421656A4Fc9943a2A7997D6f4f6c04EB2E336d18;
     address internal constant HYDREX_PROXY_ADMIN = 0x6E25D241a3bA9E0278a296b398E9678E5ED8ad40;
@@ -59,18 +55,18 @@ contract ForkTest is Test {
     address internal constant ALGEBRA_OWNER = 0x74266f2b206D1359B83fc74949EF07176FB3AE03;
     address internal constant AERO_REGISTRY = 0x7b2A2c12dC5Ea2a31455952a05031C3E4BB28F3E;
     address internal constant AERODROME_REGISTRY = 0x5C3F18F06CC09CA1910767A34a20F771039E37C0;
-    address internal constant AERO_VOLATILE_IMPL = 0x8B64A0B590815d54C11a4B49A82b0133c7f53f0E;
-    address internal constant AERO_STABLE_IMPL = 0x37D232368a22126a9584C7FF7643f26B2E276Ac8;
-    address internal constant AERO_CL_IMPL = 0x0Df9fc8730eeC048e9832B31B4bFf4351158e19B;
+    address internal constant AERO_VOLATILE_IMPL = 0x0526cF035C1156b5C598b0d3c2445e38af2e8bDE;
+    address internal constant AERO_STABLE_IMPL = 0xf525988f88B7D8b64631D86070FEC5BFDc50C174;
+    address internal constant AERO_CL_IMPL = 0x1642634C8CB1C9f1B84c9a1a08534F8c3F4E89f8;
     address internal constant AERODROME_POOL_IMPL = 0xA4e46b4f701c62e14DF11B48dCe76A7d793CD6d7;
     address internal constant AERODROME_CL_IMPL = 0xeC8E5342B19977B4eF8892e02D8DAEcfa1315831;
     address internal constant AERODROME_CL_IMPL_2 = 0x942e97a4c6FdC38B4CD1c0298D37d81fDD8E5A16;
     address internal constant AERODROME_CL_IMPL_3 = 0xc770898522D2A9c8Da7A10D63989b6b58305B665;
-    address internal constant AERO_VOLATILE_FEES = 0xEc4b9100C60B54579d44eA38165a152865840597;
-    address internal constant AERO_VOLATILE_TAX = 0x1d52180B9049cb16f7db490bF1bB0ABEb992593d;
-    address internal constant AERO_STABLE_FEES = 0x39CF8E719bae01C9ab6F9eA5b97DC7D74C76e422;
-    address internal constant AERO_STABLE_TAX = 0xA9Af4985CD8456d9aFf3185c31d9D66e53184d7B;
-    address internal constant AERO_SWAP_HOOK = 0xaAf164008441F112eB2858d9F7A2dB1B84b1E415;
+    address internal constant AERO_VOLATILE_FEES = 0x7949DE8d67E4F6b8509Bdbb43FF0503aF1247a7A;
+    address internal constant AERO_VOLATILE_TAX = 0x830D07BDe136752BCefe0B59a14c2C7af07814AF;
+    address internal constant AERO_STABLE_FEES = 0x0195fC76Da986D66B2A468133a1be41E90893Da6;
+    address internal constant AERO_STABLE_TAX = 0x78ee48646a7e1507B79443a1d5494095D16AF3B8;
+    address internal constant AERO_SWAP_HOOK = 0xC0ed888AfE87ed1AcF01D9f19bB850159e3ce434;
 
     string internal fx;
     Deploy internal d;
@@ -93,9 +89,9 @@ contract ForkTest is Test {
     function test_pin_codeHashes() public view {
         assertEq(d.HYDREX_ALGEBRA().codehash, 0x6f54720c3eb4326e8cf846308b98ab0c0d070a441ca11ba8cd00be0256af7084);
         assertEq(d.HYDREX_CLASSIC().codehash, 0xe9254068c76f9b19f4ab63f7a83b9f82f412362d41609faa232daa65f987bbac);
-        assertEq(d.AERO_VOLATILE().codehash, 0x3ea9d13b9a7ecfa2c5ff590b0b5605cb3571373572cf4e161c0173baaf018759);
-        assertEq(d.AERO_STABLE().codehash, 0x7778ded3b75ecadd23f8fc322b1879a57cbbb0d7e3f548c3143eb9542ba4b8a2);
-        assertEq(d.AERO_SLIPSTREAM().codehash, 0x725fdf87a8c681853acfc3b222120d01d603281f1e1d4377c4dac17054c76456);
+        assertEq(d.AERO_VOLATILE().codehash, 0x975417bdbc8e5df051479a271f5a03582df5f09f179771c68e2708dddeb56ef0);
+        assertEq(d.AERO_STABLE().codehash, 0x3b34cd7ed303be01986b097c49f1a29d211783ef63f5e920db0ffb9291396cc2);
+        assertEq(d.AERO_SLIPSTREAM().codehash, 0x6c09090837ace0aefe6bfa24a3bc772d13a9775b7e3109c9fece534a0ce053a6);
         assertEq(d.AERODROME_CLASSIC().codehash, 0xe2a176e5d2bcfb214b784ec6d6733708a6376a464f203cc265c284c9f349fea3);
         assertEq(d.AERODROME_SLIPSTREAM().codehash, 0x7340cf80843bd721bcaefbfc050e38304cb4174c239e6e914e3056f27f39b11c);
         assertEq(
@@ -111,18 +107,18 @@ contract ForkTest is Test {
         assertEq(HYDREX_PROXY_ADMIN.codehash, 0xccdecaad56ab1bfab03e34ecf082661df958184c89254f7f2d5f31865abb90e0);
         assertEq(AERO_VOLATILE_IMPL.codehash, 0x15269fbb3aca4305485be2669a8394ec6a14c75181e1eb4c2d46c5b1ee2a7782);
         assertEq(AERO_STABLE_IMPL.codehash, 0x9d1476a920eac769acf23251d79fd656f5566538080c06fc05573e5946b64a91);
-        assertEq(AERO_CL_IMPL.codehash, 0x94f56a671c80e4670074161c0c5b4d032949d68bfa07191264dc11ed2b18db45);
+        assertEq(AERO_CL_IMPL.codehash, 0x041172c7cbffc45627f9dd52727a0124cd6eeb2b5830ab392df54f71a6948693);
         assertEq(AERODROME_POOL_IMPL.codehash, 0xd22754a0a3b39db7298dbbc2be1e34b34320988ea67065c85fa28ae66c02d31e);
         assertEq(AERODROME_CL_IMPL.codehash, 0x772fb5c610b40a122036f544e5b9b5bce6becb19db9524331289d1aaed2d5888);
         assertEq(AERODROME_CL_IMPL_2.codehash, 0x916bc5496cc07ea86289bc3a08a90f93dcae34686be6634f6e89ef260c3df4fa);
         assertEq(AERODROME_CL_IMPL_3.codehash, 0xe63484f408c701770737a3c40e435c8183c66b1663f3a8777ce44dd73aff339b);
         assertEq(AERO_REGISTRY.codehash, 0xcd0b88f96b36edf4d58c6b41119653e25d12bf52d1ea1cd7f636eab29cdb0bd1);
         assertEq(AERODROME_REGISTRY.codehash, 0xd4a9f98ebd41e4c4e7ae646f1a1f8eaa1205100906f34299a3cd7e4ed567c929);
-        assertEq(AERO_VOLATILE_FEES.codehash, 0x8826beb783dc6b6c44a392fac83a4a02cceb84bb2ae1e60fc70193565f15c44f);
+        assertEq(AERO_VOLATILE_FEES.codehash, 0xa56614fe447178e62c473ff1333d660c1dbb70965b4a059fae228bf52457c0f2);
         assertEq(AERO_VOLATILE_TAX.codehash, 0x59de6c7ead685b6295ef7dccb7ee30cd2881c697267d09718790f998db3cf016);
-        assertEq(AERO_STABLE_FEES.codehash, 0xf247ee419fe1dcfedf09c9939822a2276de0c9d2d45fd30330998a448345e803);
+        assertEq(AERO_STABLE_FEES.codehash, 0xe0c19912c35391d5bd218fc0903c3116d9915dc36b4f0b93eb75cf19932c12ac);
         assertEq(AERO_STABLE_TAX.codehash, 0x59de6c7ead685b6295ef7dccb7ee30cd2881c697267d09718790f998db3cf016);
-        assertEq(AERO_SWAP_HOOK.codehash, 0xbc4dcb6544ee340d248fd21ccf8bc9c22261cdc7a011b053cfdca9b77981841f);
+        assertEq(AERO_SWAP_HOOK.codehash, 0x198b45ce022f423a9852526890d236531333e97861078501357e1c72f0eeecbd);
         assertEq(d.AERO().codehash, 0x4a7a844a493b672816a8adadf8500083dd100dd25976803f3964c079a819d0b9);
     }
 
@@ -172,12 +168,24 @@ contract ForkTest is Test {
     }
 
     function test_pin_poolsAreClonesOfTheImplementations() public view {
-        string[4] memory names =
-            ["aerodromeClassic", "aerodromeSlipstream", "aerodromeSlipstream2", "aerodromeSlipstream3"];
-        address[4] memory impls = [AERODROME_POOL_IMPL, AERODROME_CL_IMPL, AERODROME_CL_IMPL_2, AERODROME_CL_IMPL_3];
+        string[6] memory names = [
+            "aeroVolatile",
+            "aeroSlipstream",
+            "aerodromeClassic",
+            "aerodromeSlipstream",
+            "aerodromeSlipstream2",
+            "aerodromeSlipstream3"
+        ];
+        address[6] memory impls = [
+            AERO_VOLATILE_IMPL,
+            AERO_CL_IMPL,
+            AERODROME_POOL_IMPL,
+            AERODROME_CL_IMPL,
+            AERODROME_CL_IMPL_2,
+            AERODROME_CL_IMPL_3
+        ];
         for (uint256 i; i < names.length; ++i) {
-            address pool = fx.readAddressArray(string.concat(".routes.", names[i], ".pools"))[0];
-            assertEq(pool.code, _clone(impls[i]), names[i]);
+            assertEq(_pool(names[i]).code, _clone(impls[i]), names[i]);
         }
     }
 
@@ -285,7 +293,7 @@ contract ForkTest is Test {
     }
 
     function test_wethToAero() public {
-        address pool = IPoolSetup(d.AERO_VOLATILE()).createPool(d.AERO(), WETH);
+        address pool = _pool("wethToAero");
         deal(WETH, pool, 100e18);
         deal(d.AERO(), pool, 296_000e18);
         IPoolSetup(pool).mint(address(this));
@@ -305,8 +313,8 @@ contract ForkTest is Test {
     }
 
     function test_aeroSlipstream() public {
-        (uint160 price, int24 tick,,,,,) = IViews(UNISWAP_V3_WETH_USDC).slot0();
-        address pool = IPoolSetup(d.AERO_SLIPSTREAM()).createPool(WETH, USDC, 100, price);
+        address pool = _pool("aeroSlipstream");
+        (, int24 tick,,,,) = IViews(pool).slot0();
         deal(WETH, address(this), 1000e18);
         deal(USDC, address(this), 3_000_000e6);
         tick -= tick % 100;
@@ -335,9 +343,9 @@ contract ForkTest is Test {
 
     function test_gas_batchesFitUnderTheCap() public {
         uint256 cheapest = _gasOfRoutes("gasCheapest", 20);
-        uint256 dearest = _gasOfRoutes("gasDearest", 5);
+        uint256 dearest = _gasOfRoutes("gasDearest", 4);
         console.log("20 routes of 3 Uniswap v2 hops:", cheapest);
-        console.log("5 routes of 3 Hydrex Algebra hops:", dearest);
+        console.log("4 routes of 3 Hydrex Algebra hops:", dearest);
         assertLt(cheapest, TX_GAS_CAP);
         assertLt(dearest, TX_GAS_CAP);
     }
@@ -428,8 +436,12 @@ contract ForkTest is Test {
         }
     }
 
+    function _pool(string memory name) internal view returns (address) {
+        return fx.readAddressArray(string.concat(".routes.", name, ".pools"))[0];
+    }
+
     function _aeroVolatilePool() internal returns (address pool) {
-        pool = IPoolSetup(d.AERO_VOLATILE()).createPool(WETH, USDC);
+        pool = _pool("aeroVolatile");
         (,, uint256 usdcPerTenthWeth) = _fixture("uniswapV3");
         deal(WETH, pool, 100e18);
         deal(USDC, pool, usdcPerTenthWeth * 1000);

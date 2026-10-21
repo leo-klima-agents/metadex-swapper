@@ -88,45 +88,56 @@ abstract contract PoolFactory is PoolFactoryIndexation, IPoolFactory {
                               CONSTRUCTOR
   ////////////////////////////////////////////////////////////*/
 
-  /// @notice Wires the pool implementation, the role holders and the default fee.
-  /// @dev Reverts with ZeroAddress when any address parameter is zero.
+  /// @notice Initializes a pool factory with its governance roles, fee and modules.
+  /// @dev Factory-bound modules must be deployed before the factory using its predicted address.
   /// @param _implementation Pool implementation the factory clones.
-  /// @param _poolAdmin Initial pool admin.
-  /// @param _pauser Initial pauser.
-  /// @param _feeManager Initial fee manager.
   /// @param _defaultFee Default swap fee in basis points.
-  /// @param _discountRegistryManager Initial discount registry manager.
-  /// @param _poolTapeManager Initial pool tape manager.
-  /// @param _factoryRegistry Factory registry every created pool is recorded in as a target.
-  constructor(
-    address _implementation,
-    address _poolAdmin,
-    address _pauser,
-    address _feeManager,
-    uint256 _defaultFee,
-    address _discountRegistryManager,
-    address _poolTapeManager,
-    address _factoryRegistry
-  ) {
+  /// @param _config Initial governance roles and modules.
+  constructor(address _implementation, uint256 _defaultFee, PoolFactoryConfig memory _config) {
     if (
-      _implementation == address(0) || _poolAdmin == address(0) || _pauser == address(0) || _feeManager == address(0)
-        || _discountRegistryManager == address(0) || _poolTapeManager == address(0) || _factoryRegistry == address(0)
+      _implementation == address(0) || _config.poolAdmin == address(0) || _config.pauser == address(0)
+        || _config.feeManager == address(0) || _config.discountRegistryManager == address(0)
+        || _config.poolTapeManager == address(0) || _config.factoryRegistry == address(0)
+        || _config.feeModule == address(0) || _config.poolTape == address(0) || _config.exactOutFeeQuoter == address(0)
     ) revert ZeroAddress();
+    if (_defaultFee > MAX_DEFAULT_FEE) revert FeeTooHigh();
+    if (_defaultFee == 0) revert ZeroFee();
+    if (_config.feeModuleGasLimit == 0) revert ZeroGasLimit();
+    if (address(IFeeModule(_config.feeModule).factory()) != address(this)) revert InvalidFeeModule();
+    if (_config.poolTapeGasLimit == 0) revert ZeroGasLimit();
+    if (_config.mevTaxModule != address(0) && _config.mevTaxModuleGasLimit == 0) revert ZeroGasLimit();
+    if (address(IExactOutFeeQuoter(_config.exactOutFeeQuoter).FACTORY()) != address(this)) {
+      revert InvalidExactOutFeeQuoter();
+    }
+
     implementation = _implementation;
-    factoryRegistry = _factoryRegistry;
-    discountRegistryManager = _discountRegistryManager;
-    poolAdmin = _poolAdmin;
-    pauser = _pauser;
-    feeManager = _feeManager;
-    poolTapeManager = _poolTapeManager;
-    isPaused = false;
+    factoryRegistry = _config.factoryRegistry;
+    discountRegistryManager = _config.discountRegistryManager;
+    poolAdmin = _config.poolAdmin;
+    pauser = _config.pauser;
+    feeManager = _config.feeManager;
+    poolTapeManager = _config.poolTapeManager;
     defaultFee = _defaultFee;
-    emit SetDiscountRegistryManager(_discountRegistryManager);
-    emit SetPoolAdmin(_poolAdmin);
-    emit SetPauser(_pauser);
-    emit SetFeeManager(_feeManager);
-    emit SetPoolTapeManager(_poolTapeManager);
+    discountRegistry = _config.discountRegistry;
+    poolTape = _config.poolTape;
+    poolTapeGasLimit = _config.poolTapeGasLimit;
+    feeModule = _config.feeModule;
+    feeModuleGasLimit = _config.feeModuleGasLimit;
+    mevTaxModule = _config.mevTaxModule;
+    mevTaxModuleGasLimit = _config.mevTaxModuleGasLimit;
+    exactOutFeeQuoter = _config.exactOutFeeQuoter;
+
+    emit SetDiscountRegistryManager(_config.discountRegistryManager);
+    emit SetPoolAdmin(_config.poolAdmin);
+    emit SetPauser(_config.pauser);
+    emit SetFeeManager(_config.feeManager);
+    emit SetPoolTapeManager(_config.poolTapeManager);
     emit SetDefaultFee(_defaultFee);
+    emit SetDiscountRegistry(_config.discountRegistry);
+    emit SetPoolTape(_config.poolTape, _config.poolTapeGasLimit);
+    emit SetFeeModule(_config.feeModule, _config.feeModuleGasLimit);
+    emit SetMevTaxModule(_config.mevTaxModule, _config.mevTaxModuleGasLimit);
+    emit SetExactOutFeeQuoter(_config.exactOutFeeQuoter);
   }
 
   /// @inheritdoc IPoolFactory

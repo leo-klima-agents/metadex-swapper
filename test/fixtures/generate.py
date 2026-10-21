@@ -25,9 +25,9 @@ V4_QUOTER = "0x0d5e0F971ED27FBfF6c2837bf31316121532048D"
 EXCHANGES = [
     ("HydrexAlgebra", "0x36077D39cdC65E1e3FB65810430E5b2c4D5fA29E"),
     ("HydrexClassic", "0xC47F17c4fd96F50eFD2A2448ceDe5C185c084bf0"),
-    ("AeroVolatile", "0x9bc8b3F60D349d687Fb44A018967025E3741F9a5"),
-    ("AeroStable", "0xaEd253F1aD84d99f2165256D701b2b481DD4CC16"),
-    ("AeroSlipstream", "0xC6bdE6e9F0CD71013E5FcF2dAAE2fA1c71Bb2F25"),
+    ("AeroVolatile", "0x8E6a9FCd1d638CC760Ffba397605Fe3355dE76D2"),
+    ("AeroStable", "0x78589E876edcEbdce72ee3436ab3c9AD3a7cEF2D"),
+    ("AeroSlipstream", "0x9CB220581b91b0C83223012FE69688b92aD07a76"),
     ("AerodromeClassic", "0x420DD381b31aEf6683db6B902084cB0FFECe40Da"),
     ("AerodromeSlipstream", "0x5e7BB104d84c7CB9B682AaC2F3d509f5F406809A"),
     ("AerodromeSlipstream2", "0xaDe65c38CD4849aDBA595a4323a8C7DdfE89716a"),
@@ -193,7 +193,7 @@ def main():
     for name, (holder, token, amount, hops) in ROUTES.items():
         balance = words(call(block, token, "balanceOf(address)", holder))[0]
         assert balance >= 20 * amount, f"{name}: holder has too little"
-        pools, quote, token_in, created = [], amount, token, False
+        pools, quote, token_in, seeded = [], amount, token, False
         v4 = [h for h in hops if h[0] == "UniswapV4"]
         if v4:
             assert len(v4) == len(hops)
@@ -202,12 +202,11 @@ def main():
         else:
             for exchange, token_out in hops:
                 pool = pool_of(block, exchange, token_in, token_out)
+                pools.append(pool)
                 if not has_liquidity(block, exchange, pool):
                     assert exchange in AERO_V3 and len(hops) == 1, f"{name}: no pool"
-                    pools.append(ETH)
-                    created = True
+                    seeded = True
                     break
-                pools.append(pool)
                 quote = quote_hop(block, exchange, pool, token_in, token_out, quote)
                 token_in = token_out
         routes[name] = {
@@ -219,7 +218,7 @@ def main():
             "tokensOut": [h[1] for h in hops],
             "fees": [fee(h) for h in hops],
             "tickSpacings": [h[2][1] if len(h) > 2 else 0 for h in hops],
-            "quote": "0" if created else str(quote),
+            "quote": "0" if seeded else str(quote),
         }
         print(f"{name}: {routes[name]['quote']}")
 

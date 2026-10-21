@@ -11,12 +11,12 @@ deployed yet. Deployed as described under [Deployment](#deployment), the six swa
 
 | Output | Token | Swapper |
 | --- | --- | --- |
-| USDC | `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913` | `0x972560a38E12C94d18e44A8Fa559741888E47350` |
-| EURC | `0x60a3E35Cc302bFA44Cb288Bc5a4F316Fdb1adb42` | `0x938E4e9F1C2E64de830FCE28438fb6577cD0093e` |
-| WETH | `0x4200000000000000000000000000000000000006` | `0xC903915B8b3d848093A2f14E4910Fd4c2F8FF3bA` |
-| cbBTC | `0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf` | `0xF2cd40e7d6C911421dfFe23e797415d7D581a18b` |
-| AERO | `0x3f5bF3EdAc59d650D8fDf9657a71F2f904A3a4Ee` | `0xfc1bA9F956608635661A4CA47A26C77f3bf8EF18` |
-| HYDX | `0x00000e7efa313F4E11Bfff432471eD9423AC6B30` | `0x7e4C8127fB40582e3A4e8CA84fF60B05457117F4` |
+| USDC | `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913` | `0x0a3360e57972C822d43810F7850899D33cd1F948` |
+| EURC | `0x60a3E35Cc302bFA44Cb288Bc5a4F316Fdb1adb42` | `0xb915cff10a8B0b3306D498B0D9F71894254a1145` |
+| WETH | `0x4200000000000000000000000000000000000006` | `0xF2Ab725288Ec3f64FD45709fd809ca26794E69FF` |
+| cbBTC | `0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf` | `0xA7272202B53B582Bea1B4BfeBd076c18D7cCB289` |
+| AERO | `0x3f5bF3EdAc59d650D8fDf9657a71F2f904A3a4Ee` | `0x7E5F51a444dc0d5bbf3a470ebb1b49cabcdd71FC` |
+| HYDX | `0x00000e7efa313F4E11Bfff432471eD9423AC6B30` | `0x969001dDc453bf9b841A9f8125D11D3E8b0135D2` |
 
 ## How it works
 
@@ -88,9 +88,9 @@ that their registries list.
 | --- | --- | --- |
 | `HydrexAlgebra` | Algebra Integral, `0x36077D39cdC65E1e3FB65810430E5b2c4D5fA29E` | `poolByPair(a, b) == pool` |
 | `HydrexClassic` | Pair factory, `0xC47F17c4fd96F50eFD2A2448ceDe5C185c084bf0` | `isPair(pool)`, and its tokens are the hop's |
-| `AeroVolatile` | `0x9bc8b3F60D349d687Fb44A018967025E3741F9a5` | `isPool(pool)`, and its tokens are the hop's |
-| `AeroStable` | `0xaEd253F1aD84d99f2165256D701b2b481DD4CC16` | `isPool(pool)`, and its tokens are the hop's |
-| `AeroSlipstream` | `CLFactory`, `0xC6bdE6e9F0CD71013E5FcF2dAAE2fA1c71Bb2F25` | `isPool(pool)`, and its tokens are the hop's |
+| `AeroVolatile` | `0x8E6a9FCd1d638CC760Ffba397605Fe3355dE76D2` | `isPool(pool)`, and its tokens are the hop's |
+| `AeroStable` | `0x78589E876edcEbdce72ee3436ab3c9AD3a7cEF2D` | `isPool(pool)`, and its tokens are the hop's |
+| `AeroSlipstream` | `CLFactory`, `0x9CB220581b91b0C83223012FE69688b92aD07a76` | `isPool(pool)`, and its tokens are the hop's |
 | `AerodromeClassic` | `PoolFactory`, `0x420DD381b31aEf6683db6B902084cB0FFECe40Da` | `isPool(pool)`, and its tokens are the hop's |
 | `AerodromeSlipstream` | `CLFactory`, `0x5e7BB104d84c7CB9B682AaC2F3d509f5F406809A` | `isPool(pool)`, and its tokens are the hop's |
 | `AerodromeSlipstream2` | `CLFactory`, `0xaDe65c38CD4849aDBA595a4323a8C7DdfE89716a` | `isPool(pool)`, and its tokens are the hop's |
@@ -140,7 +140,7 @@ fees, price impact and gas come on top.
 
 Keep the priority fee low. Above a tip of 1 gwei, or 2 gwei for stable pools, Aero's classic pools add an MEV tax, up to
 10%, that a quote from `eth_call` doesn't see. The swapper prices Aero's pools with the tax, so the swap goes through,
-at a worse price, down to your minimum: on the fork, with a 2 gwei tip, 1 WETH fetched 2,123 USDC instead of 2,357.
+at a worse price, down to your minimum: on the fork, with a 2 gwei tip, 1 WETH fetched 2,175 USDC instead of 2,415.
 
 Gas used by whole transactions on a fork of Base, intrinsic and calldata gas included. It is counted after refunds, so a
 transaction's limit must cover up to a quarter more. The caller and the treasury already held some of the output token:
@@ -149,13 +149,13 @@ to WETH costs about what WETH to USDC does.
 
 | Route | Gas |
 | --- | --- |
-| Uniswap v2, v3 or v4, WETH to USDC | 163,000 to 167,000 |
-| Uniswap v4, cbBTC to ETH to USDC | ~222,000 |
-| Aerodrome, classic or Slipstream, WETH to USDC | 204,000 to 272,000 |
+| Uniswap v2, v3 or v4, WETH to USDC | 162,000 to 167,000 |
+| Uniswap v4, cbBTC to ETH to USDC | ~221,000 |
+| Aerodrome, classic or Slipstream, WETH to USDC | 205,000 to 270,000 |
 | Hydrex classic, HYDX to USDC | ~229,000 |
-| Aero v3, on pools the test creates | 290,000 to 352,000 |
-| Hydrex Algebra, WETH to USDC | ~1,280,000 |
-| HYDX to WETH on Hydrex Algebra, then to USDC on Uniswap v3 | ~1,900,000 |
+| Aero v3, on pools the tests seed | 290,000 to 352,000 |
+| Hydrex Algebra, WETH to USDC | ~1,612,000 |
+| HYDX to WETH on Hydrex Algebra, then to USDC on Uniswap v3 | ~1,913,000 |
 | Each further token, to USDC on Aerodrome classic | 153,000 to 292,000, ~220,000 on average |
 | Each further token, to WETH then USDC on Aerodrome classic | 205,000 to 344,000, ~267,000 on average |
 | 20 routes of 3 Uniswap v2 hops | ~3,419,000 |
@@ -235,7 +235,7 @@ To check that a deployed swapper is this repository's code, compare its code has
 Each swapper's code holds its output token, so each has its own hash:
 
 ```
-cast keccak $(cast code 0x972560a38E12C94d18e44A8Fa559741888E47350 --rpc-url $BASE_RPC_URL)
+cast keccak $(cast code 0x0a3360e57972C822d43810F7850899D33cd1F948 --rpc-url $BASE_RPC_URL)
 jq -j .deployments.USDC.runtimeKeccak verification/bytecode-hashes.json
 ```
 
@@ -246,7 +246,7 @@ in `BASE_RPC_URL`.
 
 - `forge test` runs the unit tests, and the fork tests too when `BASE_RPC_URL` is set. The fork tests run against
   Base at the block recorded in [`test/fixtures/fork.json`](test/fixtures/fork.json). They swap through a real pool of
-  each exchange, and into each output token. Aero's factories have no pools yet, so the fork tests create their own.
+  each exchange, and into each output token. Aero's pools hold no liquidity yet, so the fork tests add their own.
 - `test/fixtures/generate.py [block]` rewrites that fixture: a pool of each exchange, a holder of each token, and each
   route's quote at that block, from the exchanges' own quotes.
 - `script/check-signatures.sh` checks the interfaces in `src/interfaces/` against the exchanges' sources vendored in

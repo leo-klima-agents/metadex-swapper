@@ -63,6 +63,20 @@ contract SurfaceTest is SwapperTestBase {
         }
     }
 
+    function test_constructor_revertsOnADuplicateFactory() public {
+        ImmutableSwapper.Exchange[] memory list = _exchanges();
+        for (uint256 i = 1; i < EXCHANGES; ++i) {
+            list = _exchanges();
+            list[i].factory = list[i - 1].factory;
+            vm.expectRevert(ImmutableSwapper.DuplicateFactory.selector);
+            new ImmutableSwapper(address(usdc), list);
+        }
+        list = _exchanges();
+        list[EXCHANGES - 1] = ImmutableSwapper.Exchange(ImmutableSwapper.Kind.UniswapV4, address(manager));
+        vm.expectRevert(ImmutableSwapper.DuplicateFactory.selector);
+        new ImmutableSwapper(address(usdc), list);
+    }
+
     function test_constructor_takesOneToTwelveExchanges() public {
         vm.expectRevert(ImmutableSwapper.BadExchangeCount.selector);
         new ImmutableSwapper(address(usdc), _anyExchanges(0));
@@ -81,7 +95,7 @@ contract SurfaceTest is SwapperTestBase {
         list = new ImmutableSwapper.Exchange[](n);
         for (uint256 i; i < n; ++i) {
             list[i] = ImmutableSwapper.Exchange(
-                ImmutableSwapper.Kind((i + 6) % 7), makeAddr(string.concat("factory", vm.toString(i)))
+                ImmutableSwapper.Kind(i % 7), makeAddr(string.concat("factory", vm.toString(i)))
             );
         }
     }

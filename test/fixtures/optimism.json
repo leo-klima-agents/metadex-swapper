@@ -1,0 +1,187 @@
+{
+  "block": 158547340,
+  "routes": {
+    "aeroVolatile": {
+      "token": "0x4200000000000000000000000000000000000006",
+      "amount": "100000000000000000",
+      "factories": [
+        "0x8E6a9FCd1d638CC760Ffba397605Fe3355dE76D2"
+      ],
+      "pools": [
+        "0x0000000000000000000000000000000000000000"
+      ],
+      "tokensOut": [
+        "0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85"
+      ],
+      "fees": [
+        0
+      ],
+      "tickSpacings": [
+        0
+      ],
+      "seedsIn": [
+        "100000000000000000000"
+      ],
+      "seedsOut": [
+        "300000000000"
+      ],
+      "quote": "0"
+    },
+    "aeroStable": {
+      "token": "0x94b008aA00579c1307B0EF2c499aD98a8ce58e58",
+      "amount": "100000000",
+      "factories": [
+        "0x78589E876edcEbdce72ee3436ab3c9AD3a7cEF2D"
+      ],
+      "pools": [
+        "0x0000000000000000000000000000000000000000"
+      ],
+      "tokensOut": [
+        "0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85"
+      ],
+      "fees": [
+        0
+      ],
+      "tickSpacings": [
+        0
+      ],
+      "seedsIn": [
+        "100000000000"
+      ],
+      "seedsOut": [
+        "100000000000"
+      ],
+      "quote": "0"
+    },
+    "aeroSlipstream": {
+      "token": "0x4200000000000000000000000000000000000006",
+      "amount": "100000000000000000",
+      "factories": [
+        "0xfeaB42D90055db3a0616249f76B6002D72266778"
+      ],
+      "pools": [
+        "0xca231d91ec00385a54e541f504617d2197f9b7c3"
+      ],
+      "tokensOut": [
+        "0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85"
+      ],
+      "fees": [
+        0
+      ],
+      "tickSpacings": [
+        100
+      ],
+      "seedsIn": [
+        "0"
+      ],
+      "seedsOut": [
+        "0"
+      ],
+      "quote": "237516893"
+    },
+    "uniswapV2": {
+      "token": "0x4200000000000000000000000000000000000006",
+      "amount": "1000000000000000",
+      "factories": [
+        "0x0c3c1c532F1e39EdF36BE9Fe0bE1410313E074Bf"
+      ],
+      "pools": [
+        "0x4c43646304492a925e335f2b6d840c1489f17815"
+      ],
+      "tokensOut": [
+        "0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85"
+      ],
+      "fees": [
+        0
+      ],
+      "tickSpacings": [
+        0
+      ],
+      "seedsIn": [
+        "0"
+      ],
+      "seedsOut": [
+        "0"
+      ],
+      "quote": "2349191"
+    },
+    "uniswapV3": {
+      "token": "0x4200000000000000000000000000000000000006",
+      "amount": "100000000000000000",
+      "factories": [
+        "0x1F98431c8aD98523631AE4a59f267346ea31F984"
+      ],
+      "pools": [
+        "0xc1738d90e2e26c35784a0d3e3d8a9f795074bca4"
+      ],
+      "tokensOut": [
+        "0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85"
+      ],
+      "fees": [
+        3000
+      ],
+      "tickSpacings": [
+        0
+      ],
+      "seedsIn": [
+        "0"
+      ],
+      "seedsOut": [
+        "0"
+      ],
+      "quote": "237116776"
+    },
+    "uniswapV4": {
+      "token": "0x4200000000000000000000000000000000000006",
+      "amount": "100000000000000",
+      "factories": [
+        "0x9a13F98Cb987694C9F086b1F5eB990EeA8264Ec3"
+      ],
+      "pools": [
+        "0x0000000000000000000000000000000000000000"
+      ],
+      "tokensOut": [
+        "0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85"
+      ],
+      "fees": [
+        500
+      ],
+      "tickSpacings": [
+        10
+      ],
+      "seedsIn": [
+        "0"
+      ],
+      "seedsOut": [
+        "0"
+      ],
+      "quote": "237310"
+    },
+    "usdcToWeth": {
+      "token": "0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85",
+      "amount": "100000000",
+      "factories": [
+        "0x1F98431c8aD98523631AE4a59f267346ea31F984"
+      ],
+      "pools": [
+        "0xc1738d90e2e26c35784a0d3e3d8a9f795074bca4"
+      ],
+      "tokensOut": [
+        "0x4200000000000000000000000000000000000006"
+      ],
+      "fees": [
+        3000
+      ],
+      "tickSpacings": [
+        0
+      ],
+      "seedsIn": [
+        "0"
+      ],
+      "seedsOut": [
+        "0"
+      ],
+      "quote": "41920358320452678"
+    }
+  }
+}

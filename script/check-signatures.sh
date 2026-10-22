@@ -77,22 +77,27 @@ check_struct() {
   fi
 }
 
-check IAlgebraFactory.sol poolByPair algebra/IAlgebraFactory.sol
-check IPairFactory.sol isPair hydrex/IPairFactory.sol
 check IPoolFactory.sol isPool aero/IPoolFactory.sol
 check IPoolFactory.sol isPool aero/slipstream/ICLFactory.sol
+check IPoolFactory.sol isPool aero-lite/IPoolFactory.sol
+check IPoolFactory.sol isPool aero-lite/slipstream/ICLFactory.sol
 check IUniswapV2Factory.sol getPair uniswap/v2/IUniswapV2Factory.sol
 check IUniswapV3Factory.sol getPool uniswap/v3/IUniswapV3Factory.sol
+check IPairFactory.sol isPair hydrex/IPairFactory.sol
+check IAlgebraFactory.sol poolByPair algebra/IAlgebraFactory.sol
 
 for name in token0 token1 getReserves getAmountOut swap; do
-  check IClassicPool.sol "$name" hydrex/IPair.sol
   check IClassicPool.sol "$name" aero/IPool.sol
+  check IClassicPool.sol "$name" aero-lite/IPool.sol
+  check IClassicPool.sol "$name" hydrex/IPair.sol
 done
 check IClassicPool.sol getAmountOutWithTotalFee aero/IPool.sol
-check IClassicPool.sol sync hydrex/Pair.sol
+check IClassicPool.sol getAmountOutWithTotalFee aero-lite/IPool.sol
 check IClassicPool.sol sync aero/IPool.sol
+check IClassicPool.sol sync aero-lite/IPool.sol
 check IClassicPool.sol sync uniswap/v2/IUniswapV2Pair.sol
 check IClassicPool.sol swap uniswap/v2/IUniswapV2Pair.sol
+check IClassicPool.sol sync hydrex/Pair.sol
 # Uniswap v2's getReserves returns smaller types, but each fills a whole word, so IClassicPool reads them as uint256.
 v2=$(sig "$U/uniswap/v2/IUniswapV2Pair.sol" getReserves) || v2=missing
 if [ "$v2" != "getReserves()(uint112,uint112,uint32) view" ]; then
@@ -104,10 +109,12 @@ fi
 
 for name in token0 token1; do
   check IClassicPool.sol "$name" aero/slipstream/ICLPoolConstants.sol
+  check IClassicPool.sol "$name" aero-lite/slipstream/ICLPoolConstants.sol
 done
-check IConcentratedPool.sol swap algebra/IAlgebraPoolActions.sol
 check IConcentratedPool.sol swap aero/slipstream/ICLPoolActions.sol
+check IConcentratedPool.sol swap aero-lite/slipstream/ICLPoolActions.sol
 check IConcentratedPool.sol swap uniswap/v3/IUniswapV3PoolActions.sol
+check IConcentratedPool.sol swap algebra/IAlgebraPoolActions.sol
 
 for name in unlock swap sync settle take; do
   check IPoolManager.sol "$name" uniswap/v4/IPoolManager.sol
@@ -115,10 +122,11 @@ done
 check_struct PoolKey uniswap/v4/PoolKey.sol
 check_struct SwapParams uniswap/v4/PoolOperation.sol
 
-check IAlgebraSwapCallback.sol algebraSwapCallback algebra/IAlgebraSwapCallback.sol
 check IUniswapV3SwapCallback.sol uniswapV3SwapCallback aero/slipstream/ICLSwapCallback.sol
+check IUniswapV3SwapCallback.sol uniswapV3SwapCallback aero-lite/slipstream/ICLSwapCallback.sol
 check IUniswapV3SwapCallback.sol uniswapV3SwapCallback uniswap/v3/IUniswapV3SwapCallback.sol
 check IUnlockCallback.sol unlockCallback uniswap/v4/IUnlockCallback.sol
+check IAlgebraSwapCallback.sol algebraSwapCallback algebra/IAlgebraSwapCallback.sol
 
 declared=$(grep -ohE 'function [A-Za-z0-9_]+\(' "$I"/*.sol | sed -E 's/function |\(//g' | sort -u)
 erc20=(balanceOf allowance transfer transferFrom)

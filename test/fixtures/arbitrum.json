@@ -1,0 +1,213 @@
+{
+  "block": 517302790,
+  "routes": {
+    "aeroVolatile": {
+      "token": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+      "amount": "100000000000000000",
+      "factories": [
+        "0x8E6a9FCd1d638CC760Ffba397605Fe3355dE76D2"
+      ],
+      "pools": [
+        "0x0000000000000000000000000000000000000000"
+      ],
+      "tokensOut": [
+        "0xaf88d065e77c8cC2239327C5EDb3A432268e5831"
+      ],
+      "fees": [
+        0
+      ],
+      "tickSpacings": [
+        0
+      ],
+      "seedsIn": [
+        "100000000000000000000"
+      ],
+      "seedsOut": [
+        "300000000000"
+      ],
+      "quote": "0"
+    },
+    "aeroStable": {
+      "token": "0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9",
+      "amount": "100000000",
+      "factories": [
+        "0x78589E876edcEbdce72ee3436ab3c9AD3a7cEF2D"
+      ],
+      "pools": [
+        "0x0000000000000000000000000000000000000000"
+      ],
+      "tokensOut": [
+        "0xaf88d065e77c8cC2239327C5EDb3A432268e5831"
+      ],
+      "fees": [
+        0
+      ],
+      "tickSpacings": [
+        0
+      ],
+      "seedsIn": [
+        "100000000000"
+      ],
+      "seedsOut": [
+        "100000000000"
+      ],
+      "quote": "0"
+    },
+    "aeroSlipstream": {
+      "token": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+      "amount": "100000000000000000",
+      "factories": [
+        "0x88a60ee77392577c355C0acb2A8d476D5a4EC03a"
+      ],
+      "pools": [
+        "0x30c83aaecc7ceabea96b881a62729a1df366efd5"
+      ],
+      "tokensOut": [
+        "0xaf88d065e77c8cC2239327C5EDb3A432268e5831"
+      ],
+      "fees": [
+        0
+      ],
+      "tickSpacings": [
+        100
+      ],
+      "seedsIn": [
+        "0"
+      ],
+      "seedsOut": [
+        "0"
+      ],
+      "quote": "237606535"
+    },
+    "uniswapV2": {
+      "token": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+      "amount": "100000000000000000",
+      "factories": [
+        "0xf1D7CC64Fb4452F05c498126312eBE29f30Fbcf9"
+      ],
+      "pools": [
+        "0xf64dfe17c8b87f012fcf50fbda1d62bfa148366a"
+      ],
+      "tokensOut": [
+        "0xaf88d065e77c8cC2239327C5EDb3A432268e5831"
+      ],
+      "fees": [
+        0
+      ],
+      "tickSpacings": [
+        0
+      ],
+      "seedsIn": [
+        "0"
+      ],
+      "seedsOut": [
+        "0"
+      ],
+      "quote": "234783411"
+    },
+    "uniswapV3": {
+      "token": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+      "amount": "100000000000000000",
+      "factories": [
+        "0x1F98431c8aD98523631AE4a59f267346ea31F984"
+      ],
+      "pools": [
+        "0xc6962004f452be9203591991d15f6b388e09e8d0"
+      ],
+      "tokensOut": [
+        "0xaf88d065e77c8cC2239327C5EDb3A432268e5831"
+      ],
+      "fees": [
+        500
+      ],
+      "tickSpacings": [
+        0
+      ],
+      "seedsIn": [
+        "0"
+      ],
+      "seedsOut": [
+        "0"
+      ],
+      "quote": "237669425"
+    },
+    "uniswapV4": {
+      "token": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+      "amount": "100000000000000000",
+      "factories": [
+        "0x360E68faCcca8cA495c1B759Fd9EEe466db9FB32"
+      ],
+      "pools": [
+        "0x0000000000000000000000000000000000000000"
+      ],
+      "tokensOut": [
+        "0xaf88d065e77c8cC2239327C5EDb3A432268e5831"
+      ],
+      "fees": [
+        500
+      ],
+      "tickSpacings": [
+        10
+      ],
+      "seedsIn": [
+        "0"
+      ],
+      "seedsOut": [
+        "0"
+      ],
+      "quote": "237561749"
+    },
+    "usdcToWeth": {
+      "token": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+      "amount": "100000000",
+      "factories": [
+        "0x1F98431c8aD98523631AE4a59f267346ea31F984"
+      ],
+      "pools": [
+        "0xc6962004f452be9203591991d15f6b388e09e8d0"
+      ],
+      "tokensOut": [
+        "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1"
+      ],
+      "fees": [
+        500
+      ],
+      "tickSpacings": [
+        0
+      ],
+      "seedsIn": [
+        "0"
+      ],
+      "seedsOut": [
+        "0"
+      ],
+      "quote": "42033110190225025"
+    },
+    "wethToCbBtc": {
+      "token": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+      "amount": "10000000000000000",
+      "factories": [
+        "0x1F98431c8aD98523631AE4a59f267346ea31F984"
+      ],
+      "pools": [
+        "0x15811145e3f1ab23b28582556fcba20df5642876"
+      ],
+      "tokensOut": [
+        "0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf"
+      ],
+      "fees": [
+        3000
+      ],
+      "tickSpacings": [
+        0
+      ],
+      "seedsIn": [
+        "0"
+      ],
+      "seedsOut": [
+        "0"
+      ],
+      "quote": "29168"
+    }
+  }
+}

@@ -1,0 +1,194 @@
+{
+  "block": 59195574,
+  "routes": {
+    "aeroVolatile": {
+      "token": "0x4200000000000000000000000000000000000006",
+      "amount": "100000000000000000",
+      "factories": [
+        "0x8E6a9FCd1d638CC760Ffba397605Fe3355dE76D2"
+      ],
+      "pools": [
+        "0x0000000000000000000000000000000000000000"
+      ],
+      "tokensOut": [
+        "0x2D270e6886d130D724215A266106e6832161EAEd"
+      ],
+      "fees": [
+        0
+      ],
+      "tickSpacings": [
+        0
+      ],
+      "seedsIn": [
+        "100000000000000000000"
+      ],
+      "seedsOut": [
+        "300000000000"
+      ],
+      "quote": "0"
+    },
+    "aeroStable": {
+      "token": "0x0200C29006150606B650577BBE7B6248F58470c1",
+      "amount": "100000000",
+      "factories": [
+        "0x78589E876edcEbdce72ee3436ab3c9AD3a7cEF2D"
+      ],
+      "pools": [
+        "0x0000000000000000000000000000000000000000"
+      ],
+      "tokensOut": [
+        "0x2D270e6886d130D724215A266106e6832161EAEd"
+      ],
+      "fees": [
+        0
+      ],
+      "tickSpacings": [
+        0
+      ],
+      "seedsIn": [
+        "100000000000"
+      ],
+      "seedsOut": [
+        "100000000000"
+      ],
+      "quote": "0"
+    },
+    "aeroSlipstream": {
+      "token": "0x4200000000000000000000000000000000000006",
+      "amount": "100000000000000000",
+      "factories": [
+        "0x7660BF2aDefC687C22906112ca323d60A00358cF"
+      ],
+      "pools": [
+        "0x581307abf9eb238c04b3e83de5a53c5d1b144ec7"
+      ],
+      "tokensOut": [
+        "0x2D270e6886d130D724215A266106e6832161EAEd"
+      ],
+      "fees": [
+        0
+      ],
+      "tickSpacings": [
+        100
+      ],
+      "seedsIn": [
+        "0"
+      ],
+      "seedsOut": [
+        "0"
+      ],
+      "quote": "237681510"
+    },
+    "uniswapV2": {
+      "token": "0x0200C29006150606B650577BBE7B6248F58470c1",
+      "amount": "10000",
+      "factories": [
+        "0xfe57A6BA1951F69aE2Ed4abe23e0f095DF500C04"
+      ],
+      "pools": [
+        "0x4a5fb6b49af85ce3c8f54f3a6d06ef9683d1d4b1"
+      ],
+      "tokensOut": [
+        "0x4200000000000000000000000000000000000006"
+      ],
+      "fees": [
+        0
+      ],
+      "tickSpacings": [
+        0
+      ],
+      "seedsIn": [
+        "0"
+      ],
+      "seedsOut": [
+        "0"
+      ],
+      "quote": "4183698221105"
+    },
+    "uniswapV3": {
+      "token": "0x0200C29006150606B650577BBE7B6248F58470c1",
+      "amount": "100000000",
+      "factories": [
+        "0x640887A9ba3A9C53Ed27D0F7e8246A4F933f3424"
+      ],
+      "pools": [
+        "0x89e730df7bbb280d5648e79ecb541fd9afb74dd2"
+      ],
+      "tokensOut": [
+        "0x2D270e6886d130D724215A266106e6832161EAEd"
+      ],
+      "fees": [
+        100
+      ],
+      "tickSpacings": [
+        0
+      ],
+      "seedsIn": [
+        "0"
+      ],
+      "seedsOut": [
+        "0"
+      ],
+      "quote": "99888489"
+    },
+    "uniswapV4Native": {
+      "token": "0x0200C29006150606B650577BBE7B6248F58470c1",
+      "amount": "10000000",
+      "factories": [
+        "0x360E68faCcca8cA495c1B759Fd9EEe466db9FB32",
+        "0x360E68faCcca8cA495c1B759Fd9EEe466db9FB32"
+      ],
+      "pools": [
+        "0x0000000000000000000000000000000000000000",
+        "0x0000000000000000000000000000000000000000"
+      ],
+      "tokensOut": [
+        "0x0000000000000000000000000000000000000000",
+        "0x2D270e6886d130D724215A266106e6832161EAEd"
+      ],
+      "fees": [
+        3000,
+        3000
+      ],
+      "tickSpacings": [
+        60,
+        60
+      ],
+      "seedsIn": [
+        "0",
+        "0"
+      ],
+      "seedsOut": [
+        "0",
+        "0"
+      ],
+      "quote": "9896986"
+    },
+    "usdcToWeth": {
+      "token": "0x2D270e6886d130D724215A266106e6832161EAEd",
+      "amount": "100000000",
+      "factories": [
+        "0x7660BF2aDefC687C22906112ca323d60A00358cF"
+      ],
+      "pools": [
+        "0x581307abf9eb238c04b3e83de5a53c5d1b144ec7"
+      ],
+      "tokensOut": [
+        "0x4200000000000000000000000000000000000006"
+      ],
+      "fees": [
+        0
+      ],
+      "tickSpacings": [
+        100
+      ],
+      "seedsIn": [
+        "0"
+      ],
+      "seedsOut": [
+        "0"
+      ],
+      "quote": "41787888464781227"
+    }
+  }
+}

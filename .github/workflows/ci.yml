@@ -36,23 +36,35 @@ jobs:
       - run: forge test -vvv
 
   fork:
-    name: Base fork tests (skipped without BASE_RPC_URL)
+    name: ${{ matrix.chain }} fork tests (skipped without ${{ matrix.rpc }})
     runs-on: ubuntu-26.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { chain: Base, rpc: BASE_RPC_URL }
+          - { chain: Ethereum, rpc: ETHEREUM_RPC_URL }
+          - { chain: Optimism, rpc: OPTIMISM_RPC_URL }
+          - { chain: Robinhood, rpc: ROBINHOOD_RPC_URL }
+          - { chain: Arc, rpc: ARC_RPC_URL }
+          - { chain: Arbitrum, rpc: ARBITRUM_RPC_URL }
+          - { chain: Ink, rpc: INK_RPC_URL }
     env:
-      BASE_RPC_URL: ${{ secrets.BASE_RPC_URL }}
+      RPC_URL: ${{ secrets[matrix.rpc] }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           submodules: recursive
           persist-credentials: false
-      - if: env.BASE_RPC_URL == ''
-        run: echo "::notice::BASE_RPC_URL secret not set; fork tests run locally only"
+      - if: env.RPC_URL == ''
+        run: echo "::notice::${{ matrix.rpc }} secret not set; ${{ matrix.chain }} fork tests run locally only"
       - uses: foundry-rs/foundry-toolchain@908c540300062bd5a7e473851cdb4282204cee09 # v1.9.1
-        if: env.BASE_RPC_URL != ''
+        if: env.RPC_URL != ''
         with:
           version: ${{ env.FOUNDRY_VERSION }}
-      - if: env.BASE_RPC_URL != ''
-        run: forge test --match-path test/Fork.t.sol -vvv
+      # The test reads the chain's own variable, so only that chain's fork tests run.
+      - if: env.RPC_URL != ''
+        run: ${{ matrix.rpc }}="$RPC_URL" forge test --match-path test/fork/${{ matrix.chain }}.t.sol -vvv
 
   upstream-pin:
     name: vendored upstream sources

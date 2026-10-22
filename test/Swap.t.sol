@@ -317,17 +317,19 @@ contract SwapTest is SwapperTestBase {
     }
 
     function test_poolCheck_refusesAnotherExchangesPool() public {
-        for (uint256 i; i < uint256(UNISWAP_V4); ++i) {
-            uint8 e = uint8(i);
-            address pool = _pool(uint8((i + 1) % UNISWAP_V4), address(tkn), address(usdc));
+        uint8[EXCHANGES - 1] memory pooled = _pooled();
+        for (uint256 i; i < pooled.length; ++i) {
+            uint8 e = pooled[i];
+            address pool = _pool(pooled[(i + 1) % pooled.length], address(tkn), address(usdc));
             ImmutableSwapper.Route memory r = _route(address(tkn), 1e18, _hops(_hop(e, pool, address(usdc))));
             _expectRouteRevert(r, abi.encodeWithSelector(ImmutableSwapper.NotExchangePool.selector, e, pool));
         }
     }
 
     function test_poolCheck_refusesAPoolForOtherTokens() public {
-        for (uint256 i; i < uint256(UNISWAP_V4); ++i) {
-            uint8 e = uint8(i);
+        uint8[EXCHANGES - 1] memory pooled = _pooled();
+        for (uint256 i; i < pooled.length; ++i) {
+            uint8 e = pooled[i];
             address pool = _pool(e, address(weth), address(usdc));
             ImmutableSwapper.Route memory r = _route(address(tkn), 1e18, _hops(_hop(e, pool, address(usdc))));
             _expectRouteRevert(r, abi.encodeWithSelector(ImmutableSwapper.NotExchangePool.selector, e, pool));
@@ -336,8 +338,9 @@ contract SwapTest is SwapperTestBase {
 
     function test_poolCheck_refusesAddressesNoFactoryMade() public {
         address[3] memory bad = [makeAddr("nobody"), address(usdc), address(0)];
-        for (uint256 i; i < uint256(UNISWAP_V4); ++i) {
-            uint8 e = uint8(i);
+        uint8[EXCHANGES - 1] memory pooled = _pooled();
+        for (uint256 i; i < pooled.length; ++i) {
+            uint8 e = pooled[i];
             _pool(e, address(tkn), address(usdc));
             for (uint256 j; j < bad.length; ++j) {
                 ImmutableSwapper.Route memory r = _route(address(tkn), 1e18, _hops(_hop(e, bad[j], address(usdc))));
@@ -535,23 +538,23 @@ contract SwapTest is SwapperTestBase {
     function test_callbacks_onlyTheRecordedCaller() public {
         vm.startPrank(stranger);
         vm.expectRevert(abi.encodeWithSelector(ImmutableSwapper.NotExpectedCaller.selector, stranger));
-        swapper.algebraSwapCallback(1, -1, "");
-        vm.expectRevert(abi.encodeWithSelector(ImmutableSwapper.NotExpectedCaller.selector, stranger));
         swapper.uniswapV3SwapCallback(1, -1, "");
         vm.expectRevert(abi.encodeWithSelector(ImmutableSwapper.NotExpectedCaller.selector, stranger));
         swapper.unlockCallback("");
+        vm.expectRevert(abi.encodeWithSelector(ImmutableSwapper.NotExpectedCaller.selector, stranger));
+        swapper.algebraSwapCallback(1, -1, "");
         vm.stopPrank();
 
         ImmutableSwapper.Route memory r = _direct(HYDREX_ALGEBRA, address(tkn), 1e18);
         _give(address(tkn), 1e18);
         _swap(_routes(r));
         address pool = r.hops[0].pool;
-        vm.prank(pool);
-        vm.expectRevert(abi.encodeWithSelector(ImmutableSwapper.NotExpectedCaller.selector, pool));
-        swapper.algebraSwapCallback(1, -1, "");
         vm.prank(address(manager));
         vm.expectRevert(abi.encodeWithSelector(ImmutableSwapper.NotExpectedCaller.selector, address(manager)));
         swapper.unlockCallback("");
+        vm.prank(pool);
+        vm.expectRevert(abi.encodeWithSelector(ImmutableSwapper.NotExpectedCaller.selector, pool));
+        swapper.algebraSwapCallback(1, -1, "");
     }
 
     function test_callbacks_onlyOnce() public {
@@ -578,7 +581,7 @@ contract SwapTest is SwapperTestBase {
     }
 
     function test_reentrancy_throughATokenHook() public {
-        uint8[4] memory es = [UNISWAP_V2, UNISWAP_V3, HYDREX_ALGEBRA, UNISWAP_V4];
+        uint8[4] memory es = [UNISWAP_V2, UNISWAP_V3, UNISWAP_V4, HYDREX_ALGEBRA];
         for (uint256 e; e < es.length; ++e) {
             ImmutableSwapper.Route[] memory routes = _routes(_direct(es[e], address(tkn), 1e18));
             bytes[6] memory calls = [
@@ -586,8 +589,8 @@ contract SwapTest is SwapperTestBase {
                 abi.encodeCall(ImmutableSwapper.quote, (routes)),
                 abi.encodeCall(ImmutableSwapper.runRoute, (holder, 0, routes[0])),
                 abi.encodeCall(ImmutableSwapper.uniswapV3SwapCallback, (1, -1, "")),
-                abi.encodeCall(ImmutableSwapper.algebraSwapCallback, (1, -1, "")),
-                abi.encodeCall(ImmutableSwapper.unlockCallback, (""))
+                abi.encodeCall(ImmutableSwapper.unlockCallback, ("")),
+                abi.encodeCall(ImmutableSwapper.algebraSwapCallback, (1, -1, ""))
             ];
             bytes memory notExpected =
                 abi.encodeWithSelector(ImmutableSwapper.NotExpectedCaller.selector, address(usdc));

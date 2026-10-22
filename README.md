@@ -1,25 +1,17 @@
 # metadex-swapper
 
 `ImmutableSwapper` is a contract that swaps the tokens a holder picks to one output token in one call: small balances
-left in a wallet, or rewards paid in many tokens. It swaps through the pools of the exchanges its deployment lists: on
-Base, Hydrex, Aero and Uniswap. The caller picks the exchange and the pool of every hop, and the contract checks each
-pick against that exchange's own factory. It sends 1% of the output to a fixed treasury.
+left in a wallet, or rewards paid in many tokens. It swaps through the pools of the exchanges its deployment lists:
+Aero and Uniswap on every chain, and Hydrex on Base. The caller picks the exchange and the pool of every hop, and the
+contract checks each pick against that exchange's own factory. It sends 1% of the output to a fixed treasury.
 
 It is deployed once for each chain and output token, which are fixed in that deployment's code, with the chain's
 exchanges. The contract has no owner, no settings and no upgrade path. All of it is in
 [`src/ImmutableSwapper.sol`](src/ImmutableSwapper.sol).
 
-This is version 2. It takes each chain's exchanges as constructor arguments, so that it can be deployed beyond Base,
-and it leaves out Aerodrome. It is not deployed yet. On Base, it will be at:
-
-| Output | Token | Swapper |
-| --- | --- | --- |
-| USDC | `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913` | `0xf86764abF2d42123767108152a0c596d05aB0598` |
-| EURC | `0x60a3E35Cc302bFA44Cb288Bc5a4F316Fdb1adb42` | `0x296e75CCDBD20986A0f9368fD5F706e3421f3BF9` |
-| WETH | `0x4200000000000000000000000000000000000006` | `0xF468F438d418B2De7d56a17d8fc9f8fdfBE6Ac8C` |
-| cbBTC | `0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf` | `0x678c7CC87d8f766Cb5ac591bf5E4faB433c47bCb` |
-| AERO | `0x3f5bF3EdAc59d650D8fDf9657a71F2f904A3a4Ee` | `0xff5c8d64B0466FEADBf5B75ac2C4619bAE8310f0` |
-| HYDX | `0x00000e7efa313F4E11Bfff432471eD9423AC6B30` | `0x6b54d3E7E59c3eeD9d2f81B255Bd3EaC24c1D4E0` |
+This is version 2. It takes each chain's exchanges as constructor arguments, so that it can be deployed beyond Base, and
+it leaves out Aerodrome and Velodrome. It is not deployed yet. It will be deployed on Base, Ethereum, OP Mainnet,
+Robinhood Chain, Arc, Arbitrum One and Ink, at the addresses under [Chains](#chains).
 
 Version 1 is deployed on Base, with Aerodrome among its exchanges: see [Version 1](#version-1).
 
@@ -79,48 +71,39 @@ pools are only asked for their price. So `quote` and `swap` can differ:
 - A token that charges a fee on transfers is quoted as if it didn't.
 - `swap` syncs a classic pool before sending it the input, so what the pool holds beyond its reserves joins them.
   `quote` prices with the reserves as they are, so the two differ when a pool holds such tokens.
-- Code that an exchange's admins control runs inside the swap, for `quote` as for `swap`: Hydrex's plugins and Aero's
-  swap hook. It can skew a quote through those pools.
+- Code that an exchange's admins control runs inside the swap, for `quote` as for `swap`: Aero's swap hook and
+  Hydrex's plugins. It can skew a quote through those pools.
 
 To see what a call will do, simulate `swap` itself, after its approvals, with `eth_simulateV1`.
 
 ### The exchanges
 
-Each deployment fixes 1 to 12 exchanges: each is a factory, or Uniswap v4's manager, and its kind. `exchanges()`
-returns them in order, and a hop names one by its index. The kind sets how the swapper checks a pool, and how it pays it:
+Each deployment fixes 1 to 12 exchanges: each is a factory, or Uniswap v4's manager, and its kind. No two can share a
+factory. `exchanges()` returns them in order, and a hop names one by its index. The kind sets how the swapper checks a
+pool, and how it pays it:
 
 | `Kind` | A pool belongs to the exchange when |
 | --- | --- |
-| `HydrexAlgebra` | `poolByPair(a, b) == pool` |
-| `HydrexClassic` | `isPair(pool)`, and its tokens are the hop's |
 | `AeroClassic` | `isPool(pool)`, and its tokens are the hop's |
 | `AeroSlipstream` | `isPool(pool)`, and its tokens are the hop's |
 | `UniswapV2` | `getPair(a, b) == pool` |
 | `UniswapV3` | `getPool(a, b, fee) == pool` |
 | `UniswapV4` | the key of the hop's tokens, `fee` and `tickSpacing`, with no hooks |
+| `HydrexClassic` | `isPair(pool)`, and its tokens are the hop's |
+| `HydrexAlgebra` | `poolByPair(a, b) == pool` |
 
-On Base, the deployments list eight exchanges, among them every pool factory that Aero's registry lists:
-
-| Index | `Kind` | Factory, or manager |
-| --- | --- | --- |
-| 0 | `HydrexAlgebra` | Algebra Integral, `0x36077D39cdC65E1e3FB65810430E5b2c4D5fA29E` |
-| 1 | `HydrexClassic` | Pair factory, `0xC47F17c4fd96F50eFD2A2448ceDe5C185c084bf0` |
-| 2 | `AeroClassic` | Volatile pools, `0x8E6a9FCd1d638CC760Ffba397605Fe3355dE76D2` |
-| 3 | `AeroClassic` | Stable pools, `0x78589E876edcEbdce72ee3436ab3c9AD3a7cEF2D` |
-| 4 | `AeroSlipstream` | `CLFactory`, `0x9CB220581b91b0C83223012FE69688b92aD07a76` |
-| 5 | `UniswapV2` | `UniswapV2Factory`, `0x8909Dc15e40173Ff4699343b6eB8132c65e18eC6` |
-| 6 | `UniswapV3` | `UniswapV3Factory`, `0x33128a8fC17869897dcE68Ed026d694621f6FDfD` |
-| 7 | `UniswapV4` | `PoolManager`, `0x498581fF718922c3f8e6A244956aF099B2652b2b` |
+Each chain's deployments list every pool factory that the chain's Aero registry lists, and Uniswap's v2, v3 and v4: see
+[Chains](#chains).
 
 The swapper pays each kind of pool its own way:
 
-- **Algebra, Slipstream and Uniswap v3 pools** send their output, then call the swapper back to be paid. The swapper
+- **Aero's classic pools, Uniswap v2's pairs and Hydrex's pairs** are synced, then sent the input. The swapper counts
+  what the pool received, prices it with Aero's `getAmountOutWithTotalFee`, Uniswap v2's 0.3% formula, or Hydrex's
+  `getAmountOut`, and asks for that much. Hydrex's stable pairs can quote one wei more than they accept, so it asks
+  Hydrex's pairs for one wei less.
+- **Slipstream, Uniswap v3 and Algebra pools** send their output, then call the swapper back to be paid. The swapper
   pays only the pool it is swapping through, only during that swap, only once, and only exactly the hop's amount of the
   hop's token. A pool that takes less than the whole amount, a partial fill, reverts the route.
-- **Hydrex's pairs, Aero's classic pools and Uniswap v2's pairs** are synced, then sent the input. The swapper counts
-  what the pool received, prices it with Hydrex's `getAmountOut`, Aero's `getAmountOutWithTotalFee`, or Uniswap v2's
-  0.3% formula, and asks for that much. Hydrex's stable pairs can quote one wei more than they accept,
-  so it asks Hydrex's pairs for one wei less.
 - **Uniswap v4:** consecutive hops through the same manager run in one `unlock`. Each must take exactly the whole
   amount. Then the swapper pays the first token and takes the last, which must be another token. The native currency
   can only pass between two such hops, so it never leaves the manager.
@@ -128,15 +111,171 @@ The swapper pays each kind of pool its own way:
 Uniswap v4 hops name no pool: the swapper builds every key with no hooks. Hooks run inside every swap and can do
 anything there, so tokens that trade only in pools with hooks, as many launchpad tokens do, are out of reach.
 
-## What each exchange's admins can change
+## Chains
 
-On Base:
+Each chain has one swapper for each output token, and lists its own exchanges. Aero's classic factories have the same
+addresses on every chain; its `CLFactory` and Uniswap's contracts have their own on most.
+
+### Base
+
+Chain ID 8453. Only Base has Hydrex.
+
+| Output | Token | Swapper |
+| --- | --- | --- |
+| USDC | `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913` | `0xb1ed455Cd2A475B4E4A57b8D32260aCCc795D1dD` |
+| EURC | `0x60a3E35Cc302bFA44Cb288Bc5a4F316Fdb1adb42` | `0x6b37f100B6DD61077201371c1Aae029D740d51da` |
+| WETH | `0x4200000000000000000000000000000000000006` | `0xFA88C5dEd6F338D2762E7929Cc8C5551dff0B9a6` |
+| cbBTC | `0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf` | `0x79B309317Fa2D36E6354d27D7EFeC5E120123f2B` |
+| AERO | `0x3f5bF3EdAc59d650D8fDf9657a71F2f904A3a4Ee` | `0xC6281eE146FFE754771356339F2594A8955Cffe3` |
+| HYDX | `0x00000e7efa313F4E11Bfff432471eD9423AC6B30` | `0xf34FE34945e38F58D5F19C02eB767225efbD33DB` |
+
+| Index | `Kind` | Factory, or manager |
+| --- | --- | --- |
+| 0 | `AeroClassic` | Aero volatile pools, `0x8E6a9FCd1d638CC760Ffba397605Fe3355dE76D2` |
+| 1 | `AeroClassic` | Aero stable pools, `0x78589E876edcEbdce72ee3436ab3c9AD3a7cEF2D` |
+| 2 | `AeroSlipstream` | Aero `CLFactory`, `0x9CB220581b91b0C83223012FE69688b92aD07a76` |
+| 3 | `UniswapV2` | `UniswapV2Factory`, `0x8909Dc15e40173Ff4699343b6eB8132c65e18eC6` |
+| 4 | `UniswapV3` | `UniswapV3Factory`, `0x33128a8fC17869897dcE68Ed026d694621f6FDfD` |
+| 5 | `UniswapV4` | `PoolManager`, `0x498581fF718922c3f8e6A244956aF099B2652b2b` |
+| 6 | `HydrexClassic` | Hydrex pair factory, `0xC47F17c4fd96F50eFD2A2448ceDe5C185c084bf0` |
+| 7 | `HydrexAlgebra` | Hydrex's Algebra Integral factory, `0x36077D39cdC65E1e3FB65810430E5b2c4D5fA29E` |
+
+### Ethereum
+
+Chain ID 1. Aero's classic pools have no MEV tax module here.
+
+| Output | Token | Swapper |
+| --- | --- | --- |
+| USDC | `0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48` | `0x5F38452bA25ddA761ac09F9b527A8AE8AB124C05` |
+| EURC | `0x1aBaEA1f7C830bD89Acc67eC4af516284b1bC33c` | `0x936EC799146523C60Ba6CDaB568C326542fe33d1` |
+| WETH | `0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2` | `0x2FbEe80FFCA668D8B79181d1eCc9632ef0f20969` |
+| cbBTC | `0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf` | `0x0663228082f5dFac237d6530adC7dEB0cf30119A` |
+
+| Index | `Kind` | Factory, or manager |
+| --- | --- | --- |
+| 0 | `AeroClassic` | Aero volatile pools, `0x8E6a9FCd1d638CC760Ffba397605Fe3355dE76D2` |
+| 1 | `AeroClassic` | Aero stable pools, `0x78589E876edcEbdce72ee3436ab3c9AD3a7cEF2D` |
+| 2 | `AeroSlipstream` | Aero `CLFactory`, `0xF4Fd2E6c5B60c5b365cd1B96DD6245E6D60414c2` |
+| 3 | `UniswapV2` | `UniswapV2Factory`, `0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f` |
+| 4 | `UniswapV3` | `UniswapV3Factory`, `0x1F98431c8aD98523631AE4a59f267346ea31F984` |
+| 5 | `UniswapV4` | `PoolManager`, `0x000000000004444c5dc75cB358380D2e3dE08A90` |
+
+### OP Mainnet
+
+Chain ID 10.
+
+| Output | Token | Swapper |
+| --- | --- | --- |
+| USDC | `0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85` | `0x646A8869e42653c61C2A5ae3bCA803EC7DBd9ad0` |
+| WETH | `0x4200000000000000000000000000000000000006` | `0x96F1A279E7d8332d60C0490E3F96471968fe1612` |
+
+| Index | `Kind` | Factory, or manager |
+| --- | --- | --- |
+| 0 | `AeroClassic` | Aero volatile pools, `0x8E6a9FCd1d638CC760Ffba397605Fe3355dE76D2` |
+| 1 | `AeroClassic` | Aero stable pools, `0x78589E876edcEbdce72ee3436ab3c9AD3a7cEF2D` |
+| 2 | `AeroSlipstream` | Aero `CLFactory`, `0xfeaB42D90055db3a0616249f76B6002D72266778` |
+| 3 | `UniswapV2` | `UniswapV2Factory`, `0x0c3c1c532F1e39EdF36BE9Fe0bE1410313E074Bf` |
+| 4 | `UniswapV3` | `UniswapV3Factory`, `0x1F98431c8aD98523631AE4a59f267346ea31F984` |
+| 5 | `UniswapV4` | `PoolManager`, `0x9a13F98Cb987694C9F086b1F5eB990EeA8264Ec3` |
+
+### Robinhood Chain
+
+Chain ID 4663. USDG is Paxos's Global Dollar. Aero's classic pools have no MEV tax module here. There is no cbBTC
+swapper: no source from Coinbase confirms cbBTC's address on this chain.
+
+| Output | Token | Swapper |
+| --- | --- | --- |
+| USDG | `0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168` | `0xB0b717b77c61992932e5c57258ECDe354680a436` |
+| WETH | `0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73` | `0x485a9234CcaBE59506072f2083C60431ac27Fe20` |
+
+| Index | `Kind` | Factory, or manager |
+| --- | --- | --- |
+| 0 | `AeroClassic` | Aero volatile pools, `0x8E6a9FCd1d638CC760Ffba397605Fe3355dE76D2` |
+| 1 | `AeroClassic` | Aero stable pools, `0x78589E876edcEbdce72ee3436ab3c9AD3a7cEF2D` |
+| 2 | `AeroSlipstream` | Aero `CLFactory`, `0xc63d7338c178e805c544B8f897066bD3BBcBE136` |
+| 3 | `UniswapV2` | `UniswapV2Factory`, `0x8bcEaA40B9AcdfAedF85AdF4FF01F5Ad6517937f` |
+| 4 | `UniswapV3` | `UniswapV3Factory`, `0x1f7d7550B1b028f7571E69A784071F0205FD2EfA` |
+| 5 | `UniswapV4` | `PoolManager`, `0x8366a39CC670B4001A1121B8F6A443A643e40951` |
+
+### Arc
+
+Chain ID 5042. Arc has Aero and Aero Lite, and its Aero registry lists the six factories of both. USDC is Arc's native
+currency, through an ERC-20 at `0x3600…`: see [Trust and limitations](#trust-and-limitations). cirBTC is Circle's
+bitcoin. There is no WETH swapper: Arc's WETH is a bridged token whose owner is a single key. Aero Lite's classic pools
+have no MEV tax module.
+
+| Output | Token | Swapper |
+| --- | --- | --- |
+| USDC | `0x3600000000000000000000000000000000000000` | `0xCD9af7C15FB5eA73719bd148198298f9c7fb9D51` |
+| EURC | `0xbEf5f6d51CB62b58e6A8f77868681825C6fe21c1` | `0x8d21831Df0C72f98120e7D0484178dc2a34b2773` |
+| cirBTC | `0x171A4217b86A807A64eB94757Db6849fb4bDbAA0` | `0x79aD28339a95896Fd52D3996615D578B7Cb6b734` |
+
+| Index | `Kind` | Factory, or manager |
+| --- | --- | --- |
+| 0 | `AeroClassic` | Aero volatile pools, `0x8E6a9FCd1d638CC760Ffba397605Fe3355dE76D2` |
+| 1 | `AeroClassic` | Aero stable pools, `0x78589E876edcEbdce72ee3436ab3c9AD3a7cEF2D` |
+| 2 | `AeroClassic` | Aero Lite volatile pools, `0x9bc8b3F60D349d687Fb44A018967025E3741F9a5` |
+| 3 | `AeroClassic` | Aero Lite stable pools, `0xaEd253F1aD84d99f2165256D701b2b481DD4CC16` |
+| 4 | `AeroSlipstream` | Aero `CLFactory`, `0x7F83235643181E440433400a027618Cd50879751` |
+| 5 | `AeroSlipstream` | Aero Lite `CLFactory`, `0xb89Df768aF2CFE637ceB352c587Fe8edAf491d03` |
+| 6 | `UniswapV2` | `UniswapV2Factory`, `0x89e5DB8B5aA49aA85AC63f691524311AEB649eba` |
+| 7 | `UniswapV3` | `UniswapV3Factory`, `0xf0db7b58379503491d857dB50AC9ece64c653918` |
+| 8 | `UniswapV4` | `PoolManager`, `0x8366a39CC670B4001A1121B8F6A443A643e40951` |
+
+### Arbitrum One
+
+Chain ID 42161.
+
+| Output | Token | Swapper |
+| --- | --- | --- |
+| USDC | `0xaf88d065e77c8cC2239327C5EDb3A432268e5831` | `0x2BE19Ee701Cb109416481283E56Df7C70e47821C` |
+| WETH | `0x82aF49447D8a07e3bd95BD0d56f35241523fBab1` | `0x36348651d797cecc225A58C64f9b2C2b29091B26` |
+| cbBTC | `0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf` | `0xbE293Bae0e90EC5405f9b9E8794B8288282aEA6F` |
+
+| Index | `Kind` | Factory, or manager |
+| --- | --- | --- |
+| 0 | `AeroClassic` | Aero volatile pools, `0x8E6a9FCd1d638CC760Ffba397605Fe3355dE76D2` |
+| 1 | `AeroClassic` | Aero stable pools, `0x78589E876edcEbdce72ee3436ab3c9AD3a7cEF2D` |
+| 2 | `AeroSlipstream` | Aero `CLFactory`, `0x88a60ee77392577c355C0acb2A8d476D5a4EC03a` |
+| 3 | `UniswapV2` | `UniswapV2Factory`, `0xf1D7CC64Fb4452F05c498126312eBE29f30Fbcf9` |
+| 4 | `UniswapV3` | `UniswapV3Factory`, `0x1F98431c8aD98523631AE4a59f267346ea31F984` |
+| 5 | `UniswapV4` | `PoolManager`, `0x360E68faCcca8cA495c1B759Fd9EEe466db9FB32` |
+
+### Ink
+
+Chain ID 57073.
+
+| Output | Token | Swapper |
+| --- | --- | --- |
+| USDC | `0x2D270e6886d130D724215A266106e6832161EAEd` | `0x1b5a0d897Cff041dFC2f24396A1159Fd2166EBc9` |
+| WETH | `0x4200000000000000000000000000000000000006` | `0xa98058A2DE00d2361035860d81E1a3E73b9df903` |
+
+| Index | `Kind` | Factory, or manager |
+| --- | --- | --- |
+| 0 | `AeroClassic` | Aero volatile pools, `0x8E6a9FCd1d638CC760Ffba397605Fe3355dE76D2` |
+| 1 | `AeroClassic` | Aero stable pools, `0x78589E876edcEbdce72ee3436ab3c9AD3a7cEF2D` |
+| 2 | `AeroSlipstream` | Aero `CLFactory`, `0x7660BF2aDefC687C22906112ca323d60A00358cF` |
+| 3 | `UniswapV2` | `UniswapV2Factory`, `0xfe57A6BA1951F69aE2Ed4abe23e0f095DF500C04` |
+| 4 | `UniswapV3` | `UniswapV3Factory`, `0x640887A9ba3A9C53Ed27D0F7e8246A4F933f3424` |
+| 5 | `UniswapV4` | `PoolManager`, `0x360E68faCcca8cA495c1B759Fd9EEe466db9FB32` |
+
+## What each exchange's admins can change
 
 | Exchange | Held by | What it can change in a swap |
 | --- | --- | --- |
-| Hydrex | `0x74266f2b206D1359B83fc74949EF07176FB3AE03`, a single key, owns the Algebra factory. A one-day timelock, `0xdF52b5A03E3F5a4178E4F63e8BC51abE691B898F`, owns the pair factory's proxy admin. A 2-of-4 Safe, `0x1aE3753d9b60743A89159CcFF8E251C60B560311`, manages the pairs' fees. The plugins have their own admins. | Fees: the pairs', up to 2.5%. The pair factory's code, and the plugins' code. Not fully checked. |
-| Aero | A 3-of-7 Safe, `0x42255e3C2d0b71a0b006243148fdF1a71d054cE0` | Pause classic pools. Their fee, up to 20% with the MEV tax. The Slipstream pools' swap hook and its fee, capped at 10%. Discounts for chosen callers. |
-| Uniswap | The owners of the v3 factory, `0xaBEA76658b205696d49B5F91b2a03536cB8A3bE1`, and of the v4 manager, `0x31FAfd4889FA1269F7a13A66eE0fB458f27D72A9` | v2 and v3: nothing that changes what a swap costs. v4: a protocol fee of up to 0.1%. |
+| Aero, and Aero Lite on Arc | A 3-of-7 Safe, `0x42255e3C2d0b71a0b006243148fdF1a71d054cE0`, on every chain | Pause classic pools. Their fee, up to 20% with the MEV tax, which they can set where there is none. The Slipstream pools' swap hook and its fee, capped at 10%. Discounts for chosen callers. |
+| Uniswap | The owners of the v3 factory and of the v4 manager, in the table below | v2 and v3: nothing that changes what a swap costs. v4: a protocol fee of up to 0.1%. |
+| Hydrex, on Base | `0x74266f2b206D1359B83fc74949EF07176FB3AE03`, a single key, owns the Algebra factory. A one-day timelock, `0xdF52b5A03E3F5a4178E4F63e8BC51abE691B898F`, owns the pair factory's proxy admin. A 2-of-4 Safe, `0x1aE3753d9b60743A89159CcFF8E251C60B560311`, manages the pairs' fees. The plugins have their own admins. | Fees: the pairs', up to 2.5%. The pair factory's code, and the plugins' code. Not fully checked. |
+
+| Chain | Uniswap v3 factory's owner | Uniswap v4 manager's owner |
+| --- | --- | --- |
+| Base | `0xaBEA76658b205696d49B5F91b2a03536cB8A3bE1` | `0x31FAfd4889FA1269F7a13A66eE0fB458f27D72A9` |
+| Ethereum | `0xf2371551Fe3937Db7c750f4DfABe5c2fFFdcBf5A` | `0x1a9C8182C09F50C8318d769245beA52c32BE35BC`, Uniswap's timelock |
+| OP Mainnet | `0xec23Cf5A1db3dcC6595385D28B2a4D9B52503Be4` | `0xa1dD330d602c32622AA270Ea73d078B803Cb3518` |
+| Robinhood Chain | `0x05C420bC4823e039AA4dA645eDde743486dAAA25` | `0x2BAD8182C09F50c8318d769245beA52C32Be46CD`, the timelock's L2 alias |
+| Arc | `0xa59FfbB55D91Fc32b44A06F0b9cc6036a4afbcE2` | `0xbCA30b5429935205037069cF5b8A165F55d05a75` |
+| Arbitrum One | `0xFF7aD5dA31fECdC678796c88B05926dB896b0699` | `0x2BAD8182C09F50c8318d769245beA52C32Be46CD`, the timelock's L2 alias |
+| Ink | `0x66c5D722Fc52671c7F839BBbF752BC38E0520B91` | `0x2BAD8182C09F50c8318d769245beA52C32Be46CD`, the timelock's L2 alias |
 
 None of them can take the swapper's tokens, given how it pays pools. The worst they can do is a worse price, down to the
 route's minimum, a wrong quote, or a revert.
@@ -146,15 +285,16 @@ route's minimum, a wrong quote, or a revert.
 1. Quote your routes with `quote`, and leave out those that fail, or that are worth less than their gas.
 2. Approve each token for the exact amount. There is no `permit`, no Permit2 and no signature of any kind.
 3. Call `swap` with each route's `minPaid` a little under its quote, a deadline, and `skipFailed` set. Check quotes
-   through Hydrex's Algebra pools and Aero's Slipstream pools against another price first.
+   through Aero's Slipstream pools and Hydrex's Algebra pools against another price first.
 
 The fee is 1% of the output each route returns, rounded down, paid in the output token to the 2-of-3 Safe
 `0x450c72de8c0079B49AcedF294a13011bd09D125B` on each swap. It is fixed in the code: nobody can change it. The pools'
 fees, price impact and gas come on top.
 
-Keep the priority fee low. Above a tip of 1 gwei, or 2 gwei for stable pools, Aero's classic pools add an MEV tax, up to
-10%, that a quote from `eth_call` doesn't see. The swapper prices Aero's pools with the tax, so the swap goes through,
-at a worse price, down to your minimum: on the fork, with a 2 gwei tip, 1 WETH fetched 2,175 USDC instead of 2,415.
+Keep the priority fee low. Where Aero's classic pools have a MEV tax module, it adds a tax of up to 10% above a tip set
+by the module, that a quote from `eth_call` doesn't see: on Base, above 1 gwei, or 2 gwei for stable pools. The swapper
+prices Aero's pools with the tax, so the swap goes through, at a worse price, down to your minimum: on the fork of Base,
+with a 2 gwei tip, 1 WETH fetched 2,175 USDC instead of 2,415.
 
 Gas used by whole transactions on a fork of Base, intrinsic and calldata gas included. It is counted after refunds, so a
 transaction's limit must cover up to a quarter more. The caller and the treasury already held some of the output token:
@@ -163,20 +303,20 @@ to WETH costs about what WETH to USDC does.
 
 | Route | Gas |
 | --- | --- |
+| Aero v3, on pools the tests seed | 290,000 to 352,000 |
 | Uniswap v2, v3 or v4, WETH to USDC | 162,000 to 167,000 |
 | Uniswap v4, cbBTC to ETH to USDC | ~223,000 |
 | Hydrex classic, HYDX to USDC | ~230,000 |
-| Aero v3, on pools the tests seed | 290,000 to 352,000 |
 | Hydrex Algebra, WETH to USDC | ~1,622,000 |
-| HYDX to WETH on Hydrex Algebra, then to USDC on Uniswap v3 | ~1,925,000 |
-| 20 routes of 3 Uniswap v2 hops | ~3,425,000 |
-| 5 routes of 3 Hydrex Algebra hops | ~15,970,000 |
+| HYDX to WETH on Hydrex Algebra, then to USDC on Uniswap v3 | ~1,914,000 |
+| 20 routes of 3 Uniswap v2 hops | ~3,427,000 |
+| 4 routes of 3 Hydrex Algebra hops | ~13,525,000 |
 
-There is no limit on the number of routes: Base's cap of 16,777,216 gas on a transaction is the limit. Hydrex's Algebra
-pools cost the most: after each swap, the pool's plugin looks for an arbitrage across other exchanges, and about 15 such
-hops fit. So estimate gas and split large batches.
+There is no limit on the number of routes: a chain's cap on the gas of a transaction is the limit, 16,777,216 on Base.
+Hydrex's Algebra pools cost the most: after each swap, the pool's plugin looks for an arbitrage across other exchanges,
+and about 12 such hops fit. So estimate gas and split large batches.
 
-Send a generous gas limit: on Base, unused gas costs nothing. A route that runs short of gas fails like any other: with
+Send a generous gas limit: unused gas costs nothing. A route that runs short of gas fails like any other: with
 `skipFailed`, it is skipped, or the whole call reverts if too little is left to finish. Hydrex's plugin does less when
 it gets less gas, so a tight limit can also make a route through it go through, without the plugin's arbitrage. A gas
 estimate only looks for a limit at which the call doesn't revert, and a skipped route doesn't revert it, so check the
@@ -197,12 +337,18 @@ results of `eth_call` at the limit you send.
 - Hydrex's Algebra pools call their plugin before and after each swap. The plugin, and the contracts it calls, are
   upgradeable. Its arbitrage runs after the swapper is paid, so `quote` doesn't see it, and a later hop of the same
   route can find a pool it has moved. Its code even calls Foundry's console address on Base, which only costs gas.
-- A token that charges a fee on transfers works through classic pools and Uniswap v2. Through Algebra, Slipstream,
-  Uniswap v3 and v4 pools, its route reverts, though `quote` prices it.
+- A token that charges a fee on transfers works through classic pools and Uniswap v2. Through Slipstream, Uniswap v3
+  and v4, and Algebra pools, its route reverts, though `quote` prices it.
 - `skipFailed` can't skip a token or pool that burns all the gas its route gets, 63/64 of what is left, or that
   reverts with a reason too big to copy. Either reverts the whole call, for the caller who included that route only.
-- USDC, EURC and cbBTC are upgradeable, and can block addresses. A caller that the output token blocks can't be paid, so
-  their swaps revert, and so would everyone's if it blocked the treasury. WETH, AERO and HYDX can't block anyone.
+- USDC, EURC, cbBTC, cirBTC and USDG are upgradeable, and can block or freeze addresses. WETH on Arbitrum One and on
+  Robinhood Chain is upgradeable too, though it blocks nobody. A caller that the output token blocks can't be paid, so
+  their swaps revert, and so would everyone's if it blocked the treasury. WETH on the other chains, AERO and HYDX can't
+  block anyone.
+- On Arc, USDC is the native currency, and `0x3600000000000000000000000000000000000000` is the ERC-20 that moves it,
+  in 6 decimals where the native balance has 18. The swapper treats it as any ERC-20: it can take it and pay it, and
+  counts it by `balanceOf`. Foundry can't run the precompiles that this ERC-20 calls, so the fork tests of Arc run it
+  against a stand-in, [`test/mocks/ArcNativeCoin.sol`](test/mocks/ArcNativeCoin.sol).
 - Tokens sent to the swapper by mistake stay there. Every amount is counted within the call, so they are never paid to
   anyone.
 - Left out on purpose: the native currency in or out of a route; signatures; routers and aggregators; a recipient other
@@ -210,36 +356,47 @@ results of `eth_call` at the limit you send.
 
 ## Deployment
 
-Version 2 is not deployed yet. `script/Deploy.s.sol` holds each chain's exchanges and output tokens, so far Base's only.
-It deploys the swappers of the chain it runs on, and stops on a chain where the treasury, an exchange or an output token
-has no code.
+Version 2 is not deployed yet. `script/Deploy.s.sol` holds each chain's exchanges and output tokens. It deploys the
+swappers of the chain it runs on, and stops on a chain it doesn't know, or where the treasury, an exchange or an output
+token has no code.
 
 | | |
 |---|---|
-| Networks | Base |
-| Addresses | the table at the top, one swapper for each output token |
-| Exchanges | the eight under [The exchanges](#the-exchanges), in that order |
-| Treasury | `0x450c72de8c0079B49AcedF294a13011bd09D125B`, a 2-of-3 Safe, fixed in the source; it must exist on a chain before a deployment there |
+| Networks | Base, Ethereum, OP Mainnet, Robinhood Chain, Arc, Arbitrum One, Ink |
+| Addresses | one swapper for each chain and output token, under [Chains](#chains) |
+| Exchanges | each chain's, under [Chains](#chains), in that order |
+| Treasury | `0x450c72de8c0079B49AcedF294a13011bd09D125B`, a 2-of-3 Safe, fixed in the source. It exists on Base only, so far: `script/Treasury.s.sol` creates it on another chain |
 | Fee | 1% (`FEE_BPS = 100`), fixed in the source |
 | Method | CREATE2 through `0x4e59b44847b379578588920cA78FbF26c0B4956C`, salt `keccak256("metadex.cafe/ImmutableSwapper/v2")` for all; the chain's exchanges and the output token set them apart |
 
-Deployment steps:
+The treasury was made on Base by Safe's proxy factory, in block 52,814,397. `script/Treasury.s.sol` sends the same call
+on another chain, which makes the same Safe at the same address, with the same three owners, keys that work on every
+chain, and the same threshold. Anyone can send it. It needs Safe v1.5.0's contracts on the chain, which all seven have,
+and it checks the owners and the threshold of the Safe it finds or makes.
+
+Deployment steps, for each chain:
 
 1. Install Foundry v1.8.5, the version CI uses, with `foundryup --install v1.8.5`. Another version can compile
    different bytecode.
-2. Run `forge test` with `BASE_RPC_URL` set, then `script/check-verification.sh`.
-3. Do a dry run with `forge script script/Deploy.s.sol --rpc-url $BASE_RPC_URL`, and check that it logs the six
-   addresses in the table at the top. It skips any that is already deployed.
-4. Deploy, then verify each contract on BaseScan and Sourcify:
+2. Run `forge test` with the chain's RPC set: `BASE_RPC_URL`, `ETHEREUM_RPC_URL`, `OPTIMISM_RPC_URL`,
+   `ROBINHOOD_RPC_URL`, `ARC_RPC_URL`, `ARBITRUM_RPC_URL` or `INK_RPC_URL`. Then run `script/check-verification.sh`.
+3. If the chain lacks the treasury, do a dry run of `script/Treasury.s.sol`, without `--broadcast`, then send it. It
+   does nothing where the treasury exists.
+4. Do a dry run of `script/Deploy.s.sol`, and check that it logs the chain's addresses under [Chains](#chains). It
+   skips any that is already deployed.
+5. Deploy, then verify each swapper on Sourcify, and on the chain's explorer with the verifier it takes:
 
 ```
-forge script script/Deploy.s.sol --rpc-url $BASE_RPC_URL --broadcast --ledger
+CHAIN=arc RPC=$ARC_RPC_URL # the chain's key in verification/bytecode-hashes.json, and its RPC
+forge script script/Treasury.s.sol --rpc-url $RPC --broadcast --ledger # where the chain lacks the treasury
+forge script script/Deploy.s.sol --rpc-url $RPC --broadcast --ledger
 H=verification/bytecode-hashes.json
-for s in USDC EURC WETH cbBTC AERO HYDX; do
-  ADDRESS=$(jq -j ".chains.base.deployments.$s.address" $H)
-  ARGS=$(jq -j ".chains.base.deployments.$s.constructorArgs" $H)
-  forge verify-contract $ADDRESS src/ImmutableSwapper.sol:ImmutableSwapper --chain base \
-    --constructor-args $ARGS --license-type MIT --skip-is-verified-check --watch
+ID=$(jq -j ".chains.$CHAIN.chainId" $H)
+for s in $(jq -r ".chains.$CHAIN.deployments | keys[]" $H); do
+  ADDRESS=$(jq -j ".chains.$CHAIN.deployments.$s.address" $H)
+  ARGS=$(jq -j ".chains.$CHAIN.deployments.$s.constructorArgs" $H)
+  forge verify-contract $ADDRESS src/ImmutableSwapper.sol:ImmutableSwapper --chain $ID --verifier sourcify \
+    --constructor-args $ARGS --skip-is-verified-check --watch
 done
 ```
 
@@ -250,17 +407,20 @@ To check that a deployed swapper is this repository's code, compare its code has
 Each swapper's code holds its output token and its chain's exchanges, so each has its own hash:
 
 ```
-cast keccak $(cast code 0xf86764abF2d42123767108152a0c596d05aB0598 --rpc-url $BASE_RPC_URL)
+cast keccak $(cast code 0xb1ed455Cd2A475B4E4A57b8D32260aCCc795D1dD --rpc-url $BASE_RPC_URL)
 jq -j .chains.base.deployments.USDC.runtimeKeccak verification/bytecode-hashes.json
 ```
 
+The same file records each chain's exchanges, in order, as `exchanges()` returns them.
+
 ## Version 1
 
-Version 1 is deployed on Base, for the same six output tokens. It fixes twelve exchanges in its code: the eight above,
-and Aerodrome's classic factory and three Slipstream factories. A hop names one of them by its place in that list. Its
-source is at commit [`86ce3d0`](https://github.com/leo-klima-agents/metadex-swapper/tree/86ce3d0), and its records in
-[`verification/v1/`](verification/v1/). It was deployed on 2026-10-21 by the transactions below, with the salt
-`keccak256("metadex.cafe/ImmutableSwapper/v1")`. Each source is verified on BaseScan and Sourcify as an exact match.
+Version 1 is deployed on Base, for the same six output tokens. It fixes twelve exchanges in its code: Base's eight
+above, and Aerodrome's classic factory and three Slipstream factories. A hop names one of them by its place in that
+list. Its source is at commit [`86ce3d0`](https://github.com/leo-klima-agents/metadex-swapper/tree/86ce3d0), and its
+records in [`verification/v1/`](verification/v1/). It was deployed on 2026-10-21 by the transactions below, with the
+salt `keccak256("metadex.cafe/ImmutableSwapper/v1")`. Each source is verified on BaseScan and Sourcify as an exact
+match.
 
 | Output | Swapper | Transaction | Source |
 | --- | --- | --- | --- |
@@ -274,25 +434,31 @@ source is at commit [`86ce3d0`](https://github.com/leo-klima-agents/metadex-swap
 Aerodrome's admins, a 3-of-7 Safe, `0xE6A41fE61E7a1996B59d508661e3f524d6A32075`, can pause its classic pools, set
 their fee up to 3%, and set Slipstream fees up to 10% through a fee module.
 
+
 ## Development
 
-You need [Foundry](https://getfoundry.sh). The fork tests and `test/fixtures/generate.py` also need a Base archive RPC
-in `BASE_RPC_URL`.
+You need [Foundry](https://getfoundry.sh). The fork tests and `test/fixtures/generate.py` also need an archive RPC for
+each chain, in `BASE_RPC_URL`, `ETHEREUM_RPC_URL`, `OPTIMISM_RPC_URL`, `ROBINHOOD_RPC_URL`, `ARC_RPC_URL`,
+`ARBITRUM_RPC_URL` and `INK_RPC_URL`. Public RPCs often keep too little history: Robinhood Chain's prunes its state
+after a few hours.
 
-- `forge test` runs the unit tests, and the fork tests too when `BASE_RPC_URL` is set. The fork tests run against
-  Base at the block recorded in [`test/fixtures/fork.json`](test/fixtures/fork.json). They deploy Base's swappers with
-  `script/Deploy.s.sol`, and swap through a real pool of each exchange, and into each output token. Aero's pools hold no
-  liquidity yet, so the fork tests add their own.
-- `test/fixtures/generate.py [block]` rewrites that fixture: a pool of each exchange, a holder of each token, and each
-  route's quote at that block, from the exchanges' own quotes.
+- `forge test` runs the unit tests, and the fork tests of each chain whose RPC is set. Each chain's fork tests,
+  [`test/fork/<Chain>.t.sol`](test/fork/), run against that chain at the block recorded in
+  [`test/fixtures/<chain>.json`](test/fixtures/). They create the treasury with `script/Treasury.s.sol` where it is
+  missing, deploy the chain's swappers with `script/Deploy.s.sol`, and swap through a real pool of each exchange, and
+  into each output token. They pin the code of the exchanges' factories and of what they rely on. Some of Aero's pools
+  hold no liquidity yet, so the fork tests add their own.
+- `test/fixtures/generate.py <chain> [block]` rewrites a chain's fixture: a pool of each exchange, a holder of each
+  token, and each route's quote at that block, from the exchanges' own quotes.
 - `script/check-signatures.sh` checks the interfaces in `src/interfaces/` against the exchanges' sources vendored in
   `test/upstream/`.
-- `script/check-verification.sh` checks that `verification/` matches the build and `script/Deploy.s.sol`.
+- `script/check-verification.sh` checks that `verification/` matches the build and `script/Deploy.s.sol`, and that
+  this README shows every swapper's address.
 - `script/refresh-verification.sh` regenerates `verification/` after a change to the source or the deploy script. It
   leaves `verification/v1/` alone.
 
 [`test/upstream/UPSTREAM.md`](test/upstream/UPSTREAM.md) records the contracts the swapper is written against, their
-code hashes, and the behaviour it relies on.
+code hashes on each chain, and the behaviour it relies on.
 
 The contract compiles with solc 0.8.37 for `prague`, via-IR, with 1,000,000 optimizer runs. Builds are reproducible.
 

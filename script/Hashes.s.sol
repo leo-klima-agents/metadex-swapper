@@ -11,30 +11,32 @@ contract Hashes is Deploy {
         string memory all;
         for (uint256 c; c < ids.length; ++c) {
             uint256 id = ids[c];
-            string memory name = chainName(id);
-            ImmutableSwapper.Exchange[] memory e = exchanges(id);
-            Output[] memory o = outputs(id);
+            Config memory cfg = config(id);
+            ImmutableSwapper local;
             string memory deployments;
-            for (uint256 i; i < o.length; ++i) {
-                string memory key = string.concat(name, ".", o[i].symbol);
-                ImmutableSwapper local = new ImmutableSwapper(o[i].token, e);
-                vm.serializeAddress(key, "outputToken", o[i].token);
-                vm.serializeBytes(key, "constructorArgs", constructorArgs(id, o[i].token));
-                vm.serializeAddress(key, "address", predict(id, o[i].token));
+            for (uint256 i; i < cfg.outputs.length; ++i) {
+                Output memory o = cfg.outputs[i];
+                string memory key = string.concat(cfg.name, ".", o.symbol);
+                local = new ImmutableSwapper(o.token, cfg.exchanges);
+                vm.serializeAddress(key, "outputToken", o.token);
+                vm.serializeBytes(key, "constructorArgs", constructorArgs(id, o.token));
+                vm.serializeAddress(key, "address", predict(id, o.token));
                 string memory one = vm.serializeBytes32(key, "runtimeKeccak", keccak256(address(local).code));
-                deployments = vm.serializeString(string.concat(name, ".deployments"), o[i].symbol, one);
+                deployments = vm.serializeString(string.concat(cfg.name, ".deployments"), o.symbol, one);
             }
+            // What the deployed code reports, not what the config says.
+            ImmutableSwapper.Exchange[] memory e = local.exchanges();
             string[] memory kinds = new string[](e.length);
             address[] memory factories = new address[](e.length);
             for (uint256 i; i < e.length; ++i) {
                 kinds[i] = kindName(e[i].kind);
                 factories[i] = e[i].factory;
             }
-            vm.serializeUint(name, "chainId", id);
-            vm.serializeString(name, "kinds", kinds);
-            vm.serializeAddress(name, "factories", factories);
-            string memory chain = vm.serializeString(name, "deployments", deployments);
-            all = vm.serializeString("chains", name, chain);
+            vm.serializeUint(cfg.name, "chainId", id);
+            vm.serializeString(cfg.name, "kinds", kinds);
+            vm.serializeAddress(cfg.name, "factories", factories);
+            string memory chain = vm.serializeString(cfg.name, "deployments", deployments);
+            all = vm.serializeString("chains", cfg.name, chain);
         }
 
         string memory root = "hashes";

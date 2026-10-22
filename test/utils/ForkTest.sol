@@ -64,6 +64,9 @@ abstract contract ForkTest is Test {
 
     function _beforeDeploy() internal virtual {}
 
+    // Factories that the chain's Aero registry lists and its deployments leave out.
+    function _leftOut() internal pure virtual returns (address[] memory) {}
+
     function test_pin_codeHashes() public view {
         Pin[] memory p = _pins();
         for (uint256 i; i < p.length; ++i) {
@@ -99,7 +102,15 @@ abstract contract ForkTest is Test {
                 assertTrue(_isPinned(IViews(e[i].factory).defaultSwapHook()), "its swap hook is pinned");
             }
         }
-        assertEq(listed.length, aero, "and no other factory");
+        address[] memory skipped = _leftOut();
+        for (uint256 i; i < skipped.length; ++i) {
+            bool found;
+            for (uint256 j; j < listed.length; ++j) {
+                found = found || listed[j] == skipped[i];
+            }
+            assertTrue(found, "the registry lists what is left out");
+        }
+        assertEq(listed.length, aero + skipped.length, "and no other factory");
     }
 
     function test_pin_aeroPoolsAreClonesOfTheImplementations() public view {

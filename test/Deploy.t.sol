@@ -110,11 +110,20 @@ contract DeployTest is Test {
             assertGt(o.length, 0);
             for (uint256 i; i < o.length; ++i) {
                 assertNotEq(o[i].token, address(0));
+                if (i != 0) assertGt(_rank(o[i].symbol), _rank(o[i - 1].symbol), "outputs in token order");
                 for (uint256 j; j < i; ++j) {
                     assertNotEq(o[i].token, o[j].token, "each output once");
                 }
             }
         }
+    }
+
+    function _rank(string memory symbol) internal pure returns (uint256) {
+        string[7] memory order = ["WETH", "USDC", "EURC", "cirBTC", "cbBTC", "AERO", "HYDX"];
+        for (uint256 i; i < order.length; ++i) {
+            if (keccak256(bytes(order[i])) == keccak256(bytes(symbol))) return i;
+        }
+        revert("unranked output");
     }
 
     function test_kindName_namesEveryKind() public view {

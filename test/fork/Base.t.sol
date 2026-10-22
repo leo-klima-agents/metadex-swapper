@@ -37,8 +37,8 @@ contract BaseForkTest is ForkTest {
     bytes32 internal constant IMPL_SLOT = 0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc;
     bytes32 internal constant ADMIN_SLOT = 0xb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d6103;
 
-    address internal constant USDC = 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913;
     address internal constant WETH = 0x4200000000000000000000000000000000000006;
+    address internal constant USDC = 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913;
     address internal constant AERO = 0x3f5bF3EdAc59d650D8fDf9657a71F2f904A3a4Ee;
 
     address internal constant AERO_VOLATILE = 0x8E6a9FCd1d638CC760Ffba397605Fe3355dE76D2;
@@ -181,20 +181,20 @@ contract BaseForkTest is ForkTest {
         _check("hydxThroughWeth");
     }
 
-    function test_usdcToEurc() public {
-        _check("usdcToEurc");
-    }
-
-    function test_wethToEurc() public {
-        _check("wethToEurc");
-    }
-
     function test_usdcToWeth() public {
         _check("usdcToWeth");
     }
 
     function test_cbBtcToWeth() public {
         _check("cbBtcToWeth");
+    }
+
+    function test_wethToEurc() public {
+        _check("wethToEurc");
+    }
+
+    function test_usdcToEurc() public {
+        _check("usdcToEurc");
     }
 
     function test_wethToCbBtc() public {

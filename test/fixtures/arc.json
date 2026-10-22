@@ -53,58 +53,6 @@
       ],
       "quote": "0"
     },
-    "aeroLiteVolatile": {
-      "token": "0x171A4217b86A807A64eB94757Db6849fb4bDbAA0",
-      "amount": "1000000",
-      "factories": [
-        "0x9bc8b3F60D349d687Fb44A018967025E3741F9a5"
-      ],
-      "pools": [
-        "0x0000000000000000000000000000000000000000"
-      ],
-      "tokensOut": [
-        "0x3600000000000000000000000000000000000000"
-      ],
-      "fees": [
-        0
-      ],
-      "tickSpacings": [
-        0
-      ],
-      "seedsIn": [
-        "100000000"
-      ],
-      "seedsOut": [
-        "100000000000"
-      ],
-      "quote": "0"
-    },
-    "aeroLiteStable": {
-      "token": "0xbEf5f6d51CB62b58e6A8f77868681825C6fe21c1",
-      "amount": "100000000",
-      "factories": [
-        "0xaEd253F1aD84d99f2165256D701b2b481DD4CC16"
-      ],
-      "pools": [
-        "0x0000000000000000000000000000000000000000"
-      ],
-      "tokensOut": [
-        "0x3600000000000000000000000000000000000000"
-      ],
-      "fees": [
-        0
-      ],
-      "tickSpacings": [
-        0
-      ],
-      "seedsIn": [
-        "100000000000"
-      ],
-      "seedsOut": [
-        "100000000000"
-      ],
-      "quote": "0"
-    },
     "aeroSlipstream": {
       "token": "0xbEf5f6d51CB62b58e6A8f77868681825C6fe21c1",
       "amount": "100000000",
@@ -130,32 +78,6 @@
         "0"
       ],
       "quote": "112213505"
-    },
-    "aeroLiteSlipstream": {
-      "token": "0xbEf5f6d51CB62b58e6A8f77868681825C6fe21c1",
-      "amount": "100000000",
-      "factories": [
-        "0xb89Df768aF2CFE637ceB352c587Fe8edAf491d03"
-      ],
-      "pools": [
-        "0xbe080ac37ad1305dfcc9521f5e6f68cfdc41b7fa"
-      ],
-      "tokensOut": [
-        "0x3600000000000000000000000000000000000000"
-      ],
-      "fees": [
-        0
-      ],
-      "tickSpacings": [
-        1
-      ],
-      "seedsIn": [
-        "0"
-      ],
-      "seedsOut": [
-        "0"
-      ],
-      "quote": "112225047"
     },
     "uniswapV2": {
       "token": "0xbEf5f6d51CB62b58e6A8f77868681825C6fe21c1",

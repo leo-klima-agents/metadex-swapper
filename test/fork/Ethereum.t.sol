@@ -103,12 +103,16 @@ contract EthereumForkTest is ForkTest {
         _check("uniswapV4Native");
     }
 
+    function test_usdcToWeth() public {
+        _check("usdcToWeth");
+    }
+
     function test_usdcToEurc() public {
         _check("usdcToEurc");
     }
 
-    function test_usdcToWeth() public {
-        _check("usdcToWeth");
+    function test_wethToCirBtc() public {
+        _check("wethToCirBtc");
     }
 
     function test_wethToCbBtc() public {

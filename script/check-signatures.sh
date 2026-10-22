@@ -79,8 +79,6 @@ check_struct() {
 
 check IPoolFactory.sol isPool aero/IPoolFactory.sol
 check IPoolFactory.sol isPool aero/slipstream/ICLFactory.sol
-check IPoolFactory.sol isPool aero-lite/IPoolFactory.sol
-check IPoolFactory.sol isPool aero-lite/slipstream/ICLFactory.sol
 check IUniswapV2Factory.sol getPair uniswap/v2/IUniswapV2Factory.sol
 check IUniswapV3Factory.sol getPool uniswap/v3/IUniswapV3Factory.sol
 check IPairFactory.sol isPair hydrex/IPairFactory.sol
@@ -88,13 +86,10 @@ check IAlgebraFactory.sol poolByPair algebra/IAlgebraFactory.sol
 
 for name in token0 token1 getReserves getAmountOut swap; do
   check IClassicPool.sol "$name" aero/IPool.sol
-  check IClassicPool.sol "$name" aero-lite/IPool.sol
   check IClassicPool.sol "$name" hydrex/IPair.sol
 done
 check IClassicPool.sol getAmountOutWithTotalFee aero/IPool.sol
-check IClassicPool.sol getAmountOutWithTotalFee aero-lite/IPool.sol
 check IClassicPool.sol sync aero/IPool.sol
-check IClassicPool.sol sync aero-lite/IPool.sol
 check IClassicPool.sol sync uniswap/v2/IUniswapV2Pair.sol
 check IClassicPool.sol swap uniswap/v2/IUniswapV2Pair.sol
 check IClassicPool.sol sync hydrex/Pair.sol
@@ -109,10 +104,8 @@ fi
 
 for name in token0 token1; do
   check IClassicPool.sol "$name" aero/slipstream/ICLPoolConstants.sol
-  check IClassicPool.sol "$name" aero-lite/slipstream/ICLPoolConstants.sol
 done
 check IConcentratedPool.sol swap aero/slipstream/ICLPoolActions.sol
-check IConcentratedPool.sol swap aero-lite/slipstream/ICLPoolActions.sol
 check IConcentratedPool.sol swap uniswap/v3/IUniswapV3PoolActions.sol
 check IConcentratedPool.sol swap algebra/IAlgebraPoolActions.sol
 
@@ -123,7 +116,6 @@ check_struct PoolKey uniswap/v4/PoolKey.sol
 check_struct SwapParams uniswap/v4/PoolOperation.sol
 
 check IUniswapV3SwapCallback.sol uniswapV3SwapCallback aero/slipstream/ICLSwapCallback.sol
-check IUniswapV3SwapCallback.sol uniswapV3SwapCallback aero-lite/slipstream/ICLSwapCallback.sol
 check IUniswapV3SwapCallback.sol uniswapV3SwapCallback uniswap/v3/IUniswapV3SwapCallback.sol
 check IUnlockCallback.sol unlockCallback uniswap/v4/IUnlockCallback.sol
 check IAlgebraSwapCallback.sol algebraSwapCallback algebra/IAlgebraSwapCallback.sol

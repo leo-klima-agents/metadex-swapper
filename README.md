@@ -10,8 +10,8 @@ exchanges. The contract has no owner, no settings and no upgrade path. All of it
 [`src/ImmutableSwapper.sol`](src/ImmutableSwapper.sol).
 
 This is version 2. It takes each chain's exchanges as constructor arguments, so that it can be deployed beyond Base, and
-it leaves out Aerodrome and Velodrome. It is not deployed yet. It will be deployed on Base, Ethereum, OP Mainnet,
-Robinhood Chain, Arc, Arbitrum One and Ink, at the addresses under [Chains](#chains).
+it leaves out Aerodrome and Velodrome. It is not deployed yet. It will be deployed on Ethereum, Base, OP Mainnet,
+Arbitrum One and Arc, at the addresses under [Chains](#chains).
 
 Version 1 is deployed on Base, with Aerodrome among its exchanges: see [Version 1](#version-1).
 
@@ -92,8 +92,8 @@ pool, and how it pays it:
 | `HydrexClassic` | `isPair(pool)`, and its tokens are the hop's |
 | `HydrexAlgebra` | `poolByPair(a, b) == pool` |
 
-Each chain's deployments list every pool factory that the chain's Aero registry lists, and Uniswap's v2, v3 and v4: see
-[Chains](#chains).
+Each chain's deployments list Uniswap's v2, v3 and v4, and every pool factory that the chain's Aero registry lists, but
+for Aero Lite's three on Arc: see [Chains](#chains).
 
 The swapper pays each kind of pool its own way:
 
@@ -116,15 +116,36 @@ anything there, so tokens that trade only in pools with hooks, as many launchpad
 Each chain has one swapper for each output token, and lists its own exchanges. Aero's classic factories have the same
 addresses on every chain; its `CLFactory` and Uniswap's contracts have their own on most.
 
+### Ethereum
+
+Chain ID 1. cirBTC is Circle's bitcoin. Aero's classic pools have no MEV tax module here.
+
+| Output | Token | Swapper |
+| --- | --- | --- |
+| WETH | `0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2` | `0x2FbEe80FFCA668D8B79181d1eCc9632ef0f20969` |
+| USDC | `0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48` | `0x5F38452bA25ddA761ac09F9b527A8AE8AB124C05` |
+| EURC | `0x1aBaEA1f7C830bD89Acc67eC4af516284b1bC33c` | `0x936EC799146523C60Ba6CDaB568C326542fe33d1` |
+| cirBTC | `0x72DFB2E44f59C5AD2bAFE84314E5b99a7cd5075E` | `0x25fa8fAb45c399422F52404F25D0B94B1B43b5Ff` |
+| cbBTC | `0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf` | `0x0663228082f5dFac237d6530adC7dEB0cf30119A` |
+
+| Index | `Kind` | Factory, or manager |
+| --- | --- | --- |
+| 0 | `AeroClassic` | Aero volatile pools, `0x8E6a9FCd1d638CC760Ffba397605Fe3355dE76D2` |
+| 1 | `AeroClassic` | Aero stable pools, `0x78589E876edcEbdce72ee3436ab3c9AD3a7cEF2D` |
+| 2 | `AeroSlipstream` | Aero `CLFactory`, `0xF4Fd2E6c5B60c5b365cd1B96DD6245E6D60414c2` |
+| 3 | `UniswapV2` | `UniswapV2Factory`, `0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f` |
+| 4 | `UniswapV3` | `UniswapV3Factory`, `0x1F98431c8aD98523631AE4a59f267346ea31F984` |
+| 5 | `UniswapV4` | `PoolManager`, `0x000000000004444c5dc75cB358380D2e3dE08A90` |
+
 ### Base
 
 Chain ID 8453. Only Base has Hydrex.
 
 | Output | Token | Swapper |
 | --- | --- | --- |
+| WETH | `0x4200000000000000000000000000000000000006` | `0xFA88C5dEd6F338D2762E7929Cc8C5551dff0B9a6` |
 | USDC | `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913` | `0xb1ed455Cd2A475B4E4A57b8D32260aCCc795D1dD` |
 | EURC | `0x60a3E35Cc302bFA44Cb288Bc5a4F316Fdb1adb42` | `0x6b37f100B6DD61077201371c1Aae029D740d51da` |
-| WETH | `0x4200000000000000000000000000000000000006` | `0xFA88C5dEd6F338D2762E7929Cc8C5551dff0B9a6` |
 | cbBTC | `0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf` | `0x79B309317Fa2D36E6354d27D7EFeC5E120123f2B` |
 | AERO | `0x3f5bF3EdAc59d650D8fDf9657a71F2f904A3a4Ee` | `0xC6281eE146FFE754771356339F2594A8955Cffe3` |
 | HYDX | `0x00000e7efa313F4E11Bfff432471eD9423AC6B30` | `0xf34FE34945e38F58D5F19C02eB767225efbD33DB` |
@@ -140,34 +161,14 @@ Chain ID 8453. Only Base has Hydrex.
 | 6 | `HydrexClassic` | Hydrex pair factory, `0xC47F17c4fd96F50eFD2A2448ceDe5C185c084bf0` |
 | 7 | `HydrexAlgebra` | Hydrex's Algebra Integral factory, `0x36077D39cdC65E1e3FB65810430E5b2c4D5fA29E` |
 
-### Ethereum
-
-Chain ID 1. Aero's classic pools have no MEV tax module here.
-
-| Output | Token | Swapper |
-| --- | --- | --- |
-| USDC | `0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48` | `0x5F38452bA25ddA761ac09F9b527A8AE8AB124C05` |
-| EURC | `0x1aBaEA1f7C830bD89Acc67eC4af516284b1bC33c` | `0x936EC799146523C60Ba6CDaB568C326542fe33d1` |
-| WETH | `0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2` | `0x2FbEe80FFCA668D8B79181d1eCc9632ef0f20969` |
-| cbBTC | `0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf` | `0x0663228082f5dFac237d6530adC7dEB0cf30119A` |
-
-| Index | `Kind` | Factory, or manager |
-| --- | --- | --- |
-| 0 | `AeroClassic` | Aero volatile pools, `0x8E6a9FCd1d638CC760Ffba397605Fe3355dE76D2` |
-| 1 | `AeroClassic` | Aero stable pools, `0x78589E876edcEbdce72ee3436ab3c9AD3a7cEF2D` |
-| 2 | `AeroSlipstream` | Aero `CLFactory`, `0xF4Fd2E6c5B60c5b365cd1B96DD6245E6D60414c2` |
-| 3 | `UniswapV2` | `UniswapV2Factory`, `0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f` |
-| 4 | `UniswapV3` | `UniswapV3Factory`, `0x1F98431c8aD98523631AE4a59f267346ea31F984` |
-| 5 | `UniswapV4` | `PoolManager`, `0x000000000004444c5dc75cB358380D2e3dE08A90` |
-
 ### OP Mainnet
 
 Chain ID 10.
 
 | Output | Token | Swapper |
 | --- | --- | --- |
-| USDC | `0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85` | `0x646A8869e42653c61C2A5ae3bCA803EC7DBd9ad0` |
 | WETH | `0x4200000000000000000000000000000000000006` | `0x96F1A279E7d8332d60C0490E3F96471968fe1612` |
+| USDC | `0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85` | `0x646A8869e42653c61C2A5ae3bCA803EC7DBd9ad0` |
 
 | Index | `Kind` | Factory, or manager |
 | --- | --- | --- |
@@ -178,58 +179,14 @@ Chain ID 10.
 | 4 | `UniswapV3` | `UniswapV3Factory`, `0x1F98431c8aD98523631AE4a59f267346ea31F984` |
 | 5 | `UniswapV4` | `PoolManager`, `0x9a13F98Cb987694C9F086b1F5eB990EeA8264Ec3` |
 
-### Robinhood Chain
-
-Chain ID 4663. USDG is Paxos's Global Dollar. Aero's classic pools have no MEV tax module here. There is no cbBTC
-swapper: no source from Coinbase confirms cbBTC's address on this chain.
-
-| Output | Token | Swapper |
-| --- | --- | --- |
-| USDG | `0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168` | `0xB0b717b77c61992932e5c57258ECDe354680a436` |
-| WETH | `0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73` | `0x485a9234CcaBE59506072f2083C60431ac27Fe20` |
-
-| Index | `Kind` | Factory, or manager |
-| --- | --- | --- |
-| 0 | `AeroClassic` | Aero volatile pools, `0x8E6a9FCd1d638CC760Ffba397605Fe3355dE76D2` |
-| 1 | `AeroClassic` | Aero stable pools, `0x78589E876edcEbdce72ee3436ab3c9AD3a7cEF2D` |
-| 2 | `AeroSlipstream` | Aero `CLFactory`, `0xc63d7338c178e805c544B8f897066bD3BBcBE136` |
-| 3 | `UniswapV2` | `UniswapV2Factory`, `0x8bcEaA40B9AcdfAedF85AdF4FF01F5Ad6517937f` |
-| 4 | `UniswapV3` | `UniswapV3Factory`, `0x1f7d7550B1b028f7571E69A784071F0205FD2EfA` |
-| 5 | `UniswapV4` | `PoolManager`, `0x8366a39CC670B4001A1121B8F6A443A643e40951` |
-
-### Arc
-
-Chain ID 5042. Arc has Aero and Aero Lite, and its Aero registry lists the six factories of both. USDC is Arc's native
-currency, through an ERC-20 at `0x3600…`: see [Trust and limitations](#trust-and-limitations). cirBTC is Circle's
-bitcoin. There is no WETH swapper: Arc's WETH is a bridged token whose owner is a single key. Aero Lite's classic pools
-have no MEV tax module.
-
-| Output | Token | Swapper |
-| --- | --- | --- |
-| USDC | `0x3600000000000000000000000000000000000000` | `0xCD9af7C15FB5eA73719bd148198298f9c7fb9D51` |
-| EURC | `0xbEf5f6d51CB62b58e6A8f77868681825C6fe21c1` | `0x8d21831Df0C72f98120e7D0484178dc2a34b2773` |
-| cirBTC | `0x171A4217b86A807A64eB94757Db6849fb4bDbAA0` | `0x79aD28339a95896Fd52D3996615D578B7Cb6b734` |
-
-| Index | `Kind` | Factory, or manager |
-| --- | --- | --- |
-| 0 | `AeroClassic` | Aero volatile pools, `0x8E6a9FCd1d638CC760Ffba397605Fe3355dE76D2` |
-| 1 | `AeroClassic` | Aero stable pools, `0x78589E876edcEbdce72ee3436ab3c9AD3a7cEF2D` |
-| 2 | `AeroClassic` | Aero Lite volatile pools, `0x9bc8b3F60D349d687Fb44A018967025E3741F9a5` |
-| 3 | `AeroClassic` | Aero Lite stable pools, `0xaEd253F1aD84d99f2165256D701b2b481DD4CC16` |
-| 4 | `AeroSlipstream` | Aero `CLFactory`, `0x7F83235643181E440433400a027618Cd50879751` |
-| 5 | `AeroSlipstream` | Aero Lite `CLFactory`, `0xb89Df768aF2CFE637ceB352c587Fe8edAf491d03` |
-| 6 | `UniswapV2` | `UniswapV2Factory`, `0x89e5DB8B5aA49aA85AC63f691524311AEB649eba` |
-| 7 | `UniswapV3` | `UniswapV3Factory`, `0xf0db7b58379503491d857dB50AC9ece64c653918` |
-| 8 | `UniswapV4` | `PoolManager`, `0x8366a39CC670B4001A1121B8F6A443A643e40951` |
-
 ### Arbitrum One
 
 Chain ID 42161.
 
 | Output | Token | Swapper |
 | --- | --- | --- |
-| USDC | `0xaf88d065e77c8cC2239327C5EDb3A432268e5831` | `0x2BE19Ee701Cb109416481283E56Df7C70e47821C` |
 | WETH | `0x82aF49447D8a07e3bd95BD0d56f35241523fBab1` | `0x36348651d797cecc225A58C64f9b2C2b29091B26` |
+| USDC | `0xaf88d065e77c8cC2239327C5EDb3A432268e5831` | `0x2BE19Ee701Cb109416481283E56Df7C70e47821C` |
 | cbBTC | `0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf` | `0xbE293Bae0e90EC5405f9b9E8794B8288282aEA6F` |
 
 | Index | `Kind` | Factory, or manager |
@@ -241,41 +198,42 @@ Chain ID 42161.
 | 4 | `UniswapV3` | `UniswapV3Factory`, `0x1F98431c8aD98523631AE4a59f267346ea31F984` |
 | 5 | `UniswapV4` | `PoolManager`, `0x360E68faCcca8cA495c1B759Fd9EEe466db9FB32` |
 
-### Ink
+### Arc
 
-Chain ID 57073.
+Chain ID 5042. USDC is Arc's native currency, through an ERC-20 at `0x3600…`: see [Trust and
+limitations](#trust-and-limitations). There is no WETH swapper: Arc's WETH is a bridged token whose owner is a single
+key.
 
 | Output | Token | Swapper |
 | --- | --- | --- |
-| USDC | `0x2D270e6886d130D724215A266106e6832161EAEd` | `0x1b5a0d897Cff041dFC2f24396A1159Fd2166EBc9` |
-| WETH | `0x4200000000000000000000000000000000000006` | `0xa98058A2DE00d2361035860d81E1a3E73b9df903` |
+| USDC | `0x3600000000000000000000000000000000000000` | `0xbc9B081906620588228B3c44E9804048A5E5bD31` |
+| EURC | `0xbEf5f6d51CB62b58e6A8f77868681825C6fe21c1` | `0x4CAD9fa41D498686261Bb7EC4db7D7291e550686` |
+| cirBTC | `0x171A4217b86A807A64eB94757Db6849fb4bDbAA0` | `0x7A19943AA36Ca7e365142Fe10023CB182A25153c` |
 
 | Index | `Kind` | Factory, or manager |
 | --- | --- | --- |
 | 0 | `AeroClassic` | Aero volatile pools, `0x8E6a9FCd1d638CC760Ffba397605Fe3355dE76D2` |
 | 1 | `AeroClassic` | Aero stable pools, `0x78589E876edcEbdce72ee3436ab3c9AD3a7cEF2D` |
-| 2 | `AeroSlipstream` | Aero `CLFactory`, `0x7660BF2aDefC687C22906112ca323d60A00358cF` |
-| 3 | `UniswapV2` | `UniswapV2Factory`, `0xfe57A6BA1951F69aE2Ed4abe23e0f095DF500C04` |
-| 4 | `UniswapV3` | `UniswapV3Factory`, `0x640887A9ba3A9C53Ed27D0F7e8246A4F933f3424` |
-| 5 | `UniswapV4` | `PoolManager`, `0x360E68faCcca8cA495c1B759Fd9EEe466db9FB32` |
+| 2 | `AeroSlipstream` | Aero `CLFactory`, `0x7F83235643181E440433400a027618Cd50879751` |
+| 3 | `UniswapV2` | `UniswapV2Factory`, `0x89e5DB8B5aA49aA85AC63f691524311AEB649eba` |
+| 4 | `UniswapV3` | `UniswapV3Factory`, `0xf0db7b58379503491d857dB50AC9ece64c653918` |
+| 5 | `UniswapV4` | `PoolManager`, `0x8366a39CC670B4001A1121B8F6A443A643e40951` |
 
 ## What each exchange's admins can change
 
 | Exchange | Held by | What it can change in a swap |
 | --- | --- | --- |
-| Aero, and Aero Lite on Arc | A 3-of-7 Safe, `0x42255e3C2d0b71a0b006243148fdF1a71d054cE0`, on every chain | Pause classic pools. Their fee, up to 20% with the MEV tax, which they can set where there is none. The Slipstream pools' swap hook and its fee, capped at 10%. Discounts for chosen callers. |
+| Aero | A 3-of-7 Safe, `0x42255e3C2d0b71a0b006243148fdF1a71d054cE0`, on every chain | Pause classic pools. Their fee, up to 20% with the MEV tax, which they can set where there is none. The Slipstream pools' swap hook and its fee, capped at 10%. Discounts for chosen callers. |
 | Uniswap | The owners of the v3 factory and of the v4 manager, in the table below | v2 and v3: nothing that changes what a swap costs. v4: a protocol fee of up to 0.1%. |
 | Hydrex, on Base | `0x74266f2b206D1359B83fc74949EF07176FB3AE03`, a single key, owns the Algebra factory. A one-day timelock, `0xdF52b5A03E3F5a4178E4F63e8BC51abE691B898F`, owns the pair factory's proxy admin. A 2-of-4 Safe, `0x1aE3753d9b60743A89159CcFF8E251C60B560311`, manages the pairs' fees. The plugins have their own admins. | Fees: the pairs', up to 2.5%. The pair factory's code, and the plugins' code. Not fully checked. |
 
 | Chain | Uniswap v3 factory's owner | Uniswap v4 manager's owner |
 | --- | --- | --- |
-| Base | `0xaBEA76658b205696d49B5F91b2a03536cB8A3bE1` | `0x31FAfd4889FA1269F7a13A66eE0fB458f27D72A9` |
 | Ethereum | `0xf2371551Fe3937Db7c750f4DfABe5c2fFFdcBf5A` | `0x1a9C8182C09F50C8318d769245beA52c32BE35BC`, Uniswap's timelock |
+| Base | `0xaBEA76658b205696d49B5F91b2a03536cB8A3bE1` | `0x31FAfd4889FA1269F7a13A66eE0fB458f27D72A9` |
 | OP Mainnet | `0xec23Cf5A1db3dcC6595385D28B2a4D9B52503Be4` | `0xa1dD330d602c32622AA270Ea73d078B803Cb3518` |
-| Robinhood Chain | `0x05C420bC4823e039AA4dA645eDde743486dAAA25` | `0x2BAD8182C09F50c8318d769245beA52C32Be46CD`, the timelock's L2 alias |
-| Arc | `0xa59FfbB55D91Fc32b44A06F0b9cc6036a4afbcE2` | `0xbCA30b5429935205037069cF5b8A165F55d05a75` |
 | Arbitrum One | `0xFF7aD5dA31fECdC678796c88B05926dB896b0699` | `0x2BAD8182C09F50c8318d769245beA52C32Be46CD`, the timelock's L2 alias |
-| Ink | `0x66c5D722Fc52671c7F839BBbF752BC38E0520B91` | `0x2BAD8182C09F50c8318d769245beA52C32Be46CD`, the timelock's L2 alias |
+| Arc | `0xa59FfbB55D91Fc32b44A06F0b9cc6036a4afbcE2` | `0xbCA30b5429935205037069cF5b8A165F55d05a75` |
 
 None of them can take the swapper's tokens, given how it pays pools. The worst they can do is a worse price, down to the
 route's minimum, a wrong quote, or a revert.
@@ -341,10 +299,9 @@ results of `eth_call` at the limit you send.
   and v4, and Algebra pools, its route reverts, though `quote` prices it.
 - `skipFailed` can't skip a token or pool that burns all the gas its route gets, 63/64 of what is left, or that
   reverts with a reason too big to copy. Either reverts the whole call, for the caller who included that route only.
-- USDC, EURC, cbBTC, cirBTC and USDG are upgradeable, and can block or freeze addresses. WETH on Arbitrum One and on
-  Robinhood Chain is upgradeable too, though it blocks nobody. A caller that the output token blocks can't be paid, so
-  their swaps revert, and so would everyone's if it blocked the treasury. WETH on the other chains, AERO and HYDX can't
-  block anyone.
+- WETH on Arbitrum One is upgradeable, though it blocks nobody. USDC, EURC, cirBTC and cbBTC are upgradeable, and can
+  block addresses. A caller that the output token blocks can't be paid, so their swaps revert, and so would everyone's
+  if it blocked the treasury. WETH on the other chains, AERO and HYDX can't block anyone.
 - On Arc, USDC is the native currency, and `0x3600000000000000000000000000000000000000` is the ERC-20 that moves it,
   in 6 decimals where the native balance has 18. The swapper treats it as any ERC-20: it can take it and pay it, and
   counts it by `balanceOf`. Foundry can't run the precompiles that this ERC-20 calls, so the fork tests of Arc run it
@@ -362,7 +319,7 @@ token has no code.
 
 | | |
 |---|---|
-| Networks | Base, Ethereum, OP Mainnet, Robinhood Chain, Arc, Arbitrum One, Ink |
+| Networks | Ethereum, Base, OP Mainnet, Arbitrum One, Arc |
 | Addresses | one swapper for each chain and output token, under [Chains](#chains) |
 | Exchanges | each chain's, under [Chains](#chains), in that order |
 | Treasury | `0x450c72de8c0079B49AcedF294a13011bd09D125B`, a 2-of-3 Safe, fixed in the source. It exists on Base only, so far: `script/Treasury.s.sol` creates it on another chain |
@@ -371,15 +328,15 @@ token has no code.
 
 The treasury was made on Base by Safe's proxy factory, in block 52,814,397. `script/Treasury.s.sol` sends the same call
 on another chain, which makes the same Safe at the same address, with the same three owners, keys that work on every
-chain, and the same threshold. Anyone can send it. It needs Safe v1.5.0's contracts on the chain, which all seven have,
+chain, and the same threshold. Anyone can send it. It needs Safe v1.5.0's contracts on the chain, which all five have,
 and it checks the owners and the threshold of the Safe it finds or makes.
 
 Deployment steps, for each chain:
 
 1. Install Foundry v1.8.5, the version CI uses, with `foundryup --install v1.8.5`. Another version can compile
    different bytecode.
-2. Run `forge test` with the chain's RPC set: `BASE_RPC_URL`, `ETHEREUM_RPC_URL`, `OPTIMISM_RPC_URL`,
-   `ROBINHOOD_RPC_URL`, `ARC_RPC_URL`, `ARBITRUM_RPC_URL` or `INK_RPC_URL`. Then run `script/check-verification.sh`.
+2. Run `forge test` with the chain's RPC set: `ETHEREUM_RPC_URL`, `BASE_RPC_URL`, `OPTIMISM_RPC_URL`,
+   `ARBITRUM_RPC_URL` or `ARC_RPC_URL`. Then run `script/check-verification.sh`.
 3. If the chain lacks the treasury, do a dry run of `script/Treasury.s.sol`, without `--broadcast`, then send it. It
    does nothing where the treasury exists.
 4. Do a dry run of `script/Deploy.s.sol`, and check that it logs the chain's addresses under [Chains](#chains). It
@@ -438,9 +395,8 @@ their fee up to 3%, and set Slipstream fees up to 10% through a fee module.
 ## Development
 
 You need [Foundry](https://getfoundry.sh). The fork tests and `test/fixtures/generate.py` also need an archive RPC for
-each chain, in `BASE_RPC_URL`, `ETHEREUM_RPC_URL`, `OPTIMISM_RPC_URL`, `ROBINHOOD_RPC_URL`, `ARC_RPC_URL`,
-`ARBITRUM_RPC_URL` and `INK_RPC_URL`. Public RPCs often keep too little history: Robinhood Chain's prunes its state
-after a few hours.
+each chain, in `ETHEREUM_RPC_URL`, `BASE_RPC_URL`, `OPTIMISM_RPC_URL`, `ARBITRUM_RPC_URL` and `ARC_RPC_URL`. Public
+RPCs often keep too little history: Arbitrum's own no longer serves the state at its fixture's block.
 
 - `forge test` runs the unit tests, and the fork tests of each chain whose RPC is set. Each chain's fork tests,
   [`test/fork/<Chain>.t.sol`](test/fork/), run against that chain at the block recorded in

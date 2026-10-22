@@ -31,52 +31,69 @@ def hop(kind, out, n=0, fee=0, spacing=0, seed=None, seeded=False):
     return {"kind": kind, "n": n, "out": out, "fee": fee, "spacing": spacing, "seed": seed, "seeded": seeded}
 
 
+E = {
+    "WETH": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+    "USDC": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+    "EURC": "0x1aBaEA1f7C830bD89Acc67eC4af516284b1bC33c",
+    "cirBTC": "0x72DFB2E44f59C5AD2bAFE84314E5b99a7cd5075E",
+    "cbBTC": "0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf",
+    "USDT": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+}
 B = {
+    "WETH": "0x4200000000000000000000000000000000000006",
     "USDC": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
     "EURC": "0x60a3E35Cc302bFA44Cb288Bc5a4F316Fdb1adb42",
-    "WETH": "0x4200000000000000000000000000000000000006",
     "cbBTC": "0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf",
     "AERO": "0x3f5bF3EdAc59d650D8fDf9657a71F2f904A3a4Ee",
     "HYDX": "0x00000e7efa313F4E11Bfff432471eD9423AC6B30",
 }
 MORPHO = "0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb"
 HYDX_VE = "0x25B2ED7149fb8A05f6eF9407d9c8F878f59cd1e1"
-E = {
-    "USDC": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
-    "EURC": "0x1aBaEA1f7C830bD89Acc67eC4af516284b1bC33c",
-    "WETH": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
-    "cbBTC": "0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf",
-    "USDT": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
-}
 O = {
-    "USDC": "0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85",
     "WETH": "0x4200000000000000000000000000000000000006",
+    "USDC": "0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85",
     "USDT": "0x94b008aA00579c1307B0EF2c499aD98a8ce58e58",
 }
-R = {
-    "USDG": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
-    "WETH": "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
-    "VM": "0x9433D16f5F0FD7F031310dE92BbCCBfdC1afa1fa",
+A = {
+    "WETH": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+    "USDC": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+    "cbBTC": "0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf",
+    "USDT0": "0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9",
 }
 C = {
     "USDC": "0x3600000000000000000000000000000000000000",
     "EURC": "0xbEf5f6d51CB62b58e6A8f77868681825C6fe21c1",
     "cirBTC": "0x171A4217b86A807A64eB94757Db6849fb4bDbAA0",
 }
-A = {
-    "USDC": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
-    "WETH": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
-    "cbBTC": "0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf",
-    "USDT0": "0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9",
-}
-I = {
-    "USDC": "0x2D270e6886d130D724215A266106e6832161EAEd",
-    "WETH": "0x4200000000000000000000000000000000000006",
-    "USDT0": "0x0200C29006150606B650577BBE7B6248F58470c1",
-}
 
 # Each route: (holder, token, amount, hops). Without a holder, the test funds one of its own.
 CHAINS = {
+    "ethereum": {
+        "rpc": "ETHEREUM_RPC_URL",
+        "quoter": "0x99bd42B2B22e531f283b7F8a86dFf631EB16A9D1",
+        "routes": {
+            "aeroVolatile": (
+                None, E["WETH"], 10**17, [hop("AeroClassic", E["USDC"], seed=(100 * 10**18, 300_000 * 10**6))]
+            ),
+            "aeroStable": (
+                None, E["USDT"], 10**8, [hop("AeroClassic", E["USDC"], n=1, seed=(100_000 * 10**6, 100_000 * 10**6))]
+            ),
+            "aeroSlipstream": (None, E["WETH"], 10**17, [hop("AeroSlipstream", E["USDC"], spacing=50)]),
+            "uniswapV2": (None, E["WETH"], 10**17, [hop("UniswapV2", E["USDC"])]),
+            "uniswapV3": (None, E["WETH"], 10**17, [hop("UniswapV3", E["USDC"], fee=500)]),
+            "uniswapV4": (None, E["WETH"], 10**17, [hop("UniswapV4", E["USDC"], fee=500, spacing=10)]),
+            "uniswapV4Native": (
+                None,
+                E["cbBTC"],
+                10**5,
+                [hop("UniswapV4", ETH, fee=3000, spacing=60), hop("UniswapV4", E["USDC"], fee=500, spacing=10)],
+            ),
+            "usdcToWeth": (None, E["USDC"], 10**8, [hop("UniswapV3", E["WETH"], fee=500)]),
+            "usdcToEurc": (None, E["USDC"], 10**8, [hop("UniswapV3", E["EURC"], fee=500)]),
+            "wethToCirBtc": (None, E["WETH"], 10**17, [hop("UniswapV3", E["cirBTC"], fee=100)]),
+            "wethToCbBtc": (None, E["WETH"], 10**17, [hop("UniswapV3", E["cbBTC"], fee=3000)]),
+        },
+    },
     "base": {
         "rpc": "BASE_RPC_URL",
         "quoter": "0xE1A6C5803e3c44368b171BD680c7D32dfc92CA47",
@@ -102,10 +119,10 @@ CHAINS = {
             "hydxThroughWeth": (
                 HYDX_VE, B["HYDX"], 10**21, [hop("HydrexAlgebra", B["WETH"]), hop("UniswapV3", B["USDC"], fee=500)]
             ),
-            "usdcToEurc": (MORPHO, B["USDC"], 10**7, [hop("UniswapV3", B["EURC"], fee=500)]),
-            "wethToEurc": (MORPHO, B["WETH"], 10**16, [hop("HydrexAlgebra", B["EURC"])]),
             "usdcToWeth": (MORPHO, B["USDC"], 10**8, [hop("UniswapV3", B["WETH"], fee=500)]),
             "cbBtcToWeth": (MORPHO, B["cbBTC"], 10**5, [hop("UniswapV3", B["WETH"], fee=500)]),
+            "wethToEurc": (MORPHO, B["WETH"], 10**16, [hop("HydrexAlgebra", B["EURC"])]),
+            "usdcToEurc": (MORPHO, B["USDC"], 10**7, [hop("UniswapV3", B["EURC"], fee=500)]),
             "wethToCbBtc": (MORPHO, B["WETH"], 10**17, [hop("UniswapV3", B["cbBTC"], fee=500)]),
             "usdcToCbBtc": (MORPHO, B["USDC"], 10**8, [hop("UniswapV2", B["cbBTC"])]),
             "wethToAero": (
@@ -127,31 +144,6 @@ CHAINS = {
             ),
         },
     },
-    "ethereum": {
-        "rpc": "ETHEREUM_RPC_URL",
-        "quoter": "0x99bd42B2B22e531f283b7F8a86dFf631EB16A9D1",
-        "routes": {
-            "aeroVolatile": (
-                None, E["WETH"], 10**17, [hop("AeroClassic", E["USDC"], seed=(100 * 10**18, 300_000 * 10**6))]
-            ),
-            "aeroStable": (
-                None, E["USDT"], 10**8, [hop("AeroClassic", E["USDC"], n=1, seed=(100_000 * 10**6, 100_000 * 10**6))]
-            ),
-            "aeroSlipstream": (None, E["WETH"], 10**17, [hop("AeroSlipstream", E["USDC"], spacing=50)]),
-            "uniswapV2": (None, E["WETH"], 10**17, [hop("UniswapV2", E["USDC"])]),
-            "uniswapV3": (None, E["WETH"], 10**17, [hop("UniswapV3", E["USDC"], fee=500)]),
-            "uniswapV4": (None, E["WETH"], 10**17, [hop("UniswapV4", E["USDC"], fee=500, spacing=10)]),
-            "uniswapV4Native": (
-                None,
-                E["cbBTC"],
-                10**5,
-                [hop("UniswapV4", ETH, fee=3000, spacing=60), hop("UniswapV4", E["USDC"], fee=500, spacing=10)],
-            ),
-            "usdcToEurc": (None, E["USDC"], 10**8, [hop("UniswapV3", E["EURC"], fee=500)]),
-            "usdcToWeth": (None, E["USDC"], 10**8, [hop("UniswapV3", E["WETH"], fee=500)]),
-            "wethToCbBtc": (None, E["WETH"], 10**17, [hop("UniswapV3", E["cbBTC"], fee=3000)]),
-        },
-    },
     "optimism": {
         "rpc": "OPTIMISM_RPC_URL",
         "quoter": "0xd673F731EDFe5AaF1bDa7FD43D13Bbb5150B87Ca",
@@ -167,48 +159,6 @@ CHAINS = {
             "uniswapV3": (None, O["WETH"], 10**17, [hop("UniswapV3", O["USDC"], fee=3000)]),
             "uniswapV4": (None, O["WETH"], 10**14, [hop("UniswapV4", O["USDC"], fee=500, spacing=10)]),
             "usdcToWeth": (None, O["USDC"], 10**8, [hop("UniswapV3", O["WETH"], fee=3000)]),
-        },
-    },
-    "robinhood": {
-        "rpc": "ROBINHOOD_RPC_URL",
-        "quoter": "0x8Dc178eFB8111BB0973Dd9d722ebeFF267c98F94",
-        "routes": {
-            "aeroVolatile": (None, R["VM"], 10**21, [hop("AeroClassic", R["USDG"])]),
-            "aeroStable": (
-                None, R["WETH"], 10**17, [hop("AeroClassic", R["USDG"], n=1, seed=(100 * 10**18, 100 * 10**6))]
-            ),
-            "aeroSlipstream": (None, R["WETH"], 10**17, [hop("AeroSlipstream", R["USDG"], spacing=50)]),
-            "uniswapV2": (None, R["WETH"], 10**17, [hop("UniswapV2", R["USDG"])]),
-            "uniswapV3": (None, R["WETH"], 10**17, [hop("UniswapV3", R["USDG"], fee=100)]),
-            "uniswapV4": (None, R["WETH"], 10**17, [hop("UniswapV4", R["USDG"], fee=500, spacing=10)]),
-            "usdgToWeth": (None, R["USDG"], 10**8, [hop("UniswapV3", R["WETH"], fee=100)]),
-        },
-    },
-    "arc": {
-        "rpc": "ARC_RPC_URL",
-        "quoter": "0x8Dc178eFB8111BB0973Dd9d722ebeFF267c98F94",
-        "routes": {
-            "aeroVolatile": (
-                None, C["cirBTC"], 10**6, [hop("AeroClassic", C["USDC"], seed=(10**8, 100_000 * 10**6))]
-            ),
-            "aeroStable": (
-                None, C["EURC"], 10**8, [hop("AeroClassic", C["USDC"], n=1, seed=(100_000 * 10**6, 100_000 * 10**6))]
-            ),
-            "aeroLiteVolatile": (
-                None, C["cirBTC"], 10**6, [hop("AeroClassic", C["USDC"], n=2, seed=(10**8, 100_000 * 10**6))]
-            ),
-            "aeroLiteStable": (
-                None, C["EURC"], 10**8, [hop("AeroClassic", C["USDC"], n=3, seed=(100_000 * 10**6, 100_000 * 10**6))]
-            ),
-            "aeroSlipstream": (None, C["EURC"], 10**8, [hop("AeroSlipstream", C["USDC"], spacing=1)]),
-            "aeroLiteSlipstream": (None, C["EURC"], 10**8, [hop("AeroSlipstream", C["USDC"], n=1, spacing=1)]),
-            "uniswapV2": (
-                None, C["EURC"], 10**8, [hop("UniswapV2", C["USDC"], seed=(10_000 * 10**6, 11_000 * 10**6))]
-            ),
-            "uniswapV3": (None, C["EURC"], 10**8, [hop("UniswapV3", C["USDC"], fee=500)]),
-            "uniswapV4": (None, C["EURC"], 10**7, [hop("UniswapV4", C["USDC"], fee=500, spacing=10)]),
-            "usdcToEurc": (None, C["USDC"], 10**8, [hop("AeroSlipstream", C["EURC"], spacing=1)]),
-            "usdcToCirBtc": (None, C["USDC"], 10**7, [hop("UniswapV3", C["cirBTC"], fee=100)]),
         },
     },
     "arbitrum": {
@@ -229,26 +179,24 @@ CHAINS = {
             "wethToCbBtc": (None, A["WETH"], 10**16, [hop("UniswapV3", A["cbBTC"], fee=3000)]),
         },
     },
-    "ink": {
-        "rpc": "INK_RPC_URL",
-        "quoter": "0x8928074CA1b241D8Ec02815881c1Af11E8bC5219",
+    "arc": {
+        "rpc": "ARC_RPC_URL",
+        "quoter": "0x8Dc178eFB8111BB0973Dd9d722ebeFF267c98F94",
         "routes": {
             "aeroVolatile": (
-                None, I["WETH"], 10**17, [hop("AeroClassic", I["USDC"], seed=(100 * 10**18, 300_000 * 10**6))]
+                None, C["cirBTC"], 10**6, [hop("AeroClassic", C["USDC"], seed=(10**8, 100_000 * 10**6))]
             ),
             "aeroStable": (
-                None, I["USDT0"], 10**8, [hop("AeroClassic", I["USDC"], n=1, seed=(100_000 * 10**6, 100_000 * 10**6))]
+                None, C["EURC"], 10**8, [hop("AeroClassic", C["USDC"], n=1, seed=(100_000 * 10**6, 100_000 * 10**6))]
             ),
-            "aeroSlipstream": (None, I["WETH"], 10**17, [hop("AeroSlipstream", I["USDC"], spacing=100)]),
-            "uniswapV2": (None, I["USDT0"], 10**4, [hop("UniswapV2", I["WETH"])]),
-            "uniswapV3": (None, I["USDT0"], 10**8, [hop("UniswapV3", I["USDC"], fee=100)]),
-            "uniswapV4Native": (
-                None,
-                I["USDT0"],
-                10**7,
-                [hop("UniswapV4", ETH, fee=3000, spacing=60), hop("UniswapV4", I["USDC"], fee=3000, spacing=60)],
+            "aeroSlipstream": (None, C["EURC"], 10**8, [hop("AeroSlipstream", C["USDC"], spacing=1)]),
+            "uniswapV2": (
+                None, C["EURC"], 10**8, [hop("UniswapV2", C["USDC"], seed=(10_000 * 10**6, 11_000 * 10**6))]
             ),
-            "usdcToWeth": (None, I["USDC"], 10**8, [hop("AeroSlipstream", I["WETH"], spacing=100)]),
+            "uniswapV3": (None, C["EURC"], 10**8, [hop("UniswapV3", C["USDC"], fee=500)]),
+            "uniswapV4": (None, C["EURC"], 10**7, [hop("UniswapV4", C["USDC"], fee=500, spacing=10)]),
+            "usdcToEurc": (None, C["USDC"], 10**8, [hop("AeroSlipstream", C["EURC"], spacing=1)]),
+            "usdcToCirBtc": (None, C["USDC"], 10**7, [hop("UniswapV3", C["cirBTC"], fee=100)]),
         },
     },
 }

@@ -25,24 +25,6 @@ SPDX-FileCopyrightText = "Aero"
 SPDX-License-Identifier = "GPL-2.0-or-later"
 
 [[annotations]]
-path = ["test/upstream/aero-lite/IPool.sol", "test/upstream/aero-lite/IPoolFactory.sol"]
-precedence = "aggregate"
-SPDX-FileCopyrightText = "Aero"
-SPDX-License-Identifier = "MIT"
-
-[[annotations]]
-path = ["test/upstream/aero-lite/Pool.sol", "test/upstream/aero-lite/PoolFactory.sol"]
-precedence = "aggregate"
-SPDX-FileCopyrightText = "Aero"
-SPDX-License-Identifier = "GPL-3.0-or-later"
-
-[[annotations]]
-path = "test/upstream/aero-lite/slipstream/**"
-precedence = "aggregate"
-SPDX-FileCopyrightText = "Aero"
-SPDX-License-Identifier = "GPL-2.0-or-later"
-
-[[annotations]]
 path = "test/upstream/uniswap/v2/**"
 precedence = "aggregate"
 SPDX-FileCopyrightText = "Uniswap Labs"

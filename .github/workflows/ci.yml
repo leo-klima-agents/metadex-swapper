@@ -42,13 +42,11 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { chain: Base, rpc: BASE_RPC_URL }
           - { chain: Ethereum, rpc: ETHEREUM_RPC_URL }
+          - { chain: Base, rpc: BASE_RPC_URL }
           - { chain: Optimism, rpc: OPTIMISM_RPC_URL }
-          - { chain: Robinhood, rpc: ROBINHOOD_RPC_URL }
-          - { chain: Arc, rpc: ARC_RPC_URL }
           - { chain: Arbitrum, rpc: ARBITRUM_RPC_URL }
-          - { chain: Ink, rpc: INK_RPC_URL }
+          - { chain: Arc, rpc: ARC_RPC_URL }
     env:
       RPC_URL: ${{ secrets[matrix.rpc] }}
     steps:

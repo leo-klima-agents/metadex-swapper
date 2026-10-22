@@ -27,7 +27,7 @@ else
   echo "$INPUT ok"
 fi
 
-for address in $(jq -r '.deployments[].address' "$HASHES"); do
+for address in $(jq -r '.chains[].deployments[].address' "$HASHES"); do
   if grep -qF "\`$address\`" README.md; then
     echo "README.md shows $address"
   else

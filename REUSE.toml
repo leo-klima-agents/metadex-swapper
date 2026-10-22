@@ -37,12 +37,6 @@ SPDX-FileCopyrightText = "Aero"
 SPDX-License-Identifier = "GPL-2.0-or-later"
 
 [[annotations]]
-path = "test/upstream/aerodrome/**"
-precedence = "aggregate"
-SPDX-FileCopyrightText = "Aerodrome"
-SPDX-License-Identifier = "GPL-2.0-or-later"
-
-[[annotations]]
 path = "test/upstream/uniswap/v2/**"
 precedence = "aggregate"
 SPDX-FileCopyrightText = "Uniswap Labs"

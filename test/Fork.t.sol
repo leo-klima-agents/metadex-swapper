@@ -16,7 +16,6 @@ interface IViews {
     function mevTaxModule() external view returns (address);
     function defaultSwapHook() external view returns (address);
     function targetFactories() external view returns (address[] memory);
-    function poolFactories() external view returns (address[] memory);
     function leafVoter() external view returns (address);
     function ORCHESTRATOR() external view returns (address);
     function adapter() external view returns (address);
@@ -54,14 +53,9 @@ contract ForkTest is Test {
     address internal constant HYDREX_STABLE_PAIR = 0xB0EAc8AA498845045229DFE9B68d023f3d019079;
     address internal constant ALGEBRA_OWNER = 0x74266f2b206D1359B83fc74949EF07176FB3AE03;
     address internal constant AERO_REGISTRY = 0x7b2A2c12dC5Ea2a31455952a05031C3E4BB28F3E;
-    address internal constant AERODROME_REGISTRY = 0x5C3F18F06CC09CA1910767A34a20F771039E37C0;
     address internal constant AERO_VOLATILE_IMPL = 0x0526cF035C1156b5C598b0d3c2445e38af2e8bDE;
     address internal constant AERO_STABLE_IMPL = 0xf525988f88B7D8b64631D86070FEC5BFDc50C174;
     address internal constant AERO_CL_IMPL = 0x1642634C8CB1C9f1B84c9a1a08534F8c3F4E89f8;
-    address internal constant AERODROME_POOL_IMPL = 0xA4e46b4f701c62e14DF11B48dCe76A7d793CD6d7;
-    address internal constant AERODROME_CL_IMPL = 0xeC8E5342B19977B4eF8892e02D8DAEcfa1315831;
-    address internal constant AERODROME_CL_IMPL_2 = 0x942e97a4c6FdC38B4CD1c0298D37d81fDD8E5A16;
-    address internal constant AERODROME_CL_IMPL_3 = 0xc770898522D2A9c8Da7A10D63989b6b58305B665;
     address internal constant AERO_VOLATILE_FEES = 0x7949DE8d67E4F6b8509Bdbb43FF0503aF1247a7A;
     address internal constant AERO_VOLATILE_TAX = 0x830D07BDe136752BCefe0B59a14c2C7af07814AF;
     address internal constant AERO_STABLE_FEES = 0x0195fC76Da986D66B2A468133a1be41E90893Da6;
@@ -79,10 +73,10 @@ contract ForkTest is Test {
         vm.createSelectFork(rpc, fx.readUint(".block"));
         assertEq(block.chainid, 8453);
         d = new Deploy();
-        address[6] memory deployed = d.run();
-        address[6] memory o = d.outputs();
+        address[] memory deployed = d.run();
+        Deploy.Output[] memory o = d.outputs(d.BASE());
         for (uint256 i; i < o.length; ++i) {
-            swappers[o[i]] = ImmutableSwapper(deployed[i]);
+            swappers[o[i].token] = ImmutableSwapper(deployed[i]);
         }
     }
 
@@ -92,14 +86,6 @@ contract ForkTest is Test {
         assertEq(d.AERO_VOLATILE().codehash, 0x975417bdbc8e5df051479a271f5a03582df5f09f179771c68e2708dddeb56ef0);
         assertEq(d.AERO_STABLE().codehash, 0x3b34cd7ed303be01986b097c49f1a29d211783ef63f5e920db0ffb9291396cc2);
         assertEq(d.AERO_SLIPSTREAM().codehash, 0x6c09090837ace0aefe6bfa24a3bc772d13a9775b7e3109c9fece534a0ce053a6);
-        assertEq(d.AERODROME_CLASSIC().codehash, 0xe2a176e5d2bcfb214b784ec6d6733708a6376a464f203cc265c284c9f349fea3);
-        assertEq(d.AERODROME_SLIPSTREAM().codehash, 0x7340cf80843bd721bcaefbfc050e38304cb4174c239e6e914e3056f27f39b11c);
-        assertEq(
-            d.AERODROME_SLIPSTREAM_2().codehash, 0x0e72100f63ce8e32c95370fa9636d38c8cf434a820f2a7a69985e50930d2cb85
-        );
-        assertEq(
-            d.AERODROME_SLIPSTREAM_3().codehash, 0x4961963494e47f363617ab9a0f3999a28b33c519e51392952db06350cce700bd
-        );
         assertEq(d.UNISWAP_V2().codehash, 0xbab145d02e7005f0d84c6c1639d39b799b0ea16df99ebbdaf5a14d9da820b4e0);
         assertEq(d.UNISWAP_V3().codehash, 0x95707a4ac71f20181a63ef7d180e3c625be5d20fc8f6f980befa966bad568132);
         assertEq(d.UNISWAP_V4().codehash, 0x83b2af6e9f3158defc2811cbcb0db71ecf8b2ba2abea39c39e370ac5c6f43eb6);
@@ -108,12 +94,7 @@ contract ForkTest is Test {
         assertEq(AERO_VOLATILE_IMPL.codehash, 0x15269fbb3aca4305485be2669a8394ec6a14c75181e1eb4c2d46c5b1ee2a7782);
         assertEq(AERO_STABLE_IMPL.codehash, 0x9d1476a920eac769acf23251d79fd656f5566538080c06fc05573e5946b64a91);
         assertEq(AERO_CL_IMPL.codehash, 0x041172c7cbffc45627f9dd52727a0124cd6eeb2b5830ab392df54f71a6948693);
-        assertEq(AERODROME_POOL_IMPL.codehash, 0xd22754a0a3b39db7298dbbc2be1e34b34320988ea67065c85fa28ae66c02d31e);
-        assertEq(AERODROME_CL_IMPL.codehash, 0x772fb5c610b40a122036f544e5b9b5bce6becb19db9524331289d1aaed2d5888);
-        assertEq(AERODROME_CL_IMPL_2.codehash, 0x916bc5496cc07ea86289bc3a08a90f93dcae34686be6634f6e89ef260c3df4fa);
-        assertEq(AERODROME_CL_IMPL_3.codehash, 0xe63484f408c701770737a3c40e435c8183c66b1663f3a8777ce44dd73aff339b);
         assertEq(AERO_REGISTRY.codehash, 0xcd0b88f96b36edf4d58c6b41119653e25d12bf52d1ea1cd7f636eab29cdb0bd1);
-        assertEq(AERODROME_REGISTRY.codehash, 0xd4a9f98ebd41e4c4e7ae646f1a1f8eaa1205100906f34299a3cd7e4ed567c929);
         assertEq(AERO_VOLATILE_FEES.codehash, 0xa56614fe447178e62c473ff1333d660c1dbb70965b4a059fae228bf52457c0f2);
         assertEq(AERO_VOLATILE_TAX.codehash, 0x59de6c7ead685b6295ef7dccb7ee30cd2881c697267d09718790f998db3cf016);
         assertEq(AERO_STABLE_FEES.codehash, 0xe0c19912c35391d5bd218fc0903c3116d9915dc36b4f0b93eb75cf19932c12ac);
@@ -126,10 +107,6 @@ contract ForkTest is Test {
         assertEq(IViews(d.AERO_VOLATILE()).implementation(), AERO_VOLATILE_IMPL);
         assertEq(IViews(d.AERO_STABLE()).implementation(), AERO_STABLE_IMPL);
         assertEq(IViews(d.AERO_SLIPSTREAM()).poolImplementation(), AERO_CL_IMPL);
-        assertEq(IViews(d.AERODROME_CLASSIC()).implementation(), AERODROME_POOL_IMPL);
-        assertEq(IViews(d.AERODROME_SLIPSTREAM()).poolImplementation(), AERODROME_CL_IMPL);
-        assertEq(IViews(d.AERODROME_SLIPSTREAM_2()).poolImplementation(), AERODROME_CL_IMPL_2);
-        assertEq(IViews(d.AERODROME_SLIPSTREAM_3()).poolImplementation(), AERODROME_CL_IMPL_3);
 
         assertEq(IViews(d.AERO_VOLATILE()).feeModule(), AERO_VOLATILE_FEES);
         assertEq(IViews(d.AERO_VOLATILE()).mevTaxModule(), AERO_VOLATILE_TAX);
@@ -148,17 +125,11 @@ contract ForkTest is Test {
         assertEq(aero[0], d.AERO_VOLATILE());
         assertEq(aero[1], d.AERO_STABLE());
         assertEq(aero[2], d.AERO_SLIPSTREAM());
-        address[] memory aerodrome = IViews(AERODROME_REGISTRY).poolFactories();
-        assertEq(aerodrome.length, 4);
-        assertEq(aerodrome[0], d.AERODROME_CLASSIC());
-        assertEq(aerodrome[1], d.AERODROME_SLIPSTREAM());
-        assertEq(aerodrome[2], d.AERODROME_SLIPSTREAM_2());
-        assertEq(aerodrome[3], d.AERODROME_SLIPSTREAM_3());
 
-        address[12] memory e = d.exchanges();
+        ImmutableSwapper.Exchange[] memory e = d.exchanges(d.BASE());
         for (uint256 i; i < e.length; ++i) {
-            address impl = address(uint160(uint256(vm.load(e[i], IMPL_SLOT))));
-            assertEq(impl, e[i] == d.HYDREX_CLASSIC() ? HYDREX_PAIR_FACTORY_IMPL : address(0));
+            address impl = address(uint160(uint256(vm.load(e[i].factory, IMPL_SLOT))));
+            assertEq(impl, e[i].factory == d.HYDREX_CLASSIC() ? HYDREX_PAIR_FACTORY_IMPL : address(0));
         }
         assertEq(address(uint160(uint256(vm.load(d.HYDREX_CLASSIC(), ADMIN_SLOT)))), HYDREX_PROXY_ADMIN);
         assertEq(IViews(HYDREX_PROXY_ADMIN).owner(), HYDREX_TIMELOCK);
@@ -168,22 +139,8 @@ contract ForkTest is Test {
     }
 
     function test_pin_poolsAreClonesOfTheImplementations() public view {
-        string[6] memory names = [
-            "aeroVolatile",
-            "aeroSlipstream",
-            "aerodromeClassic",
-            "aerodromeSlipstream",
-            "aerodromeSlipstream2",
-            "aerodromeSlipstream3"
-        ];
-        address[6] memory impls = [
-            AERO_VOLATILE_IMPL,
-            AERO_CL_IMPL,
-            AERODROME_POOL_IMPL,
-            AERODROME_CL_IMPL,
-            AERODROME_CL_IMPL_2,
-            AERODROME_CL_IMPL_3
-        ];
+        string[2] memory names = ["aeroVolatile", "aeroSlipstream"];
+        address[2] memory impls = [AERO_VOLATILE_IMPL, AERO_CL_IMPL];
         for (uint256 i; i < names.length; ++i) {
             assertEq(_pool(names[i]).code, _clone(impls[i]), names[i]);
         }
@@ -195,22 +152,6 @@ contract ForkTest is Test {
 
     function test_hydrexClassic() public {
         _check("hydrexClassic", address(0));
-    }
-
-    function test_aerodromeClassic() public {
-        _check("aerodromeClassic", address(0));
-    }
-
-    function test_aerodromeSlipstream() public {
-        _check("aerodromeSlipstream", address(0));
-    }
-
-    function test_aerodromeSlipstream2() public {
-        _check("aerodromeSlipstream2", address(0));
-    }
-
-    function test_aerodromeSlipstream3() public {
-        _check("aerodromeSlipstream3", address(0));
     }
 
     function test_uniswapV2() public {
@@ -280,11 +221,11 @@ contract ForkTest is Test {
             IClassicPool(pair).swap(out0, out1, address(this), "");
             vm.revertToState(snap);
 
-            swappers[tokenOut] = new ImmutableSwapper(tokenOut, d.exchanges());
+            swappers[tokenOut] = new ImmutableSwapper(tokenOut, d.exchanges(d.BASE()));
             ImmutableSwapper.Route memory r;
             (r.token, r.amount) = (tokenIn, amounts[i]);
             r.hops = new ImmutableSwapper.Hop[](1);
-            r.hops[0] = ImmutableSwapper.Hop(ImmutableSwapper.Exchange.HydrexClassic, pair, tokenOut, 0, 0);
+            r.hops[0] = ImmutableSwapper.Hop(_indexOf(d.HYDREX_CLASSIC()), pair, tokenOut, 0, 0);
             deal(tokenIn, holder, amounts[i]);
             (ImmutableSwapper.Result memory res,) = _swapAs(holder, r);
             assertEq(res.amountOut, quoted - 1);
@@ -430,10 +371,17 @@ contract ForkTest is Test {
         int256[] memory spacings = fx.readIntArray(string.concat(k, ".tickSpacings"));
         r.hops = new ImmutableSwapper.Hop[](exchanges.length);
         for (uint256 i; i < exchanges.length; ++i) {
-            r.hops[i] = ImmutableSwapper.Hop(
-                ImmutableSwapper.Exchange(exchanges[i]), pools[i], tokensOut[i], uint24(fees[i]), int24(spacings[i])
-            );
+            r.hops[i] =
+                ImmutableSwapper.Hop(uint8(exchanges[i]), pools[i], tokensOut[i], uint24(fees[i]), int24(spacings[i]));
         }
+    }
+
+    function _indexOf(address factory) internal view returns (uint8) {
+        ImmutableSwapper.Exchange[] memory e = d.exchanges(d.BASE());
+        for (uint256 i; i < e.length; ++i) {
+            if (e[i].factory == factory) return uint8(i);
+        }
+        revert("not listed");
     }
 
     function _pool(string memory name) internal view returns (address) {

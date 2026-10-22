@@ -28,18 +28,13 @@ EXCHANGES = [
     ("AeroVolatile", "0x8E6a9FCd1d638CC760Ffba397605Fe3355dE76D2"),
     ("AeroStable", "0x78589E876edcEbdce72ee3436ab3c9AD3a7cEF2D"),
     ("AeroSlipstream", "0x9CB220581b91b0C83223012FE69688b92aD07a76"),
-    ("AerodromeClassic", "0x420DD381b31aEf6683db6B902084cB0FFECe40Da"),
-    ("AerodromeSlipstream", "0x5e7BB104d84c7CB9B682AaC2F3d509f5F406809A"),
-    ("AerodromeSlipstream2", "0xaDe65c38CD4849aDBA595a4323a8C7DdfE89716a"),
-    ("AerodromeSlipstream3", "0xf8f2eB4940CFE7d13603DDDD87f123820Fc061Ef"),
     ("UniswapV2", "0x8909Dc15e40173Ff4699343b6eB8132c65e18eC6"),
     ("UniswapV3", "0x33128a8fC17869897dcE68Ed026d694621f6FDfD"),
     ("UniswapV4", "0x498581fF718922c3f8e6A244956aF099B2652b2b"),
 ]
 INDEX = {name: i for i, (name, _) in enumerate(EXCHANGES)}
 FACTORY = dict(EXCHANGES)
-CONCENTRATED = {"HydrexAlgebra", "AeroSlipstream", "AerodromeSlipstream", "AerodromeSlipstream2"}
-CONCENTRATED |= {"AerodromeSlipstream3", "UniswapV3"}
+CONCENTRATED = {"HydrexAlgebra", "AeroSlipstream", "UniswapV3"}
 AERO_V3 = {"AeroVolatile", "AeroStable", "AeroSlipstream"}
 
 V3_FEE = 500
@@ -50,10 +45,6 @@ LOOKUP = {
     "AeroVolatile": ("getPool(address,address)", []),
     "AeroStable": ("getPool(address,address)", []),
     "AeroSlipstream": ("getPool(address,address,int24)", [100]),
-    "AerodromeClassic": ("getPool(address,address,bool)", [False]),
-    "AerodromeSlipstream": ("getPool(address,address,int24)", [100]),
-    "AerodromeSlipstream2": ("getPool(address,address,int24)", [50]),
-    "AerodromeSlipstream3": ("getPool(address,address,int24)", [50]),
     "UniswapV2": ("getPair(address,address)", []),
     "UniswapV3": ("getPool(address,address,uint24)", [V3_FEE]),
 }
@@ -64,21 +55,17 @@ ROUTES = {
     "aeroVolatile": (MORPHO, WETH, 10**17, [("AeroVolatile", USDC)]),
     "aeroStable": (MORPHO, EURC, 10**8, [("AeroStable", USDC)]),
     "aeroSlipstream": (MORPHO, WETH, 10**17, [("AeroSlipstream", USDC)]),
-    "aerodromeClassic": (MORPHO, WETH, 10**17, [("AerodromeClassic", USDC)]),
-    "aerodromeSlipstream": (MORPHO, WETH, 10**17, [("AerodromeSlipstream", USDC)]),
-    "aerodromeSlipstream2": (MORPHO, WETH, 10**16, [("AerodromeSlipstream2", USDC)]),
-    "aerodromeSlipstream3": (MORPHO, WETH, 10**17, [("AerodromeSlipstream3", USDC)]),
     "uniswapV2": (MORPHO, WETH, 10**17, [("UniswapV2", USDC)]),
     "uniswapV3": (MORPHO, WETH, 10**17, [("UniswapV3", USDC)]),
     "uniswapV4": (MORPHO, WETH, 10**17, [("UniswapV4", USDC, (3000, 60))]),
     "uniswapV4Native": (MORPHO, CBBTC, 10**5, [("UniswapV4", ETH, (500, 10)), ("UniswapV4", USDC, (3000, 60))]),
     "hydxThroughWeth": (HYDX_VE, HYDX, 10**21, [("HydrexAlgebra", WETH), ("UniswapV3", USDC)]),
     "usdcToEurc": (MORPHO, USDC, 10**7, [("UniswapV3", EURC)]),
-    "wethToEurc": (MORPHO, WETH, 10**16, [("AerodromeSlipstream", EURC)]),
+    "wethToEurc": (MORPHO, WETH, 10**16, [("HydrexAlgebra", EURC)]),
     "usdcToWeth": (MORPHO, USDC, 10**8, [("UniswapV3", WETH)]),
-    "cbBtcToWeth": (MORPHO, CBBTC, 10**5, [("AerodromeSlipstream", WETH)]),
+    "cbBtcToWeth": (MORPHO, CBBTC, 10**5, [("UniswapV3", WETH)]),
     "wethToCbBtc": (MORPHO, WETH, 10**17, [("UniswapV3", CBBTC)]),
-    "usdcToCbBtc": (MORPHO, USDC, 10**8, [("AerodromeSlipstream", CBBTC)]),
+    "usdcToCbBtc": (MORPHO, USDC, 10**8, [("UniswapV2", CBBTC)]),
     "wethToAero": (MORPHO, WETH, 10**17, [("AeroVolatile", NEW_AERO)]),
     "wethToHydx": (MORPHO, WETH, 10**16, [("HydrexAlgebra", HYDX)]),
     "usdcToHydx": (MORPHO, USDC, 10**7, [("HydrexClassic", HYDX)]),

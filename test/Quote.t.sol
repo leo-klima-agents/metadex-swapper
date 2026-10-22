@@ -33,7 +33,7 @@ contract QuoteTest is SwapperTestBase {
 
     function test_needsNoAllowance() public {
         ImmutableSwapper.Route memory r = _direct(UNISWAP_V3, address(tkn), 2e18);
-        ImmutableSwapper.Route memory all = _direct(AERODROME_SLIPSTREAM, address(tkn), type(uint256).max);
+        ImmutableSwapper.Route memory all = _direct(AERO_SLIPSTREAM, address(tkn), type(uint256).max);
         tkn.mint(holder, 5e18);
 
         ImmutableSwapper.Result[] memory quoted = _quote(_routes(r, all));
@@ -75,9 +75,8 @@ contract QuoteTest is SwapperTestBase {
     }
 
     function test_pricesEachRouteAgainstThePoolsAsTheyAre() public {
-        address pool = _pool(AERODROME_CLASSIC, address(tkn), address(usdc), 1, 1);
-        ImmutableSwapper.Route memory r =
-            _route(address(tkn), 1e27, _hops(_hop(AERODROME_CLASSIC, pool, address(usdc))));
+        address pool = _pool(AERO_STABLE, address(tkn), address(usdc), 1, 1);
+        ImmutableSwapper.Route memory r = _route(address(tkn), 1e27, _hops(_hop(AERO_STABLE, pool, address(usdc))));
         ImmutableSwapper.Route[] memory routes = _routes(r, r);
 
         ImmutableSwapper.Result[] memory quoted = _quote(routes);
@@ -93,7 +92,7 @@ contract QuoteTest is SwapperTestBase {
         ImmutableSwapper.Route[] memory routes = new ImmutableSwapper.Route[](EXCHANGES);
         for (uint256 i; i < EXCHANGES; ++i) {
             MockToken t = new MockToken();
-            routes[i] = _direct(ImmutableSwapper.Exchange(i), address(t), 1e18);
+            routes[i] = _direct(uint8(i), address(t), 1e18);
             t.mint(holder, 1e18);
         }
 

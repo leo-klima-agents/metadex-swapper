@@ -12,20 +12,16 @@ import {MockPoolManager} from "../mocks/MockPoolManager.sol";
 import {MockToken} from "../mocks/MockToken.sol";
 
 abstract contract SwapperTestBase is Test {
-    ImmutableSwapper.Exchange internal constant HYDREX_ALGEBRA = ImmutableSwapper.Exchange.HydrexAlgebra;
-    ImmutableSwapper.Exchange internal constant HYDREX_CLASSIC = ImmutableSwapper.Exchange.HydrexClassic;
-    ImmutableSwapper.Exchange internal constant AERO_VOLATILE = ImmutableSwapper.Exchange.AeroVolatile;
-    ImmutableSwapper.Exchange internal constant AERO_STABLE = ImmutableSwapper.Exchange.AeroStable;
-    ImmutableSwapper.Exchange internal constant AERO_SLIPSTREAM = ImmutableSwapper.Exchange.AeroSlipstream;
-    ImmutableSwapper.Exchange internal constant AERODROME_CLASSIC = ImmutableSwapper.Exchange.AerodromeClassic;
-    ImmutableSwapper.Exchange internal constant AERODROME_SLIPSTREAM = ImmutableSwapper.Exchange.AerodromeSlipstream;
-    ImmutableSwapper.Exchange internal constant AERODROME_SLIPSTREAM_2 = ImmutableSwapper.Exchange.AerodromeSlipstream2;
-    ImmutableSwapper.Exchange internal constant AERODROME_SLIPSTREAM_3 = ImmutableSwapper.Exchange.AerodromeSlipstream3;
-    ImmutableSwapper.Exchange internal constant UNISWAP_V2 = ImmutableSwapper.Exchange.UniswapV2;
-    ImmutableSwapper.Exchange internal constant UNISWAP_V3 = ImmutableSwapper.Exchange.UniswapV3;
-    ImmutableSwapper.Exchange internal constant UNISWAP_V4 = ImmutableSwapper.Exchange.UniswapV4;
+    uint8 internal constant HYDREX_ALGEBRA = 0;
+    uint8 internal constant HYDREX_CLASSIC = 1;
+    uint8 internal constant AERO_VOLATILE = 2;
+    uint8 internal constant AERO_STABLE = 3;
+    uint8 internal constant AERO_SLIPSTREAM = 4;
+    uint8 internal constant UNISWAP_V2 = 5;
+    uint8 internal constant UNISWAP_V3 = 6;
+    uint8 internal constant UNISWAP_V4 = 7;
 
-    uint256 internal constant EXCHANGES = 12;
+    uint256 internal constant EXCHANGES = 8;
     uint256 internal constant DEEP = 1e30;
     uint24 internal constant V3_FEE = 500;
     uint24 internal constant V4_FEE = 3000;
@@ -58,17 +54,29 @@ abstract contract SwapperTestBase is Test {
         treasury = swapper.TREASURY();
     }
 
-    function _exchanges() internal view returns (address[EXCHANGES] memory list) {
+    function _exchanges() internal view returns (ImmutableSwapper.Exchange[] memory list) {
+        list = new ImmutableSwapper.Exchange[](EXCHANGES);
         for (uint256 i; i < EXCHANGES - 1; ++i) {
-            list[i] = address(factories[i]);
+            list[i] = ImmutableSwapper.Exchange(_kind(uint8(i)), address(factories[i]));
         }
-        list[EXCHANGES - 1] = address(manager);
+        list[EXCHANGES - 1] = ImmutableSwapper.Exchange(ImmutableSwapper.Kind.UniswapV4, address(manager));
     }
 
-    function _direct(ImmutableSwapper.Exchange e, address token, uint256 amount)
-        internal
-        returns (ImmutableSwapper.Route memory)
-    {
+    function _kind(uint8 e) internal pure returns (ImmutableSwapper.Kind) {
+        ImmutableSwapper.Kind[EXCHANGES] memory kinds = [
+            ImmutableSwapper.Kind.HydrexAlgebra,
+            ImmutableSwapper.Kind.HydrexClassic,
+            ImmutableSwapper.Kind.AeroClassic,
+            ImmutableSwapper.Kind.AeroClassic,
+            ImmutableSwapper.Kind.AeroSlipstream,
+            ImmutableSwapper.Kind.UniswapV2,
+            ImmutableSwapper.Kind.UniswapV3,
+            ImmutableSwapper.Kind.UniswapV4
+        ];
+        return kinds[e];
+    }
+
+    function _direct(uint8 e, address token, uint256 amount) internal returns (ImmutableSwapper.Route memory) {
         address pool = _pool(e, token, address(usdc));
         return _route(token, amount, _hops(_hop(e, pool, address(usdc))));
     }
@@ -96,15 +104,11 @@ abstract contract SwapperTestBase is Test {
         r[1] = b;
     }
 
-    function _isConcentrated(ImmutableSwapper.Exchange e) internal pure returns (bool) {
-        return e == HYDREX_ALGEBRA || e == AERO_SLIPSTREAM || e == AERODROME_SLIPSTREAM || e == AERODROME_SLIPSTREAM_2
-            || e == AERODROME_SLIPSTREAM_3 || e == UNISWAP_V3;
+    function _isConcentrated(uint8 e) internal pure returns (bool) {
+        return e == HYDREX_ALGEBRA || e == AERO_SLIPSTREAM || e == UNISWAP_V3;
     }
 
-    function _pool(ImmutableSwapper.Exchange e, address a, address b, uint256 num, uint256 den)
-        internal
-        returns (address pool)
-    {
+    function _pool(uint8 e, address a, address b, uint256 num, uint256 den) internal returns (address pool) {
         if (e == UNISWAP_V4) {
             (address c0, address c1) = a < b ? (a, b) : (b, a);
             (uint256 n, uint256 d) = a < b ? (num, den) : (den, num);
@@ -124,10 +128,10 @@ abstract contract SwapperTestBase is Test {
             p.sync();
             pool = address(p);
         }
-        factories[uint256(e)].list(pool, a, b, V3_FEE);
+        factories[e].list(pool, a, b, V3_FEE);
     }
 
-    function _pool(ImmutableSwapper.Exchange e, address a, address b) internal returns (address) {
+    function _pool(uint8 e, address a, address b) internal returns (address) {
         return _pool(e, a, b, 1, 1);
     }
 
@@ -135,11 +139,7 @@ abstract contract SwapperTestBase is Test {
         return IPoolManager.PoolKey(c0, c1, V4_FEE, V4_TICK_SPACING, address(0));
     }
 
-    function _hop(ImmutableSwapper.Exchange e, address pool, address tokenOut)
-        internal
-        pure
-        returns (ImmutableSwapper.Hop memory)
-    {
+    function _hop(uint8 e, address pool, address tokenOut) internal pure returns (ImmutableSwapper.Hop memory) {
         if (e == UNISWAP_V4) return ImmutableSwapper.Hop(e, pool, tokenOut, V4_FEE, V4_TICK_SPACING);
         return ImmutableSwapper.Hop(e, pool, tokenOut, e == UNISWAP_V3 ? V3_FEE : 0, 0);
     }

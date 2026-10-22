@@ -15,23 +15,23 @@ import {IUniswapV3SwapCallback} from "./interfaces/IUniswapV3SwapCallback.sol";
 import {IUnlockCallback} from "./interfaces/IUnlockCallback.sol";
 
 contract ImmutableSwapper is IAlgebraSwapCallback, IUniswapV3SwapCallback, IUnlockCallback {
-    enum Exchange {
+    enum Kind {
         HydrexAlgebra,
         HydrexClassic,
-        AeroVolatile,
-        AeroStable,
+        AeroClassic,
         AeroSlipstream,
-        AerodromeClassic,
-        AerodromeSlipstream,
-        AerodromeSlipstream2,
-        AerodromeSlipstream3,
         UniswapV2,
         UniswapV3,
         UniswapV4
     }
 
+    struct Exchange {
+        Kind kind;
+        address factory;
+    }
+
     struct Hop {
-        Exchange exchange;
+        uint8 exchange;
         address pool;
         address tokenOut;
         uint24 fee;
@@ -55,23 +55,25 @@ contract ImmutableSwapper is IAlgebraSwapCallback, IUniswapV3SwapCallback, IUnlo
     address public constant TREASURY = 0x450c72de8c0079B49AcedF294a13011bd09D125B;
     uint256 public constant FEE_BPS = 100;
     uint256 public constant MAX_HOPS = 3;
-    uint256 private constant EXCHANGES = 12;
+    uint256 private constant MAX_EXCHANGES = 12;
     uint160 private constant MIN_SQRT_RATIO = 4295128739;
     uint160 private constant MAX_SQRT_RATIO = 1461446703485210103287273052203988822378723970342;
 
     address public immutable outputToken;
-    address private immutable hydrexAlgebra;
-    address private immutable hydrexClassic;
-    address private immutable aeroVolatile;
-    address private immutable aeroStable;
-    address private immutable aeroSlipstream;
-    address private immutable aerodromeClassic;
-    address private immutable aerodromeSlipstream;
-    address private immutable aerodromeSlipstream2;
-    address private immutable aerodromeSlipstream3;
-    address private immutable uniswapV2;
-    address private immutable uniswapV3;
-    address private immutable uniswapV4;
+    uint256 private immutable exchangeCount;
+    // Each holds an exchange's kind above its factory's address; unused ones are zero.
+    uint256 private immutable exchange0;
+    uint256 private immutable exchange1;
+    uint256 private immutable exchange2;
+    uint256 private immutable exchange3;
+    uint256 private immutable exchange4;
+    uint256 private immutable exchange5;
+    uint256 private immutable exchange6;
+    uint256 private immutable exchange7;
+    uint256 private immutable exchange8;
+    uint256 private immutable exchange9;
+    uint256 private immutable exchange10;
+    uint256 private immutable exchange11;
 
     bool private transient locked;
     bool private transient quoting;
@@ -87,7 +89,8 @@ contract ImmutableSwapper is IAlgebraSwapCallback, IUniswapV3SwapCallback, IUnlo
     error Expired();
     error BadHopCount(uint256 route);
     error BadPath(uint256 route, uint256 hop);
-    error NotExchangePool(Exchange exchange, address pool);
+    error UnknownExchange(uint256 route, uint256 hop);
+    error NotExchangePool(uint8 exchange, address pool);
     error NativeOutsideV4(uint256 route, uint256 hop);
     error NoOutput(uint256 route, uint256 hop);
     error PartialFill(address pool);
@@ -98,6 +101,7 @@ contract ImmutableSwapper is IAlgebraSwapCallback, IUniswapV3SwapCallback, IUnlo
     error OnlySelf();
     error Reentrancy();
     error ZeroAddress();
+    error BadExchangeCount();
 
     modifier nonReentrant() {
         if (locked) revert Reentrancy();
@@ -106,24 +110,30 @@ contract ImmutableSwapper is IAlgebraSwapCallback, IUniswapV3SwapCallback, IUnlo
         locked = false;
     }
 
-    constructor(address outputToken_, address[EXCHANGES] memory exchanges_) {
+    constructor(address outputToken_, Exchange[] memory exchanges_) {
         if (outputToken_ == address(0)) revert ZeroAddress();
-        for (uint256 i; i < EXCHANGES; ++i) {
-            if (exchanges_[i] == address(0)) revert ZeroAddress();
+        uint256 n = exchanges_.length;
+        if (n == 0 || n > MAX_EXCHANGES) revert BadExchangeCount();
+        uint256[MAX_EXCHANGES] memory packed;
+        for (uint256 i; i < n; ++i) {
+            address factory = exchanges_[i].factory;
+            if (factory == address(0)) revert ZeroAddress();
+            packed[i] = (uint256(exchanges_[i].kind) << 160) | uint160(factory);
         }
         outputToken = outputToken_;
-        hydrexAlgebra = exchanges_[0];
-        hydrexClassic = exchanges_[1];
-        aeroVolatile = exchanges_[2];
-        aeroStable = exchanges_[3];
-        aeroSlipstream = exchanges_[4];
-        aerodromeClassic = exchanges_[5];
-        aerodromeSlipstream = exchanges_[6];
-        aerodromeSlipstream2 = exchanges_[7];
-        aerodromeSlipstream3 = exchanges_[8];
-        uniswapV2 = exchanges_[9];
-        uniswapV3 = exchanges_[10];
-        uniswapV4 = exchanges_[11];
+        exchangeCount = n;
+        exchange0 = packed[0];
+        exchange1 = packed[1];
+        exchange2 = packed[2];
+        exchange3 = packed[3];
+        exchange4 = packed[4];
+        exchange5 = packed[5];
+        exchange6 = packed[6];
+        exchange7 = packed[7];
+        exchange8 = packed[8];
+        exchange9 = packed[9];
+        exchange10 = packed[10];
+        exchange11 = packed[11];
     }
 
     function swap(Route[] calldata routes, uint256 deadline, bool skipFailed)
@@ -161,10 +171,10 @@ contract ImmutableSwapper is IAlgebraSwapCallback, IUniswapV3SwapCallback, IUnlo
         quoting = false;
     }
 
-    function exchanges() external view returns (address[] memory list) {
-        list = new address[](EXCHANGES);
-        for (uint256 i; i < EXCHANGES; ++i) {
-            list[i] = _factory(Exchange(i));
+    function exchanges() external view returns (Exchange[] memory list) {
+        list = new Exchange[](exchangeCount);
+        for (uint256 i; i < list.length; ++i) {
+            (list[i].kind, list[i].factory) = _exchange(i);
         }
     }
 
@@ -247,26 +257,29 @@ contract ImmutableSwapper is IAlgebraSwapCallback, IUniswapV3SwapCallback, IUnlo
         for (uint256 i; i < n; ++i) {
             Hop calldata hop = route.hops[i];
             if ((hop.tokenOut == outputToken) != (i == n - 1)) revert BadPath(index, i);
-            if (
-                hop.tokenOut == address(0)
-                    && (hop.exchange != Exchange.UniswapV4 || route.hops[i + 1].exchange != Exchange.UniswapV4)
-            ) revert NativeOutsideV4(index, i);
-            if (!_isExchangePool(hop, tokenIn)) revert NotExchangePool(hop.exchange, hop.pool);
+            (Kind kind, address factory) = _exchange(hop.exchange);
+            if (factory == address(0)) revert UnknownExchange(index, i);
+            if (hop.tokenOut == address(0) && (kind != Kind.UniswapV4 || route.hops[i + 1].exchange != hop.exchange)) {
+                revert NativeOutsideV4(index, i);
+            }
+            if (!_isExchangePool(kind, factory, hop, tokenIn)) revert NotExchangePool(hop.exchange, hop.pool);
             tokenIn = hop.tokenOut;
         }
     }
 
-    function _isExchangePool(Hop calldata hop, address tokenIn) private view returns (bool) {
-        Exchange e = hop.exchange;
+    function _isExchangePool(Kind kind, address factory, Hop calldata hop, address tokenIn)
+        private
+        view
+        returns (bool)
+    {
         address pool = hop.pool;
-        if (e == Exchange.UniswapV4) return pool == address(0);
+        if (kind == Kind.UniswapV4) return pool == address(0);
         if (pool == address(0)) return false;
-        address factory = _factory(e);
-        if (e == Exchange.HydrexAlgebra) return IAlgebraFactory(factory).poolByPair(tokenIn, hop.tokenOut) == pool;
-        if (e == Exchange.UniswapV2) return IUniswapV2Factory(factory).getPair(tokenIn, hop.tokenOut) == pool;
-        if (e == Exchange.UniswapV3) return IUniswapV3Factory(factory).getPool(tokenIn, hop.tokenOut, hop.fee) == pool;
+        if (kind == Kind.HydrexAlgebra) return IAlgebraFactory(factory).poolByPair(tokenIn, hop.tokenOut) == pool;
+        if (kind == Kind.UniswapV2) return IUniswapV2Factory(factory).getPair(tokenIn, hop.tokenOut) == pool;
+        if (kind == Kind.UniswapV3) return IUniswapV3Factory(factory).getPool(tokenIn, hop.tokenOut, hop.fee) == pool;
         bool listed =
-            e == Exchange.HydrexClassic ? IPairFactory(factory).isPair(pool) : IPoolFactory(factory).isPool(pool);
+            kind == Kind.HydrexClassic ? IPairFactory(factory).isPair(pool) : IPoolFactory(factory).isPool(pool);
         if (!listed) return false;
         (address token0, address token1) = tokenIn < hop.tokenOut ? (tokenIn, hop.tokenOut) : (hop.tokenOut, tokenIn);
         return IClassicPool(pool).token0() == token0 && IClassicPool(pool).token1() == token1;
@@ -275,18 +288,18 @@ contract ImmutableSwapper is IAlgebraSwapCallback, IUniswapV3SwapCallback, IUnlo
     function _runHops(uint256 index, Hop[] calldata hops, address token, uint256 amount) private returns (uint256) {
         uint256 i;
         while (i < hops.length) {
-            Exchange e = hops[i].exchange;
+            (Kind kind, address factory) = _exchange(hops[i].exchange);
             uint256 next = i + 1;
-            if (e == Exchange.UniswapV4) {
-                while (next < hops.length && hops[next].exchange == Exchange.UniswapV4) {
+            if (kind == Kind.UniswapV4) {
+                while (next < hops.length && hops[next].exchange == hops[i].exchange) {
                     ++next;
                 }
                 if (hops[next - 1].tokenOut == token) revert BadPath(index, next - 1);
-                amount = _swapV4(hops[i:next], token, amount);
-            } else if (_isConcentrated(e)) {
+                amount = _swapV4(factory, hops[i:next], token, amount);
+            } else if (_isConcentrated(kind)) {
                 amount = _swapConcentrated(hops[i], token, amount);
             } else {
-                amount = _swapClassic(hops[i], token, amount);
+                amount = _swapClassic(kind, hops[i], token, amount);
             }
             if (amount == 0) revert NoOutput(index, next - 1);
             token = hops[next - 1].tokenOut;
@@ -309,17 +322,16 @@ contract ImmutableSwapper is IAlgebraSwapCallback, IUniswapV3SwapCallback, IUnlo
         return _output(ok, ret, hop.tokenOut, before);
     }
 
-    function _swapV4(Hop[] calldata hops, address tokenIn, uint256 amount) private returns (uint256) {
+    function _swapV4(address manager, Hop[] calldata hops, address tokenIn, uint256 amount) private returns (uint256) {
         address tokenOut = hops[hops.length - 1].tokenOut;
-        _expect(uniswapV4, tokenIn, amount, false);
+        _expect(manager, tokenIn, amount, false);
         uint256 before = _balance(tokenOut);
-        (bool ok, bytes memory ret) = uniswapV4.call(abi.encodeCall(IPoolManager.unlock, (abi.encode(hops))));
+        (bool ok, bytes memory ret) = manager.call(abi.encodeCall(IPoolManager.unlock, (abi.encode(hops))));
         expectedCaller = address(0);
         return _output(ok, ret, tokenOut, before);
     }
 
-    function _swapClassic(Hop calldata hop, address tokenIn, uint256 amount) private returns (uint256) {
-        Exchange e = hop.exchange;
+    function _swapClassic(Kind kind, Hop calldata hop, address tokenIn, uint256 amount) private returns (uint256) {
         IClassicPool pool = IClassicPool(hop.pool);
         bool zeroForOne = tokenIn < hop.tokenOut;
         if (!quoting) {
@@ -331,15 +343,15 @@ contract ImmutableSwapper is IAlgebraSwapCallback, IUniswapV3SwapCallback, IUnlo
         if (!quoting) amount = IERC20(tokenIn).balanceOf(address(pool)) - reserveIn;
 
         uint256 out;
-        if (e == Exchange.UniswapV2) {
+        if (kind == Kind.UniswapV2) {
             out = amount * 997 * reserveOut / (reserveIn * 1000 + amount * 997);
-        } else if (e == Exchange.AeroVolatile || e == Exchange.AeroStable) {
+        } else if (kind == Kind.AeroClassic) {
             out = pool.getAmountOutWithTotalFee(amount, tokenIn);
         } else {
             out = pool.getAmountOut(amount, tokenIn);
         }
         // Hydrex's stable pairs sometimes quote one wei more than their swap will accept.
-        if (e == Exchange.HydrexClassic && out != 0) --out;
+        if (kind == Kind.HydrexClassic && out != 0) --out;
         if (quoting || out == 0) return out;
 
         (uint256 out0, uint256 out1) = zeroForOne ? (uint256(0), out) : (out, uint256(0));
@@ -385,24 +397,29 @@ contract ImmutableSwapper is IAlgebraSwapCallback, IUniswapV3SwapCallback, IUnlo
         (owed, out) = zeroForOne ? (amount0, amount1) : (amount1, amount0);
     }
 
-    function _factory(Exchange e) private view returns (address) {
-        if (e == Exchange.HydrexAlgebra) return hydrexAlgebra;
-        if (e == Exchange.HydrexClassic) return hydrexClassic;
-        if (e == Exchange.AeroVolatile) return aeroVolatile;
-        if (e == Exchange.AeroStable) return aeroStable;
-        if (e == Exchange.AeroSlipstream) return aeroSlipstream;
-        if (e == Exchange.AerodromeClassic) return aerodromeClassic;
-        if (e == Exchange.AerodromeSlipstream) return aerodromeSlipstream;
-        if (e == Exchange.AerodromeSlipstream2) return aerodromeSlipstream2;
-        if (e == Exchange.AerodromeSlipstream3) return aerodromeSlipstream3;
-        if (e == Exchange.UniswapV2) return uniswapV2;
-        if (e == Exchange.UniswapV3) return uniswapV3;
-        return uniswapV4;
+    function _exchange(uint256 i) private view returns (Kind, address) {
+        uint256 e = _packed(i);
+        return (Kind(e >> 160), address(uint160(e)));
     }
 
-    function _isConcentrated(Exchange e) private pure returns (bool) {
-        return e == Exchange.HydrexAlgebra || e == Exchange.AeroSlipstream || e == Exchange.AerodromeSlipstream
-            || e == Exchange.AerodromeSlipstream2 || e == Exchange.AerodromeSlipstream3 || e == Exchange.UniswapV3;
+    function _packed(uint256 i) private view returns (uint256) {
+        if (i == 0) return exchange0;
+        if (i == 1) return exchange1;
+        if (i == 2) return exchange2;
+        if (i == 3) return exchange3;
+        if (i == 4) return exchange4;
+        if (i == 5) return exchange5;
+        if (i == 6) return exchange6;
+        if (i == 7) return exchange7;
+        if (i == 8) return exchange8;
+        if (i == 9) return exchange9;
+        if (i == 10) return exchange10;
+        if (i == 11) return exchange11;
+        return 0;
+    }
+
+    function _isConcentrated(Kind kind) private pure returns (bool) {
+        return kind == Kind.HydrexAlgebra || kind == Kind.AeroSlipstream || kind == Kind.UniswapV3;
     }
 
     function _limit(bool zeroForOne) private pure returns (uint160) {

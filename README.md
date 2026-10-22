@@ -1,22 +1,27 @@
 # metadex-swapper
 
-`ImmutableSwapper` is a contract on Base that swaps the tokens a holder picks to one output token in one call: small
-balances left in a wallet, or rewards paid in many tokens. It swaps through the pools of four exchanges: Hydrex, Aero,
-Aerodrome and Uniswap. The caller picks the exchange and the pool of every hop, and the contract checks each pick against
-that exchange's own factory. It sends 1% of the output to a fixed treasury.
+`ImmutableSwapper` is a contract that swaps the tokens a holder picks to one output token in one call: small balances
+left in a wallet, or rewards paid in many tokens. It swaps through the pools of the exchanges its deployment lists: on
+Base, Hydrex, Aero and Uniswap. The caller picks the exchange and the pool of every hop, and the contract checks each
+pick against that exchange's own factory. It sends 1% of the output to a fixed treasury.
 
-It is deployed once for each output token, which is fixed in that deployment's code. The contract has no owner, no
-settings and no upgrade path. All of it is in [`src/ImmutableSwapper.sol`](src/ImmutableSwapper.sol), deployed on
-Base at:
+It is deployed once for each chain and output token, which are fixed in that deployment's code, with the chain's
+exchanges. The contract has no owner, no settings and no upgrade path. All of it is in
+[`src/ImmutableSwapper.sol`](src/ImmutableSwapper.sol).
+
+This is version 2. It takes each chain's exchanges as constructor arguments, so that it can be deployed beyond Base,
+and it leaves out Aerodrome. It is not deployed yet. On Base, it will be at:
 
 | Output | Token | Swapper |
 | --- | --- | --- |
-| USDC | `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913` | [`0x31791f453d2100e728E012c9e189C0828adf4b6F`](https://basescan.org/address/0x31791f453d2100e728E012c9e189C0828adf4b6F#code) |
-| EURC | `0x60a3E35Cc302bFA44Cb288Bc5a4F316Fdb1adb42` | [`0x2cd8019d4F98e2fE2Ba705d8E7D38284c2a1450E`](https://basescan.org/address/0x2cd8019d4F98e2fE2Ba705d8E7D38284c2a1450E#code) |
-| WETH | `0x4200000000000000000000000000000000000006` | [`0xe5cbD828c2227E17f7FF8BD54C7A1e6012694Ff2`](https://basescan.org/address/0xe5cbD828c2227E17f7FF8BD54C7A1e6012694Ff2#code) |
-| cbBTC | `0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf` | [`0x54805B6E6266c952627E47B8ADe4ae65c5DEA7d0`](https://basescan.org/address/0x54805B6E6266c952627E47B8ADe4ae65c5DEA7d0#code) |
-| AERO | `0x3f5bF3EdAc59d650D8fDf9657a71F2f904A3a4Ee` | [`0xdd575A498C625AF96ac89efE578Dc68f4c9aB963`](https://basescan.org/address/0xdd575A498C625AF96ac89efE578Dc68f4c9aB963#code) |
-| HYDX | `0x00000e7efa313F4E11Bfff432471eD9423AC6B30` | [`0xC629B1A13a0E1d4F0C38cD80d22E4AAC363cc8bC`](https://basescan.org/address/0xC629B1A13a0E1d4F0C38cD80d22E4AAC363cc8bC#code) |
+| USDC | `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913` | `0xf86764abF2d42123767108152a0c596d05aB0598` |
+| EURC | `0x60a3E35Cc302bFA44Cb288Bc5a4F316Fdb1adb42` | `0x296e75CCDBD20986A0f9368fD5F706e3421f3BF9` |
+| WETH | `0x4200000000000000000000000000000000000006` | `0xF468F438d418B2De7d56a17d8fc9f8fdfBE6Ac8C` |
+| cbBTC | `0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf` | `0x678c7CC87d8f766Cb5ac591bf5E4faB433c47bCb` |
+| AERO | `0x3f5bF3EdAc59d650D8fDf9657a71F2f904A3a4Ee` | `0xff5c8d64B0466FEADBf5B75ac2C4619bAE8310f0` |
+| HYDX | `0x00000e7efa313F4E11Bfff432471eD9423AC6B30` | `0x6b54d3E7E59c3eeD9d2f81B255Bd3EaC24c1D4E0` |
+
+Version 1 is deployed on Base, with Aerodrome among its exchanges: see [Version 1](#version-1).
 
 ## How it works
 
@@ -27,15 +32,15 @@ output token, in 1 to 3 hops (`MAX_HOPS`):
 
 ```solidity
 struct Hop {
-    Exchange exchange; // picked by the caller
+    uint8 exchange; // an index into exchanges(), picked by the caller
     address pool; // zero for Uniswap v4
-    address tokenOut; // the last hop's is the output token; zero is native ETH, between two Uniswap v4 hops only
+    address tokenOut; // the last hop's is the output token; zero is the native currency, between two hops of one Uniswap v4 manager only
     uint24 fee; // Uniswap v3 and v4 only
     int24 tickSpacing; // Uniswap v4 only
 }
 
 struct Route {
-    address token; // never the output token, never native ETH
+    address token; // never the output token, never the native currency
     uint256 amount; // type(uint256).max: the caller's balance, up to the allowance given
     uint256 minPaid; // the least of the output token this route must pay the caller, after the fee
     Hop[] hops;
@@ -81,47 +86,56 @@ To see what a call will do, simulate `swap` itself, after its approvals, with `e
 
 ### The exchanges
 
-Twelve kinds of pool, from four exchanges, fixed at deployment. For Aero and Aerodrome, they are every pool factory
-that their registries list.
+Each deployment fixes 1 to 12 exchanges: each is a factory, or Uniswap v4's manager, and its kind. `exchanges()`
+returns them in order, and a hop names one by its index. The kind sets how the swapper checks a pool, and how it pays it:
 
-| `Exchange` | Factory, or manager | A pool belongs to it when |
+| `Kind` | A pool belongs to the exchange when |
+| --- | --- |
+| `HydrexAlgebra` | `poolByPair(a, b) == pool` |
+| `HydrexClassic` | `isPair(pool)`, and its tokens are the hop's |
+| `AeroClassic` | `isPool(pool)`, and its tokens are the hop's |
+| `AeroSlipstream` | `isPool(pool)`, and its tokens are the hop's |
+| `UniswapV2` | `getPair(a, b) == pool` |
+| `UniswapV3` | `getPool(a, b, fee) == pool` |
+| `UniswapV4` | the key of the hop's tokens, `fee` and `tickSpacing`, with no hooks |
+
+On Base, the deployments list eight exchanges, among them every pool factory that Aero's registry lists:
+
+| Index | `Kind` | Factory, or manager |
 | --- | --- | --- |
-| `HydrexAlgebra` | Algebra Integral, `0x36077D39cdC65E1e3FB65810430E5b2c4D5fA29E` | `poolByPair(a, b) == pool` |
-| `HydrexClassic` | Pair factory, `0xC47F17c4fd96F50eFD2A2448ceDe5C185c084bf0` | `isPair(pool)`, and its tokens are the hop's |
-| `AeroVolatile` | `0x8E6a9FCd1d638CC760Ffba397605Fe3355dE76D2` | `isPool(pool)`, and its tokens are the hop's |
-| `AeroStable` | `0x78589E876edcEbdce72ee3436ab3c9AD3a7cEF2D` | `isPool(pool)`, and its tokens are the hop's |
-| `AeroSlipstream` | `CLFactory`, `0x9CB220581b91b0C83223012FE69688b92aD07a76` | `isPool(pool)`, and its tokens are the hop's |
-| `AerodromeClassic` | `PoolFactory`, `0x420DD381b31aEf6683db6B902084cB0FFECe40Da` | `isPool(pool)`, and its tokens are the hop's |
-| `AerodromeSlipstream` | `CLFactory`, `0x5e7BB104d84c7CB9B682AaC2F3d509f5F406809A` | `isPool(pool)`, and its tokens are the hop's |
-| `AerodromeSlipstream2` | `CLFactory`, `0xaDe65c38CD4849aDBA595a4323a8C7DdfE89716a` | `isPool(pool)`, and its tokens are the hop's |
-| `AerodromeSlipstream3` | `CLFactory`, `0xf8f2eB4940CFE7d13603DDDD87f123820Fc061Ef` | `isPool(pool)`, and its tokens are the hop's |
-| `UniswapV2` | `UniswapV2Factory`, `0x8909Dc15e40173Ff4699343b6eB8132c65e18eC6` | `getPair(a, b) == pool` |
-| `UniswapV3` | `UniswapV3Factory`, `0x33128a8fC17869897dcE68Ed026d694621f6FDfD` | `getPool(a, b, fee) == pool` |
-| `UniswapV4` | `PoolManager`, `0x498581fF718922c3f8e6A244956aF099B2652b2b` | the key of the hop's tokens, `fee` and `tickSpacing`, with no hooks |
+| 0 | `HydrexAlgebra` | Algebra Integral, `0x36077D39cdC65E1e3FB65810430E5b2c4D5fA29E` |
+| 1 | `HydrexClassic` | Pair factory, `0xC47F17c4fd96F50eFD2A2448ceDe5C185c084bf0` |
+| 2 | `AeroClassic` | Volatile pools, `0x8E6a9FCd1d638CC760Ffba397605Fe3355dE76D2` |
+| 3 | `AeroClassic` | Stable pools, `0x78589E876edcEbdce72ee3436ab3c9AD3a7cEF2D` |
+| 4 | `AeroSlipstream` | `CLFactory`, `0x9CB220581b91b0C83223012FE69688b92aD07a76` |
+| 5 | `UniswapV2` | `UniswapV2Factory`, `0x8909Dc15e40173Ff4699343b6eB8132c65e18eC6` |
+| 6 | `UniswapV3` | `UniswapV3Factory`, `0x33128a8fC17869897dcE68Ed026d694621f6FDfD` |
+| 7 | `UniswapV4` | `PoolManager`, `0x498581fF718922c3f8e6A244956aF099B2652b2b` |
 
-`exchanges()` returns these addresses, in this order. The swapper pays each kind of pool its own way:
+The swapper pays each kind of pool its own way:
 
 - **Algebra, Slipstream and Uniswap v3 pools** send their output, then call the swapper back to be paid. The swapper
   pays only the pool it is swapping through, only during that swap, only once, and only exactly the hop's amount of the
   hop's token. A pool that takes less than the whole amount, a partial fill, reverts the route.
-- **Hydrex's pairs, Aero's and Aerodrome's classic pools, and Uniswap v2's pairs** are synced, then sent the input. The
-  swapper counts what the pool received, prices it with the pool's `getAmountOut`, Aero's `getAmountOutWithTotalFee`,
-  or Uniswap v2's 0.3% formula, and asks for that much. Hydrex's stable pairs can quote one wei more than they accept,
+- **Hydrex's pairs, Aero's classic pools and Uniswap v2's pairs** are synced, then sent the input. The swapper counts
+  what the pool received, prices it with Hydrex's `getAmountOut`, Aero's `getAmountOutWithTotalFee`, or Uniswap v2's
+  0.3% formula, and asks for that much. Hydrex's stable pairs can quote one wei more than they accept,
   so it asks Hydrex's pairs for one wei less.
-- **Uniswap v4:** consecutive hops run in one `unlock`. Each must take exactly the whole amount. Then the swapper pays
-  the first token and takes the last, which must be another token. Native ETH can only pass between two such hops, so
-  it never leaves the manager.
+- **Uniswap v4:** consecutive hops through the same manager run in one `unlock`. Each must take exactly the whole
+  amount. Then the swapper pays the first token and takes the last, which must be another token. The native currency
+  can only pass between two such hops, so it never leaves the manager.
 
 Uniswap v4 hops name no pool: the swapper builds every key with no hooks. Hooks run inside every swap and can do
 anything there, so tokens that trade only in pools with hooks, as many launchpad tokens do, are out of reach.
 
 ## What each exchange's admins can change
 
+On Base:
+
 | Exchange | Held by | What it can change in a swap |
 | --- | --- | --- |
 | Hydrex | `0x74266f2b206D1359B83fc74949EF07176FB3AE03`, a single key, owns the Algebra factory. A one-day timelock, `0xdF52b5A03E3F5a4178E4F63e8BC51abE691B898F`, owns the pair factory's proxy admin. A 2-of-4 Safe, `0x1aE3753d9b60743A89159CcFF8E251C60B560311`, manages the pairs' fees. The plugins have their own admins. | Fees: the pairs', up to 2.5%. The pair factory's code, and the plugins' code. Not fully checked. |
 | Aero | A 3-of-7 Safe, `0x42255e3C2d0b71a0b006243148fdF1a71d054cE0` | Pause classic pools. Their fee, up to 20% with the MEV tax. The Slipstream pools' swap hook and its fee, capped at 10%. Discounts for chosen callers. |
-| Aerodrome | A 3-of-7 Safe, `0xE6A41fE61E7a1996B59d508661e3f524d6A32075` | Pause classic pools. Their fee, up to 3%. Slipstream fees, up to 10%, through a fee module. |
 | Uniswap | The owners of the v3 factory, `0xaBEA76658b205696d49B5F91b2a03536cB8A3bE1`, and of the v4 manager, `0x31FAfd4889FA1269F7a13A66eE0fB458f27D72A9` | v2 and v3: nothing that changes what a swap costs. v4: a protocol fee of up to 0.1%. |
 
 None of them can take the swapper's tokens, given how it pays pools. The worst they can do is a worse price, down to the
@@ -150,21 +164,17 @@ to WETH costs about what WETH to USDC does.
 | Route | Gas |
 | --- | --- |
 | Uniswap v2, v3 or v4, WETH to USDC | 162,000 to 167,000 |
-| Uniswap v4, cbBTC to ETH to USDC | ~221,000 |
-| Aerodrome, classic or Slipstream, WETH to USDC | 205,000 to 270,000 |
-| Hydrex classic, HYDX to USDC | ~229,000 |
+| Uniswap v4, cbBTC to ETH to USDC | ~223,000 |
+| Hydrex classic, HYDX to USDC | ~230,000 |
 | Aero v3, on pools the tests seed | 290,000 to 352,000 |
-| Hydrex Algebra, WETH to USDC | ~1,612,000 |
-| HYDX to WETH on Hydrex Algebra, then to USDC on Uniswap v3 | ~1,913,000 |
-| Each further token, to USDC on Aerodrome classic | 153,000 to 292,000, ~220,000 on average |
-| Each further token, to WETH then USDC on Aerodrome classic | 205,000 to 344,000, ~272,000 on average |
-| 20 routes of 3 Uniswap v2 hops | ~3,419,000 |
-| 5 routes of 3 Hydrex Algebra hops | ~15,212,000 |
+| Hydrex Algebra, WETH to USDC | ~1,622,000 |
+| HYDX to WETH on Hydrex Algebra, then to USDC on Uniswap v3 | ~1,925,000 |
+| 20 routes of 3 Uniswap v2 hops | ~3,425,000 |
+| 5 routes of 3 Hydrex Algebra hops | ~15,970,000 |
 
-There is no limit on the number of routes: Base's cap of 16,777,216 gas on a transaction is the limit. About 64 tokens
-fit in one call when each has a pool against USDC, and about 47 when each goes through WETH. Hydrex's Algebra pools cost
-the most: after each swap, the pool's plugin looks for an arbitrage across other exchanges, and about 15 such hops fit.
-So estimate gas and split large batches.
+There is no limit on the number of routes: Base's cap of 16,777,216 gas on a transaction is the limit. Hydrex's Algebra
+pools cost the most: after each swap, the pool's plugin looks for an arbitrage across other exchanges, and about 15 such
+hops fit. So estimate gas and split large batches.
 
 Send a generous gas limit: on Base, unused gas costs nothing. A route that runs short of gas fails like any other: with
 `skipFailed`, it is skipped, or the whole call reverts if too little is left to finish. Hydrex's plugin does less when
@@ -174,7 +184,8 @@ results of `eth_call` at the limit you send.
 
 ## Trust and limitations
 
-- Nobody can change the swapper. A new exchange, factory, fee or treasury means a new deployment.
+- Nobody can change the swapper. A new factory means a new deployment on its chain. A new kind of exchange, fee or
+  treasury means a new version.
 - The swapper fixes each exchange's factories rather than asking its registry, whose admin could add a factory that
   vouches for any contract. A factory added later needs a new deployment.
 - Anyone can create a pool of a listed factory, for any two tokens. Such a pool runs its exchange's code, but its tokens
@@ -194,30 +205,23 @@ results of `eth_call` at the limit you send.
   their swaps revert, and so would everyone's if it blocked the treasury. WETH, AERO and HYDX can't block anyone.
 - Tokens sent to the swapper by mistake stay there. Every amount is counted within the call, so they are never paid to
   anyone.
-- Left out on purpose: native ETH in or out of a route; signatures; routers and aggregators; a recipient other than
-  the caller; Algebra's custom pools; choosing routes; claiming rewards.
+- Left out on purpose: the native currency in or out of a route; signatures; routers and aggregators; a recipient other
+  than the caller; Algebra's custom pools; Aerodrome and Velodrome; choosing routes; claiming rewards.
 
 ## Deployment
 
-Deployed on 2026-10-21 by the transactions below. Each source is verified on BaseScan and Sourcify as an exact match.
-
-| Output | Transaction | Source |
-| --- | --- | --- |
-| USDC | [`0x4ef3…382a`](https://basescan.org/tx/0x4ef3fa97cc025a34bd03e08df9994781e25bef5ea182b90dab2deb9c1df9382a) | [BaseScan](https://basescan.org/address/0x31791f453d2100e728E012c9e189C0828adf4b6F#code), [Sourcify](https://repo.sourcify.dev/8453/0x31791f453d2100e728E012c9e189C0828adf4b6F) |
-| EURC | [`0x87f6…ec2a`](https://basescan.org/tx/0x87f61b2d13f77faa51da27d504f6158adc97d58f14fc6bf683025ee88500ec2a) | [BaseScan](https://basescan.org/address/0x2cd8019d4F98e2fE2Ba705d8E7D38284c2a1450E#code), [Sourcify](https://repo.sourcify.dev/8453/0x2cd8019d4F98e2fE2Ba705d8E7D38284c2a1450E) |
-| WETH | [`0x7eb8…940a`](https://basescan.org/tx/0x7eb8d356413a4fe3a7f352c5cdac08dd4ec29271b883634461f0399dcea6940a) | [BaseScan](https://basescan.org/address/0xe5cbD828c2227E17f7FF8BD54C7A1e6012694Ff2#code), [Sourcify](https://repo.sourcify.dev/8453/0xe5cbD828c2227E17f7FF8BD54C7A1e6012694Ff2) |
-| cbBTC | [`0x6422…003d`](https://basescan.org/tx/0x642220ca25c5e2bc4df3dae8ba1ef0647d64f05daf6d8697f94372a2d208003d) | [BaseScan](https://basescan.org/address/0x54805B6E6266c952627E47B8ADe4ae65c5DEA7d0#code), [Sourcify](https://repo.sourcify.dev/8453/0x54805B6E6266c952627E47B8ADe4ae65c5DEA7d0) |
-| AERO | [`0x4db4…e46b`](https://basescan.org/tx/0x4db43c8745609ff0bdd7393c7bcdfa453e7d66b64ce72886fbc145b7bcc6e46b) | [BaseScan](https://basescan.org/address/0xdd575A498C625AF96ac89efE578Dc68f4c9aB963#code), [Sourcify](https://repo.sourcify.dev/8453/0xdd575A498C625AF96ac89efE578Dc68f4c9aB963) |
-| HYDX | [`0x9005…ef23`](https://basescan.org/tx/0x90051331fd42eefe7836da478e54468fc62b79d7dcfa7d54d2fce3377d83ef23) | [BaseScan](https://basescan.org/address/0xC629B1A13a0E1d4F0C38cD80d22E4AAC363cc8bC#code), [Sourcify](https://repo.sourcify.dev/8453/0xC629B1A13a0E1d4F0C38cD80d22E4AAC363cc8bC) |
+Version 2 is not deployed yet. `script/Deploy.s.sol` holds each chain's exchanges and output tokens, so far Base's only.
+It deploys the swappers of the chain it runs on, and stops on a chain where the treasury, an exchange or an output token
+has no code.
 
 | | |
 |---|---|
-| Network | Base |
+| Networks | Base |
 | Addresses | the table at the top, one swapper for each output token |
-| Exchanges | the twelve under [The exchanges](#the-exchanges), in the order of `Exchange` |
-| Treasury | `0x450c72de8c0079B49AcedF294a13011bd09D125B`, a 2-of-3 Safe, fixed in the source |
+| Exchanges | the eight under [The exchanges](#the-exchanges), in that order |
+| Treasury | `0x450c72de8c0079B49AcedF294a13011bd09D125B`, a 2-of-3 Safe, fixed in the source; it must exist on a chain before a deployment there |
 | Fee | 1% (`FEE_BPS = 100`), fixed in the source |
-| Method | CREATE2 through `0x4e59b44847b379578588920cA78FbF26c0B4956C`, salt `keccak256("metadex.cafe/ImmutableSwapper/v1")` for all six; the output token sets them apart |
+| Method | CREATE2 through `0x4e59b44847b379578588920cA78FbF26c0B4956C`, salt `keccak256("metadex.cafe/ImmutableSwapper/v2")` for all; the chain's exchanges and the output token set them apart |
 
 Deployment steps:
 
@@ -232,8 +236,8 @@ Deployment steps:
 forge script script/Deploy.s.sol --rpc-url $BASE_RPC_URL --broadcast --ledger
 H=verification/bytecode-hashes.json
 for s in USDC EURC WETH cbBTC AERO HYDX; do
-  ADDRESS=$(jq -j ".deployments.$s.address" $H)
-  ARGS=$(jq -j ".deployments.$s.constructorArgs" $H)
+  ADDRESS=$(jq -j ".chains.base.deployments.$s.address" $H)
+  ARGS=$(jq -j ".chains.base.deployments.$s.constructorArgs" $H)
   forge verify-contract $ADDRESS src/ImmutableSwapper.sol:ImmutableSwapper --chain base \
     --constructor-args $ARGS --license-type MIT --skip-is-verified-check --watch
 done
@@ -243,12 +247,32 @@ done
 
 To check that a deployed swapper is this repository's code, compare its code hash with the one recorded in
 `verification/bytecode-hashes.json`, which `script/check-verification.sh` checks against a build of this repository.
-Each swapper's code holds its output token, so each has its own hash:
+Each swapper's code holds its output token and its chain's exchanges, so each has its own hash:
 
 ```
-cast keccak $(cast code 0x31791f453d2100e728E012c9e189C0828adf4b6F --rpc-url $BASE_RPC_URL)
-jq -j .deployments.USDC.runtimeKeccak verification/bytecode-hashes.json
+cast keccak $(cast code 0xf86764abF2d42123767108152a0c596d05aB0598 --rpc-url $BASE_RPC_URL)
+jq -j .chains.base.deployments.USDC.runtimeKeccak verification/bytecode-hashes.json
 ```
+
+## Version 1
+
+Version 1 is deployed on Base, for the same six output tokens. It fixes twelve exchanges in its code: the eight above,
+and Aerodrome's classic factory and three Slipstream factories. A hop names one of them by its place in that list. Its
+source is at commit [`86ce3d0`](https://github.com/leo-klima-agents/metadex-swapper/tree/86ce3d0), and its records in
+[`verification/v1/`](verification/v1/). It was deployed on 2026-10-21 by the transactions below, with the salt
+`keccak256("metadex.cafe/ImmutableSwapper/v1")`. Each source is verified on BaseScan and Sourcify as an exact match.
+
+| Output | Swapper | Transaction | Source |
+| --- | --- | --- | --- |
+| USDC | [`0x31791f453d2100e728E012c9e189C0828adf4b6F`](https://basescan.org/address/0x31791f453d2100e728E012c9e189C0828adf4b6F#code) | [`0x4ef3…382a`](https://basescan.org/tx/0x4ef3fa97cc025a34bd03e08df9994781e25bef5ea182b90dab2deb9c1df9382a) | [BaseScan](https://basescan.org/address/0x31791f453d2100e728E012c9e189C0828adf4b6F#code), [Sourcify](https://repo.sourcify.dev/8453/0x31791f453d2100e728E012c9e189C0828adf4b6F) |
+| EURC | [`0x2cd8019d4F98e2fE2Ba705d8E7D38284c2a1450E`](https://basescan.org/address/0x2cd8019d4F98e2fE2Ba705d8E7D38284c2a1450E#code) | [`0x87f6…ec2a`](https://basescan.org/tx/0x87f61b2d13f77faa51da27d504f6158adc97d58f14fc6bf683025ee88500ec2a) | [BaseScan](https://basescan.org/address/0x2cd8019d4F98e2fE2Ba705d8E7D38284c2a1450E#code), [Sourcify](https://repo.sourcify.dev/8453/0x2cd8019d4F98e2fE2Ba705d8E7D38284c2a1450E) |
+| WETH | [`0xe5cbD828c2227E17f7FF8BD54C7A1e6012694Ff2`](https://basescan.org/address/0xe5cbD828c2227E17f7FF8BD54C7A1e6012694Ff2#code) | [`0x7eb8…940a`](https://basescan.org/tx/0x7eb8d356413a4fe3a7f352c5cdac08dd4ec29271b883634461f0399dcea6940a) | [BaseScan](https://basescan.org/address/0xe5cbD828c2227E17f7FF8BD54C7A1e6012694Ff2#code), [Sourcify](https://repo.sourcify.dev/8453/0xe5cbD828c2227E17f7FF8BD54C7A1e6012694Ff2) |
+| cbBTC | [`0x54805B6E6266c952627E47B8ADe4ae65c5DEA7d0`](https://basescan.org/address/0x54805B6E6266c952627E47B8ADe4ae65c5DEA7d0#code) | [`0x6422…003d`](https://basescan.org/tx/0x642220ca25c5e2bc4df3dae8ba1ef0647d64f05daf6d8697f94372a2d208003d) | [BaseScan](https://basescan.org/address/0x54805B6E6266c952627E47B8ADe4ae65c5DEA7d0#code), [Sourcify](https://repo.sourcify.dev/8453/0x54805B6E6266c952627E47B8ADe4ae65c5DEA7d0) |
+| AERO | [`0xdd575A498C625AF96ac89efE578Dc68f4c9aB963`](https://basescan.org/address/0xdd575A498C625AF96ac89efE578Dc68f4c9aB963#code) | [`0x4db4…e46b`](https://basescan.org/tx/0x4db43c8745609ff0bdd7393c7bcdfa453e7d66b64ce72886fbc145b7bcc6e46b) | [BaseScan](https://basescan.org/address/0xdd575A498C625AF96ac89efE578Dc68f4c9aB963#code), [Sourcify](https://repo.sourcify.dev/8453/0xdd575A498C625AF96ac89efE578Dc68f4c9aB963) |
+| HYDX | [`0xC629B1A13a0E1d4F0C38cD80d22E4AAC363cc8bC`](https://basescan.org/address/0xC629B1A13a0E1d4F0C38cD80d22E4AAC363cc8bC#code) | [`0x9005…ef23`](https://basescan.org/tx/0x90051331fd42eefe7836da478e54468fc62b79d7dcfa7d54d2fce3377d83ef23) | [BaseScan](https://basescan.org/address/0xC629B1A13a0E1d4F0C38cD80d22E4AAC363cc8bC#code), [Sourcify](https://repo.sourcify.dev/8453/0xC629B1A13a0E1d4F0C38cD80d22E4AAC363cc8bC) |
+
+Aerodrome's admins, a 3-of-7 Safe, `0xE6A41fE61E7a1996B59d508661e3f524d6A32075`, can pause its classic pools, set
+their fee up to 3%, and set Slipstream fees up to 10% through a fee module.
 
 ## Development
 
@@ -256,14 +280,16 @@ You need [Foundry](https://getfoundry.sh). The fork tests and `test/fixtures/gen
 in `BASE_RPC_URL`.
 
 - `forge test` runs the unit tests, and the fork tests too when `BASE_RPC_URL` is set. The fork tests run against
-  Base at the block recorded in [`test/fixtures/fork.json`](test/fixtures/fork.json). They swap through a real pool of
-  each exchange, and into each output token. Aero's pools hold no liquidity yet, so the fork tests add their own.
+  Base at the block recorded in [`test/fixtures/fork.json`](test/fixtures/fork.json). They deploy Base's swappers with
+  `script/Deploy.s.sol`, and swap through a real pool of each exchange, and into each output token. Aero's pools hold no
+  liquidity yet, so the fork tests add their own.
 - `test/fixtures/generate.py [block]` rewrites that fixture: a pool of each exchange, a holder of each token, and each
   route's quote at that block, from the exchanges' own quotes.
 - `script/check-signatures.sh` checks the interfaces in `src/interfaces/` against the exchanges' sources vendored in
   `test/upstream/`.
 - `script/check-verification.sh` checks that `verification/` matches the build and `script/Deploy.s.sol`.
-- `script/refresh-verification.sh` regenerates `verification/` after a change to the source or the deploy script.
+- `script/refresh-verification.sh` regenerates `verification/` after a change to the source or the deploy script. It
+  leaves `verification/v1/` alone.
 
 [`test/upstream/UPSTREAM.md`](test/upstream/UPSTREAM.md) records the contracts the swapper is written against, their
 code hashes, and the behaviour it relies on.

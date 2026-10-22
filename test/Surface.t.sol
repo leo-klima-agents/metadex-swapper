@@ -46,30 +46,50 @@ contract SurfaceTest is SwapperTestBase {
 
     function test_constructor_storesConfiguration() public view {
         assertEq(swapper.outputToken(), address(usdc));
-        address[] memory list = swapper.exchanges();
-        address[EXCHANGES] memory expected = _exchanges();
+        ImmutableSwapper.Exchange[] memory list = swapper.exchanges();
         assertEq(list.length, EXCHANGES);
-        for (uint256 i; i < EXCHANGES; ++i) {
-            assertEq(list[i], expected[i]);
-        }
+        assertEq(abi.encode(list), abi.encode(_exchanges()));
     }
 
     function test_constructor_revertsOnZeroAddress() public {
-        address[EXCHANGES] memory list = _exchanges();
+        ImmutableSwapper.Exchange[] memory list = _exchanges();
         vm.expectRevert(ImmutableSwapper.ZeroAddress.selector);
         new ImmutableSwapper(address(0), list);
         for (uint256 i; i < EXCHANGES; ++i) {
             list = _exchanges();
-            list[i] = address(0);
+            list[i].factory = address(0);
             vm.expectRevert(ImmutableSwapper.ZeroAddress.selector);
             new ImmutableSwapper(address(usdc), list);
+        }
+    }
+
+    function test_constructor_takesOneToTwelveExchanges() public {
+        vm.expectRevert(ImmutableSwapper.BadExchangeCount.selector);
+        new ImmutableSwapper(address(usdc), _anyExchanges(0));
+        vm.expectRevert(ImmutableSwapper.BadExchangeCount.selector);
+        new ImmutableSwapper(address(usdc), _anyExchanges(13));
+
+        uint256[2] memory counts = [uint256(1), 12];
+        for (uint256 i; i < counts.length; ++i) {
+            ImmutableSwapper.Exchange[] memory list = _anyExchanges(counts[i]);
+            ImmutableSwapper deployed = new ImmutableSwapper(address(usdc), list);
+            assertEq(abi.encode(deployed.exchanges()), abi.encode(list), "every kind and factory, in order");
+        }
+    }
+
+    function _anyExchanges(uint256 n) internal returns (ImmutableSwapper.Exchange[] memory list) {
+        list = new ImmutableSwapper.Exchange[](n);
+        for (uint256 i; i < n; ++i) {
+            list[i] = ImmutableSwapper.Exchange(
+                ImmutableSwapper.Kind((i + 6) % 7), makeAddr(string.concat("factory", vm.toString(i)))
+            );
         }
     }
 
     function test_storage_neverTouched() public {
         ImmutableSwapper.Route[] memory routes = new ImmutableSwapper.Route[](EXCHANGES);
         for (uint256 i; i < EXCHANGES; ++i) {
-            routes[i] = _direct(ImmutableSwapper.Exchange(i), address(tkn), 1e18);
+            routes[i] = _direct(uint8(i), address(tkn), 1e18);
         }
         _give(address(tkn), EXCHANGES * 1e18);
 

@@ -20,9 +20,8 @@ selector.
 | `aero/IPool.sol` | Aero volatile pool implementation, `V3/src/interfaces/pools/IPool.sol` | MIT |
 | `aero/PoolFactory.sol` | Aero volatile factory, `V3/src/factories/PoolFactory.sol` | GPL-3.0-or-later |
 | `aero/IPoolFactory.sol` | Aero volatile factory, `V3/src/interfaces/factories/IPoolFactory.sol` | MIT |
-| `aero/slipstream/*.sol` | Aero CLFactory, `contracts/core/interfaces/`: `ICLFactory.sol`, `pool/ICLPoolActions.sol`, `pool/ICLPoolConstants.sol`, `callback/ICLSwapCallback.sol` | GPL-2.0-or-later |
-| `aerodrome/slipstream/*.sol` | Aerodrome's first CLPool implementation, `contracts/core/CLPool.sol` and the same four interfaces | GPL-2.0-or-later |
-| `aerodrome/slipstream3/ICLFactory.sol` | Aerodrome's third CLPool implementation, `contracts/core/interfaces/ICLFactory.sol`; the second's is identical | GPL-2.0-or-later |
+| `aero/slipstream/CLPool.sol` | Aero CLPool implementation, `contracts/core/CLPool.sol` | GPL-2.0-or-later |
+| `aero/slipstream/I*.sol` | Aero CLFactory, `contracts/core/interfaces/`: `ICLFactory.sol`, `pool/ICLPoolActions.sol`, `pool/ICLPoolConstants.sol`, `callback/ICLSwapCallback.sol` | GPL-2.0-or-later |
 | `uniswap/v2/*.sol` | UniswapV2Factory, `contracts/UniswapV2Pair.sol`, `contracts/interfaces/IUniswapV2Factory.sol`, `contracts/interfaces/IUniswapV2Pair.sol` | GPL-3.0-or-later |
 | `uniswap/v3/*.sol` | UniswapV3Factory, `contracts/interfaces/`: `IUniswapV3Factory.sol`, `pool/IUniswapV3PoolActions.sol`, `callback/IUniswapV3SwapCallback.sol` | GPL-2.0-or-later |
 | `uniswap/v4/*.sol` | PoolManager, `lib/v4-core/src/`: `interfaces/IPoolManager.sol`, `interfaces/callback/IUnlockCallback.sol`, `types/PoolKey.sol`, `types/PoolOperation.sol` | MIT |
@@ -38,8 +37,7 @@ Uniswap v2's sources carry no SPDX header; `@uniswap/v2-core` is published under
 | Aero volatile pool implementation (`VolatilePool`) | `0x0526cF035C1156b5C598b0d3c2445e38af2e8bDE` | [match](https://repo.sourcify.dev/8453/0x0526cF035C1156b5C598b0d3c2445e38af2e8bDE) | 0.8.36 |
 | Aero volatile factory (`VolatilePoolFactory`) | `0x8E6a9FCd1d638CC760Ffba397605Fe3355dE76D2` | [match](https://repo.sourcify.dev/8453/0x8E6a9FCd1d638CC760Ffba397605Fe3355dE76D2) | 0.8.36 |
 | Aero CLFactory | `0x9CB220581b91b0C83223012FE69688b92aD07a76` | [match](https://repo.sourcify.dev/8453/0x9CB220581b91b0C83223012FE69688b92aD07a76) | 0.7.6 |
-| Aerodrome's first CLPool implementation | `0xeC8E5342B19977B4eF8892e02D8DAEcfa1315831` | [match](https://repo.sourcify.dev/8453/0xeC8E5342B19977B4eF8892e02D8DAEcfa1315831) | 0.7.6 |
-| Aerodrome's third CLPool implementation | `0xc770898522D2A9c8Da7A10D63989b6b58305B665` | [exact match](https://repo.sourcify.dev/8453/0xc770898522D2A9c8Da7A10D63989b6b58305B665) | 0.7.6 |
+| Aero CLPool implementation (`CLPool`) | `0x1642634C8CB1C9f1B84c9a1a08534F8c3F4E89f8` | [match](https://repo.sourcify.dev/8453/0x1642634C8CB1C9f1B84c9a1a08534F8c3F4E89f8) | 0.7.6 |
 | UniswapV2Factory | `0x8909Dc15e40173Ff4699343b6eB8132c65e18eC6` | [exact match](https://repo.sourcify.dev/8453/0x8909Dc15e40173Ff4699343b6eB8132c65e18eC6) | 0.5.16 |
 | UniswapV3Factory | `0x33128a8fC17869897dcE68Ed026d694621f6FDfD` | [match](https://repo.sourcify.dev/8453/0x33128a8fC17869897dcE68Ed026d694621f6FDfD) | 0.7.6 |
 | PoolManager | `0x498581fF718922c3f8e6A244956aF099B2652b2b` | [match](https://repo.sourcify.dev/8453/0x498581fF718922c3f8e6A244956aF099B2652b2b) | 0.8.26 |
@@ -50,11 +48,11 @@ files; only the compilation target's own paths are vendored. The vendored files 
 and `SHA256SUMS` holds their hashes:
 
 ```
-for a in 0x36077D39cdC65E1e3FB65810430E5b2c4D5fA29E 0x51f0B932855986B0E621c9D4DB6Eee1f4644D3D2 0x605abD1873737CA9a9Ec1CFa52CDfc8ef62c2E1d 0x421656a4fc9943a2a7997d6f4f6c04eb2e336d18 0x0526cF035C1156b5C598b0d3c2445e38af2e8bDE 0x8E6a9FCd1d638CC760Ffba397605Fe3355dE76D2 0x9CB220581b91b0C83223012FE69688b92aD07a76 0xeC8E5342B19977B4eF8892e02D8DAEcfa1315831 0xc770898522D2A9c8Da7A10D63989b6b58305B665 0x8909Dc15e40173Ff4699343b6eB8132c65e18eC6 0x33128a8fC17869897dcE68Ed026d694621f6FDfD 0x498581fF718922c3f8e6A244956aF099B2652b2b; do
+for a in 0x36077D39cdC65E1e3FB65810430E5b2c4D5fA29E 0x51f0B932855986B0E621c9D4DB6Eee1f4644D3D2 0x605abD1873737CA9a9Ec1CFa52CDfc8ef62c2E1d 0x421656a4fc9943a2a7997d6f4f6c04eb2e336d18 0x0526cF035C1156b5C598b0d3c2445e38af2e8bDE 0x8E6a9FCd1d638CC760Ffba397605Fe3355dE76D2 0x9CB220581b91b0C83223012FE69688b92aD07a76 0x1642634C8CB1C9f1B84c9a1a08534F8c3F4E89f8 0x8909Dc15e40173Ff4699343b6eB8132c65e18eC6 0x33128a8fC17869897dcE68Ed026d694621f6FDfD 0x498581fF718922c3f8e6A244956aF099B2652b2b; do
   curl -sS "https://sourcify.dev/server/v2/contract/8453/$a?fields=sources" > /tmp/$a.json
 done
 U=test/upstream
-mkdir -p $U/algebra $U/hydrex $U/aero/slipstream $U/aerodrome/slipstream $U/aerodrome/slipstream3 $U/uniswap/v2 $U/uniswap/v3 $U/uniswap/v4
+mkdir -p $U/algebra $U/hydrex $U/aero/slipstream $U/uniswap/v2 $U/uniswap/v3 $U/uniswap/v4
 get() { jq -j --arg k "$2" '.sources[$k].content' "/tmp/$1.json" > "$U/$3"; }
 get 0x36077D39cdC65E1e3FB65810430E5b2c4D5fA29E contracts/interfaces/IAlgebraFactory.sol algebra/IAlgebraFactory.sol
 get 0x51f0B932855986B0E621c9D4DB6Eee1f4644D3D2 contracts/interfaces/pool/IAlgebraPoolActions.sol algebra/IAlgebraPoolActions.sol
@@ -69,10 +67,8 @@ get 0x8E6a9FCd1d638CC760Ffba397605Fe3355dE76D2 V3/src/factories/PoolFactory.sol 
 get 0x8E6a9FCd1d638CC760Ffba397605Fe3355dE76D2 V3/src/interfaces/factories/IPoolFactory.sol aero/IPoolFactory.sol
 for f in interfaces/ICLFactory.sol interfaces/pool/ICLPoolActions.sol interfaces/pool/ICLPoolConstants.sol interfaces/callback/ICLSwapCallback.sol; do
   get 0x9CB220581b91b0C83223012FE69688b92aD07a76 contracts/core/$f aero/slipstream/"$(basename $f)"
-  get 0xeC8E5342B19977B4eF8892e02D8DAEcfa1315831 contracts/core/$f aerodrome/slipstream/"$(basename $f)"
 done
-get 0xeC8E5342B19977B4eF8892e02D8DAEcfa1315831 contracts/core/CLPool.sol aerodrome/slipstream/CLPool.sol
-get 0xc770898522D2A9c8Da7A10D63989b6b58305B665 contracts/core/interfaces/ICLFactory.sol aerodrome/slipstream3/ICLFactory.sol
+get 0x1642634C8CB1C9f1B84c9a1a08534F8c3F4E89f8 contracts/core/CLPool.sol aero/slipstream/CLPool.sol
 for f in UniswapV2Pair.sol interfaces/IUniswapV2Factory.sol interfaces/IUniswapV2Pair.sol; do
   get 0x8909Dc15e40173Ff4699343b6eB8132c65e18eC6 contracts/$f uniswap/v2/"$(basename $f)"
 done
@@ -90,14 +86,11 @@ done
 Their licences don't allow it, so only their code hashes are kept, in the table below, with the interfaces written for
 this repository:
 
-- BUSL-1.1: Aerodrome's `Pool` and `PoolFactory`, whose sources on Sourcify are a single flattened file; Algebra's
-  `AlgebraPool`; Uniswap v3's `UniswapV3Pool` and `UniswapV3Factory`; Uniswap v4's `PoolManager`. Aerodrome's classic
-  pools declare the same functions as Aero's and Hydrex's, which `script/check-signatures.sh` checks, and
-  `test/Fork.t.sol` swaps through one.
+- BUSL-1.1: Algebra's `AlgebraPool`; Uniswap v3's `UniswapV3Pool` and `UniswapV3Factory`; Uniswap v4's
+  `PoolManager`.
 - `LicenseRef-Dromos-Restricted-Use-1.0`: Aero's `FactoryRegistry`, fee modules, MEV tax modules and swap hook, which
   the swapper never calls; and Aero's new AERO token, an ERC-20 the AERO swapper pays out, with no fee or hook on
   transfers.
-- Aero's CLPool implementation is verified only on BaseScan, not on Sourcify.
 
 ## Addresses
 
@@ -109,27 +102,18 @@ this repository:
 | Hydrex pair factory proxy, `HydrexClassic` | `0xC47F17c4fd96F50eFD2A2448ceDe5C185c084bf0` | `0xe9254068c76f9b19f4ab63f7a83b9f82f412362d41609faa232daa65f987bbac` |
 | Hydrex pair factory implementation (ERC-1967 slot) | `0x421656a4fc9943a2a7997d6f4f6c04eb2e336d18` | `0x628fe0455fa1787ee8dd00677bccf958dd341f0d74039da40b0582080ac92f5e` |
 | Hydrex pair factory `ProxyAdmin` (ERC-1967 slot), owned by a one-day timelock `0xdF52b5A03E3F5a4178E4F63e8BC51abE691B898F` | `0x6e25d241a3ba9e0278a296b398e9678e5ed8ad40` | `0xccdecaad56ab1bfab03e34ecf082661df958184c89254f7f2d5f31865abb90e0` |
-| Aero volatile factory, `AeroVolatile` | `0x8E6a9FCd1d638CC760Ffba397605Fe3355dE76D2` | `0x975417bdbc8e5df051479a271f5a03582df5f09f179771c68e2708dddeb56ef0` |
+| Aero volatile factory, `AeroClassic` | `0x8E6a9FCd1d638CC760Ffba397605Fe3355dE76D2` | `0x975417bdbc8e5df051479a271f5a03582df5f09f179771c68e2708dddeb56ef0` |
 | Aero volatile pool implementation | `0x0526cF035C1156b5C598b0d3c2445e38af2e8bDE` | `0x15269fbb3aca4305485be2669a8394ec6a14c75181e1eb4c2d46c5b1ee2a7782` |
-| Aero stable factory, `AeroStable` | `0x78589E876edcEbdce72ee3436ab3c9AD3a7cEF2D` | `0x3b34cd7ed303be01986b097c49f1a29d211783ef63f5e920db0ffb9291396cc2` |
+| Aero stable factory, `AeroClassic` | `0x78589E876edcEbdce72ee3436ab3c9AD3a7cEF2D` | `0x3b34cd7ed303be01986b097c49f1a29d211783ef63f5e920db0ffb9291396cc2` |
 | Aero stable pool implementation | `0xf525988f88B7D8b64631D86070FEC5BFDc50C174` | `0x9d1476a920eac769acf23251d79fd656f5566538080c06fc05573e5946b64a91` |
 | Aero CLFactory, `AeroSlipstream` | `0x9CB220581b91b0C83223012FE69688b92aD07a76` | `0x6c09090837ace0aefe6bfa24a3bc772d13a9775b7e3109c9fece534a0ce053a6` |
-| Aero CLPool implementation, verified on BaseScan | `0x1642634C8CB1C9f1B84c9a1a08534F8c3F4E89f8` | `0x041172c7cbffc45627f9dd52727a0124cd6eeb2b5830ab392df54f71a6948693` |
+| Aero CLPool implementation | `0x1642634C8CB1C9f1B84c9a1a08534F8c3F4E89f8` | `0x041172c7cbffc45627f9dd52727a0124cd6eeb2b5830ab392df54f71a6948693` |
 | Aero `FactoryRegistry`, listing the three Aero factories and no other | `0x7b2A2c12dC5Ea2a31455952a05031C3E4BB28F3E` | `0xcd0b88f96b36edf4d58c6b41119653e25d12bf52d1ea1cd7f636eab29cdb0bd1` |
 | Aero volatile fee module (`CustomFeeModule`) | `0x7949DE8d67E4F6b8509Bdbb43FF0503aF1247a7A` | `0xa56614fe447178e62c473ff1333d660c1dbb70965b4a059fae228bf52457c0f2` |
 | Aero volatile MEV tax module (`PriorityFeeMevTaxModule`) | `0x830D07BDe136752BCefe0B59a14c2C7af07814AF` | `0x59de6c7ead685b6295ef7dccb7ee30cd2881c697267d09718790f998db3cf016` |
 | Aero stable fee module (`CustomFeeModule`) | `0x0195fC76Da986D66B2A468133a1be41E90893Da6` | `0xe0c19912c35391d5bd218fc0903c3116d9915dc36b4f0b93eb75cf19932c12ac` |
 | Aero stable MEV tax module (`PriorityFeeMevTaxModule`) | `0x78ee48646a7e1507B79443a1d5494095D16AF3B8` | `0x59de6c7ead685b6295ef7dccb7ee30cd2881c697267d09718790f998db3cf016` |
 | Aero CL default swap hook (`DynamicSwapFeeHook`) | `0xC0ed888AfE87ed1AcF01D9f19bB850159e3ce434` | `0x198b45ce022f423a9852526890d236531333e97861078501357e1c72f0eeecbd` |
-| Aerodrome `PoolFactory`, `AerodromeClassic` | `0x420DD381b31aEf6683db6B902084cB0FFECe40Da` | `0xe2a176e5d2bcfb214b784ec6d6733708a6376a464f203cc265c284c9f349fea3` |
-| Aerodrome pool implementation | `0xA4e46b4f701c62e14DF11B48dCe76A7d793CD6d7` | `0xd22754a0a3b39db7298dbbc2be1e34b34320988ea67065c85fa28ae66c02d31e` |
-| Aerodrome CLFactory, `AerodromeSlipstream` | `0x5e7BB104d84c7CB9B682AaC2F3d509f5F406809A` | `0x7340cf80843bd721bcaefbfc050e38304cb4174c239e6e914e3056f27f39b11c` |
-| Its CLPool implementation | `0xeC8E5342B19977B4eF8892e02D8DAEcfa1315831` | `0x772fb5c610b40a122036f544e5b9b5bce6becb19db9524331289d1aaed2d5888` |
-| Aerodrome CLFactory, `AerodromeSlipstream2` | `0xaDe65c38CD4849aDBA595a4323a8C7DdfE89716a` | `0x0e72100f63ce8e32c95370fa9636d38c8cf434a820f2a7a69985e50930d2cb85` |
-| Its CLPool implementation | `0x942e97a4c6FdC38B4CD1c0298D37d81fDD8E5A16` | `0x916bc5496cc07ea86289bc3a08a90f93dcae34686be6634f6e89ef260c3df4fa` |
-| Aerodrome CLFactory, `AerodromeSlipstream3` | `0xf8f2eB4940CFE7d13603DDDD87f123820Fc061Ef` | `0x4961963494e47f363617ab9a0f3999a28b33c519e51392952db06350cce700bd` |
-| Its CLPool implementation | `0xc770898522D2A9c8Da7A10D63989b6b58305B665` | `0xe63484f408c701770737a3c40e435c8183c66b1663f3a8777ce44dd73aff339b` |
-| Aerodrome `FactoryRegistry`, listing the four Aerodrome factories and no other | `0x5C3F18F06CC09CA1910767A34a20F771039E37C0` | `0xd4a9f98ebd41e4c4e7ae646f1a1f8eaa1205100906f34299a3cd7e4ed567c929` |
 | UniswapV2Factory, `UniswapV2` | `0x8909Dc15e40173Ff4699343b6eB8132c65e18eC6` | `0xbab145d02e7005f0d84c6c1639d39b799b0ea16df99ebbdaf5a14d9da820b4e0` |
 | UniswapV3Factory, `UniswapV3` | `0x33128a8fC17869897dcE68Ed026d694621f6FDfD` | `0x95707a4ac71f20181a63ef7d180e3c625be5d20fc8f6f980befa966bad568132` |
 | PoolManager, `UniswapV4` | `0x498581fF718922c3f8e6A244956aF099B2652b2b` | `0x83b2af6e9f3158defc2811cbcb0db71ecf8b2ba2abea39c39e370ac5c6f43eb6` |
@@ -140,8 +124,8 @@ Aero's new AERO is the `TOKEN` of its root `Voter`, `0x49d7d4f17Ec56Ef8fA04E464A
 `FactoryRegistry` through its `LeafVoter`, the `LeafMessageOrchestrator`'s adapter and the `RootMessageOrchestrator`.
 At the pinned block, its 2.127 billion tokens sit with its two migration contracts, and it trades in no pool yet.
 
-Only the Hydrex pair factory has an ERC-1967 implementation slot set. Aero's and Aerodrome's pools are EIP-1167 clones
-of their factory's implementation: `test/Fork.t.sol` checks Aero's two and Aerodrome's four that it swaps through.
+Only the Hydrex pair factory has an ERC-1967 implementation slot set. Aero's pools are EIP-1167 clones of their
+factory's implementation: `test/Fork.t.sol` checks the two that it swaps through.
 
 ## Facts the design depends on
 
@@ -153,7 +137,7 @@ Line numbers are in the vendored files, unless a Sourcify link is given.
    v3's `getPool` hold each pair's one pool, by fee for Uniswap v3. Anyone can create a pool for any two tokens.
 2. **Concentrated pools pay first, then call back.** Each sends the output, then calls the callback on `msg.sender`
    with the two amounts, the positive one owed, and reverts unless its balance grew by that much
-   ([`CLPool.sol`](aerodrome/slipstream/CLPool.sol#L854-L866);
+   ([`CLPool.sol`](aero/slipstream/CLPool.sol#L707-L720);
    [`AlgebraPool.sol`](https://repo.sourcify.dev/8453/0x51f0B932855986B0E621c9D4DB6Eee1f4644D3D2) lines 264-279,
    then `_afterSwap`, where Hydrex's plugin trades). With an exact input, the input owed is the whole amount unless the
    price limit stops the swap.

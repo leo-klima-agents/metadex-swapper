@@ -5,7 +5,7 @@ cache/
 broadcast/*
 !broadcast/*/
 broadcast/*/*
-!broadcast/*/8453/
-broadcast/*/8453/*
-!broadcast/*/8453/run-latest.json
+!broadcast/*/*/
+broadcast/*/*/*
+!broadcast/*/*/run-latest.json
 __pycache__/

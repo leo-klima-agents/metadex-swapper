@@ -7,18 +7,6 @@ SPDX-FileCopyrightText = "2026 Léo de Souza"
 SPDX-License-Identifier = "MIT"
 
 [[annotations]]
-path = "test/upstream/hydrex/**"
-precedence = "aggregate"
-SPDX-FileCopyrightText = "2026 Hydrex"
-SPDX-License-Identifier = "MIT"
-
-[[annotations]]
-path = "test/upstream/algebra/**"
-precedence = "aggregate"
-SPDX-FileCopyrightText = "Algebra"
-SPDX-License-Identifier = "GPL-2.0-or-later"
-
-[[annotations]]
 path = ["test/upstream/aero/IPool.sol", "test/upstream/aero/IPoolFactory.sol"]
 precedence = "aggregate"
 SPDX-FileCopyrightText = "Aero"
@@ -34,12 +22,6 @@ SPDX-License-Identifier = "GPL-3.0-or-later"
 path = "test/upstream/aero/slipstream/**"
 precedence = "aggregate"
 SPDX-FileCopyrightText = "Aero"
-SPDX-License-Identifier = "GPL-2.0-or-later"
-
-[[annotations]]
-path = "test/upstream/aerodrome/**"
-precedence = "aggregate"
-SPDX-FileCopyrightText = "Aerodrome"
 SPDX-License-Identifier = "GPL-2.0-or-later"
 
 [[annotations]]
@@ -59,6 +41,18 @@ path = "test/upstream/uniswap/v4/**"
 precedence = "aggregate"
 SPDX-FileCopyrightText = "Uniswap Labs"
 SPDX-License-Identifier = "MIT"
+
+[[annotations]]
+path = "test/upstream/hydrex/**"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2026 Hydrex"
+SPDX-License-Identifier = "MIT"
+
+[[annotations]]
+path = "test/upstream/algebra/**"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "Algebra"
+SPDX-License-Identifier = "GPL-2.0-or-later"
 
 [[annotations]]
 path = ["broadcast/**", "verification/**"]

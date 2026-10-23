@@ -48,8 +48,8 @@ contract MockConcentratedPool {
         (amount0, amount1) = zeroForOne != wrongSide ? (owed, -int256(out)) : (-int256(out), owed);
         uint256 before = IERC20(tokenIn).balanceOf(address(this));
         for (uint256 i; i < callbacks; ++i) {
-            if (algebra) IAlgebraSwapCallback(msg.sender).algebraSwapCallback(amount0, amount1, data);
-            else IUniswapV3SwapCallback(msg.sender).uniswapV3SwapCallback(amount0, amount1, data);
+            if (!algebra) IUniswapV3SwapCallback(msg.sender).uniswapV3SwapCallback(amount0, amount1, data);
+            else IAlgebraSwapCallback(msg.sender).algebraSwapCallback(amount0, amount1, data);
         }
         require(IERC20(tokenIn).balanceOf(address(this)) >= before + uint256(owed), "IIA");
     }

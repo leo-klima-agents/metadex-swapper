@@ -29,16 +29,16 @@ contract SelectorsTest is Test {
         p[1] = Pin(IERC20.allowance.selector, "allowance(address,address)");
         p[2] = Pin(IERC20.transfer.selector, "transfer(address,uint256)");
         p[3] = Pin(IERC20.transferFrom.selector, "transferFrom(address,address,uint256)");
-        p[4] = Pin(IAlgebraFactory.poolByPair.selector, "poolByPair(address,address)");
-        p[5] = Pin(IPairFactory.isPair.selector, "isPair(address)");
-        p[6] = Pin(IPoolFactory.isPool.selector, "isPool(address)");
-        p[7] = Pin(IUniswapV2Factory.getPair.selector, "getPair(address,address)");
-        p[8] = Pin(IUniswapV3Factory.getPool.selector, "getPool(address,address,uint24)");
+        p[4] = Pin(IPoolFactory.isPool.selector, "isPool(address)");
+        p[5] = Pin(IUniswapV2Factory.getPair.selector, "getPair(address,address)");
+        p[6] = Pin(IUniswapV3Factory.getPool.selector, "getPool(address,address,uint24)");
+        p[7] = Pin(IPairFactory.isPair.selector, "isPair(address)");
+        p[8] = Pin(IAlgebraFactory.poolByPair.selector, "poolByPair(address,address)");
         p[9] = Pin(IClassicPool.token0.selector, "token0()");
         p[10] = Pin(IClassicPool.token1.selector, "token1()");
         p[11] = Pin(IClassicPool.getReserves.selector, "getReserves()");
-        p[12] = Pin(IClassicPool.getAmountOut.selector, "getAmountOut(uint256,address)");
-        p[13] = Pin(IClassicPool.getAmountOutWithTotalFee.selector, "getAmountOutWithTotalFee(uint256,address)");
+        p[12] = Pin(IClassicPool.getAmountOutWithTotalFee.selector, "getAmountOutWithTotalFee(uint256,address)");
+        p[13] = Pin(IClassicPool.getAmountOut.selector, "getAmountOut(uint256,address)");
         p[14] = Pin(IClassicPool.swap.selector, "swap(uint256,uint256,address,bytes)");
         p[15] = Pin(IClassicPool.sync.selector, "sync()");
         p[16] = Pin(IConcentratedPool.swap.selector, "swap(address,bool,int256,uint160,bytes)");
@@ -48,9 +48,9 @@ contract SelectorsTest is Test {
         p[19] = Pin(IPoolManager.sync.selector, "sync(address)");
         p[20] = Pin(IPoolManager.settle.selector, "settle()");
         p[21] = Pin(IPoolManager.take.selector, "take(address,address,uint256)");
-        p[22] = Pin(IAlgebraSwapCallback.algebraSwapCallback.selector, "algebraSwapCallback(int256,int256,bytes)");
-        p[23] = Pin(IUniswapV3SwapCallback.uniswapV3SwapCallback.selector, "uniswapV3SwapCallback(int256,int256,bytes)");
-        p[24] = Pin(IUnlockCallback.unlockCallback.selector, "unlockCallback(bytes)");
+        p[22] = Pin(IUniswapV3SwapCallback.uniswapV3SwapCallback.selector, "uniswapV3SwapCallback(int256,int256,bytes)");
+        p[23] = Pin(IUnlockCallback.unlockCallback.selector, "unlockCallback(bytes)");
+        p[24] = Pin(IAlgebraSwapCallback.algebraSwapCallback.selector, "algebraSwapCallback(int256,int256,bytes)");
     }
 
     function test_matchSignatures() public pure {

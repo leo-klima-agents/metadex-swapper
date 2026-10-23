@@ -1,0 +1,239 @@
+{
+  "block": 27325357,
+  "routes": {
+    "aeroVolatile": {
+      "token": "0x171A4217b86A807A64eB94757Db6849fb4bDbAA0",
+      "amount": "1000000",
+      "factories": [
+        "0x8E6a9FCd1d638CC760Ffba397605Fe3355dE76D2"
+      ],
+      "pools": [
+        "0x0000000000000000000000000000000000000000"
+      ],
+      "tokensOut": [
+        "0x3600000000000000000000000000000000000000"
+      ],
+      "fees": [
+        0
+      ],
+      "tickSpacings": [
+        0
+      ],
+      "seedsIn": [
+        "100000000"
+      ],
+      "seedsOut": [
+        "100000000000"
+      ],
+      "quote": "0"
+    },
+    "aeroStable": {
+      "token": "0xbEf5f6d51CB62b58e6A8f77868681825C6fe21c1",
+      "amount": "100000000",
+      "factories": [
+        "0x78589E876edcEbdce72ee3436ab3c9AD3a7cEF2D"
+      ],
+      "pools": [
+        "0x0000000000000000000000000000000000000000"
+      ],
+      "tokensOut": [
+        "0x3600000000000000000000000000000000000000"
+      ],
+      "fees": [
+        0
+      ],
+      "tickSpacings": [
+        0
+      ],
+      "seedsIn": [
+        "100000000000"
+      ],
+      "seedsOut": [
+        "100000000000"
+      ],
+      "quote": "0"
+    },
+    "aeroSlipstream": {
+      "token": "0xbEf5f6d51CB62b58e6A8f77868681825C6fe21c1",
+      "amount": "100000000",
+      "factories": [
+        "0x7F83235643181E440433400a027618Cd50879751"
+      ],
+      "pools": [
+        "0x6f57b4c22155cef09f17184c954f227ff0493742"
+      ],
+      "tokensOut": [
+        "0x3600000000000000000000000000000000000000"
+      ],
+      "fees": [
+        0
+      ],
+      "tickSpacings": [
+        1
+      ],
+      "seedsIn": [
+        "0"
+      ],
+      "seedsOut": [
+        "0"
+      ],
+      "quote": "112213505"
+    },
+    "uniswapV2": {
+      "token": "0xbEf5f6d51CB62b58e6A8f77868681825C6fe21c1",
+      "amount": "100000000",
+      "factories": [
+        "0x89e5DB8B5aA49aA85AC63f691524311AEB649eba"
+      ],
+      "pools": [
+        "0xfb778eacdd10603c521e8a343f4d37f3afa41fb7"
+      ],
+      "tokensOut": [
+        "0x3600000000000000000000000000000000000000"
+      ],
+      "fees": [
+        0
+      ],
+      "tickSpacings": [
+        0
+      ],
+      "seedsIn": [
+        "10000000000"
+      ],
+      "seedsOut": [
+        "11000000000"
+      ],
+      "quote": "0"
+    },
+    "uniswapV3": {
+      "token": "0xbEf5f6d51CB62b58e6A8f77868681825C6fe21c1",
+      "amount": "100000000",
+      "factories": [
+        "0xf0db7b58379503491d857dB50AC9ece64c653918"
+      ],
+      "pools": [
+        "0x6fd5f2fb831940dcd61a98c5b3acb7d8c6f3bfc1"
+      ],
+      "tokensOut": [
+        "0x3600000000000000000000000000000000000000"
+      ],
+      "fees": [
+        500
+      ],
+      "tickSpacings": [
+        0
+      ],
+      "seedsIn": [
+        "0"
+      ],
+      "seedsOut": [
+        "0"
+      ],
+      "quote": "112182909"
+    },
+    "uniswapV4": {
+      "token": "0xbEf5f6d51CB62b58e6A8f77868681825C6fe21c1",
+      "amount": "10000000",
+      "factories": [
+        "0x8366a39CC670B4001A1121B8F6A443A643e40951"
+      ],
+      "pools": [
+        "0x0000000000000000000000000000000000000000"
+      ],
+      "tokensOut": [
+        "0x3600000000000000000000000000000000000000"
+      ],
+      "fees": [
+        500
+      ],
+      "tickSpacings": [
+        10
+      ],
+      "seedsIn": [
+        "0"
+      ],
+      "seedsOut": [
+        "0"
+      ],
+      "quote": "11215338"
+    },
+    "usdcToWeth": {
+      "token": "0x3600000000000000000000000000000000000000",
+      "amount": "100000000",
+      "factories": [
+        "0x7F83235643181E440433400a027618Cd50879751"
+      ],
+      "pools": [
+        "0xad5eea00214715cce97cdc4d0d13e9ee2b57eace"
+      ],
+      "tokensOut": [
+        "0x128cC466B61f542da60c70e3aA11c10e19B84EDB"
+      ],
+      "fees": [
+        0
+      ],
+      "tickSpacings": [
+        50
+      ],
+      "seedsIn": [
+        "0"
+      ],
+      "seedsOut": [
+        "0"
+      ],
+      "quote": "42030321264615576"
+    },
+    "usdcToEurc": {
+      "token": "0x3600000000000000000000000000000000000000",
+      "amount": "100000000",
+      "factories": [
+        "0x7F83235643181E440433400a027618Cd50879751"
+      ],
+      "pools": [
+        "0x6f57b4c22155cef09f17184c954f227ff0493742"
+      ],
+      "tokensOut": [
+        "0xbEf5f6d51CB62b58e6A8f77868681825C6fe21c1"
+      ],
+      "fees": [
+        0
+      ],
+      "tickSpacings": [
+        1
+      ],
+      "seedsIn": [
+        "0"
+      ],
+      "seedsOut": [
+        "0"
+      ],
+      "quote": "89074216"
+    },
+    "usdcToCirBtc": {
+      "token": "0x3600000000000000000000000000000000000000",
+      "amount": "10000000",
+      "factories": [
+        "0xf0db7b58379503491d857dB50AC9ece64c653918"
+      ],
+      "pools": [
+        "0x82916bee18fcef517b26c72d7cb5f13694e1db41"
+      ],
+      "tokensOut": [
+        "0x171A4217b86A807A64eB94757Db6849fb4bDbAA0"
+      ],
+      "fees": [
+        100
+      ],
+      "tickSpacings": [
+        0
+      ],
+      "seedsIn": [
+        "0"
+      ],
+      "seedsOut": [
+        "0"
+      ],
+      "quote": "12322"
+    }
+  }
+}

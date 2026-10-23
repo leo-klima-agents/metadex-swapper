@@ -61,6 +61,7 @@ A = {
     "USDT0": "0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9",
 }
 C = {
+    "WETH": "0x128cC466B61f542da60c70e3aA11c10e19B84EDB",
     "USDC": "0x3600000000000000000000000000000000000000",
     "EURC": "0xbEf5f6d51CB62b58e6A8f77868681825C6fe21c1",
     "cirBTC": "0x171A4217b86A807A64eB94757Db6849fb4bDbAA0",
@@ -195,6 +196,7 @@ CHAINS = {
             ),
             "uniswapV3": (None, C["EURC"], 10**8, [hop("UniswapV3", C["USDC"], fee=500)]),
             "uniswapV4": (None, C["EURC"], 10**7, [hop("UniswapV4", C["USDC"], fee=500, spacing=10)]),
+            "usdcToWeth": (None, C["USDC"], 10**8, [hop("AeroSlipstream", C["WETH"], spacing=50)]),
             "usdcToEurc": (None, C["USDC"], 10**8, [hop("AeroSlipstream", C["EURC"], spacing=1)]),
             "usdcToCirBtc": (None, C["USDC"], 10**7, [hop("UniswapV3", C["cirBTC"], fee=100)]),
         },

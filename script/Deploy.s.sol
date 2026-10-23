@@ -168,10 +168,11 @@ contract Deploy is Script {
 
     function _arc() private pure returns (Config memory c) {
         c.name = "arc";
-        c.outputs = new Output[](3);
-        c.outputs[0] = Output("USDC", 0x3600000000000000000000000000000000000000);
-        c.outputs[1] = Output("EURC", 0xbEf5f6d51CB62b58e6A8f77868681825C6fe21c1);
-        c.outputs[2] = Output("cirBTC", 0x171A4217b86A807A64eB94757Db6849fb4bDbAA0);
+        c.outputs = new Output[](4);
+        c.outputs[0] = Output("WETH", 0x128cC466B61f542da60c70e3aA11c10e19B84EDB);
+        c.outputs[1] = Output("USDC", 0x3600000000000000000000000000000000000000);
+        c.outputs[2] = Output("EURC", 0xbEf5f6d51CB62b58e6A8f77868681825C6fe21c1);
+        c.outputs[3] = Output("cirBTC", 0x171A4217b86A807A64eB94757Db6849fb4bDbAA0);
         c.exchanges = _aeroAndUniswap(
             0x7F83235643181E440433400a027618Cd50879751,
             0x89e5DB8B5aA49aA85AC63f691524311AEB649eba,

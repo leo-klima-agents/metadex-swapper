@@ -6,7 +6,6 @@ import {Test, console} from "forge-std/Test.sol";
 import {IERC20} from "forge-std/interfaces/IERC20.sol";
 
 import {Deploy} from "../../script/Deploy.s.sol";
-import {Treasury} from "../../script/Treasury.s.sol";
 import {ImmutableSwapper} from "../../src/ImmutableSwapper.sol";
 
 interface IViews {
@@ -15,8 +14,6 @@ interface IViews {
     function defaultSwapHook() external view returns (address);
     function factoryRegistry() external view returns (address);
     function targetFactories() external view returns (address[] memory);
-    function getOwners() external view returns (address[] memory);
-    function getThreshold() external view returns (uint256);
 }
 
 interface IPoolSetup {
@@ -25,8 +22,8 @@ interface IPoolSetup {
     function mint(address to) external returns (uint256);
 }
 
-// Forks a chain at its fixture's block, recreates the treasury there if it is missing, deploys that chain's swappers
-// with script/Deploy.s.sol, and swaps each fixture route through them. Each chain's test names its pins and routes.
+// Forks a chain at its fixture's block, deploys that chain's swappers with script/Deploy.s.sol, and swaps each fixture
+// route through them. Each chain's test names its pins and routes.
 abstract contract ForkTest is Test {
     using stdJson for string;
 
@@ -34,8 +31,6 @@ abstract contract ForkTest is Test {
         address target;
         bytes32 codehash;
     }
-
-    bytes32 internal constant SAFE_PROXY_CODEHASH = 0x4e381985ca68b3e5d27b4425fa581c19cf33146d3f887a3cfca96f55528ea46f;
 
     string internal fx;
     Deploy internal d;
@@ -53,8 +48,10 @@ abstract contract ForkTest is Test {
         vm.createSelectFork(rpc, fx.readUint(".block"));
         assertEq(block.chainid, _chainId());
         _beforeDeploy();
-        new Treasury().run();
         d = new Deploy();
+        // The deploy script needs the treasury to have code. Where it doesn't exist yet, a stand-in takes its place: the
+        // swaps only send it tokens.
+        if (d.TREASURY().code.length == 0) vm.etch(d.TREASURY(), hex"00");
         address[] memory deployed = d.run();
         Deploy.Output[] memory o = d.config(_chainId()).outputs;
         for (uint256 i; i < o.length; ++i) {
@@ -127,17 +124,6 @@ abstract contract ForkTest is Test {
                 }
             }
         }
-    }
-
-    function test_treasury_isTheSafeOnBase() public {
-        Treasury t = new Treasury();
-        address treasury = d.TREASURY();
-        assertEq(treasury, t.TREASURY());
-        assertEq(treasury.codehash, SAFE_PROXY_CODEHASH);
-        assertEq(IViews(treasury).getOwners(), t.owners());
-        assertEq(IViews(treasury).getThreshold(), t.THRESHOLD());
-        address singleton = address(uint160(uint256(vm.load(treasury, 0))));
-        assertEq(singleton, block.chainid == 1 ? t.SINGLETON() : t.L2_SINGLETON());
     }
 
     function _check(string memory name) internal {

@@ -157,6 +157,32 @@
       ],
       "quote": "11215338"
     },
+    "usdcToWeth": {
+      "token": "0x3600000000000000000000000000000000000000",
+      "amount": "100000000",
+      "factories": [
+        "0x7F83235643181E440433400a027618Cd50879751"
+      ],
+      "pools": [
+        "0xad5eea00214715cce97cdc4d0d13e9ee2b57eace"
+      ],
+      "tokensOut": [
+        "0x128cC466B61f542da60c70e3aA11c10e19B84EDB"
+      ],
+      "fees": [
+        0
+      ],
+      "tickSpacings": [
+        50
+      ],
+      "seedsIn": [
+        "0"
+      ],
+      "seedsOut": [
+        "0"
+      ],
+      "quote": "42030321264615576"
+    },
     "usdcToEurc": {
       "token": "0x3600000000000000000000000000000000000000",
       "amount": "100000000",

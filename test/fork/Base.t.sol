@@ -22,6 +22,8 @@ interface IBaseViews {
     function owner() external view returns (address);
     function getMinDelay() external view returns (uint256);
     function slot0() external view returns (uint160 sqrtPriceX96, int24 tick, uint16, uint16, uint16, bool);
+    function getOwners() external view returns (address[] memory);
+    function getThreshold() external view returns (uint256);
 }
 
 interface ICLPoolSetup {
@@ -61,6 +63,9 @@ contract BaseForkTest is ForkTest {
     address internal constant HYDREX_TIMELOCK = 0xdF52b5A03E3F5a4178E4F63e8BC51abE691B898F;
     address internal constant HYDREX_STABLE_PAIR = 0xB0EAc8AA498845045229DFE9B68d023f3d019079;
     address internal constant ALGEBRA_OWNER = 0x74266f2b206D1359B83fc74949EF07176FB3AE03;
+
+    bytes32 internal constant SAFE_PROXY_CODEHASH = 0x4e381985ca68b3e5d27b4425fa581c19cf33146d3f887a3cfca96f55528ea46f;
+    address internal constant SAFE_L2_SINGLETON = 0xEdd160fEBBD92E350D4D398fb636302fccd67C7e;
 
     function _chainId() internal pure override returns (uint256) {
         return 8453;
@@ -133,6 +138,18 @@ contract BaseForkTest is ForkTest {
         assertEq(IBaseViews(HYDREX_TIMELOCK).getMinDelay(), 1 days);
         assertEq(IBaseViews(HYDREX_ALGEBRA).owner(), ALGEBRA_OWNER);
         assertEq(ALGEBRA_OWNER.code.length, 0);
+    }
+
+    function test_treasury_isTheSafe() public view {
+        address treasury = d.TREASURY();
+        assertEq(treasury.codehash, SAFE_PROXY_CODEHASH);
+        address[] memory owners = IBaseViews(treasury).getOwners();
+        assertEq(owners.length, 3);
+        assertEq(owners[0], 0x38F74e78B755668D13189C207851745B2fc04A62);
+        assertEq(owners[1], 0x2CbbBa3f77c0dFBfBc5C7Af0f3056A086B6a7807);
+        assertEq(owners[2], 0xA53b1a6F17189d7061f22f8E749Fe494C9E7dAE1);
+        assertEq(IBaseViews(treasury).getThreshold(), 2);
+        assertEq(address(uint160(uint256(vm.load(treasury, 0)))), SAFE_L2_SINGLETON);
     }
 
     function test_aeroVolatile() public {

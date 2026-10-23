@@ -139,6 +139,10 @@ contract ArcForkTest is ForkTest {
         _check("uniswapV4");
     }
 
+    function test_usdcToWeth() public {
+        _check("usdcToWeth");
+    }
+
     function test_usdcToEurc() public {
         _check("usdcToEurc");
     }

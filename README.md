@@ -200,12 +200,14 @@ Chain ID 42161.
 
 ### Arc
 
-Chain ID 5042. USDC is Arc's native currency, through an ERC-20 at `0x3600…`: see [Trust and
-limitations](#trust-and-limitations). There is no WETH swapper: Arc's WETH is a bridged token whose owner is a single
-key.
+Chain ID 5042. WETH is the bridged WETH that Arc's documentation lists: it is minted on Arc against WETH locked on
+Ethereum, through the `CrossChainTokenService` at `0x431871229103b780868f8C6BB820cd16ECf942BC`. A look-alike WETH trades
+on Arc at `0x41d5379e2fCcE2c28802aA9f2536541B0Ab9F938`. USDC is Arc's native currency, through an ERC-20 at `0x3600…`.
+See [Trust and limitations](#trust-and-limitations) for both.
 
 | Output | Token | Swapper |
 | --- | --- | --- |
+| WETH | `0x128cC466B61f542da60c70e3aA11c10e19B84EDB` | `0x43C7BdA82e136608D3FA422d064aC8FED43d3E87` |
 | USDC | `0x3600000000000000000000000000000000000000` | `0xbc9B081906620588228B3c44E9804048A5E5bD31` |
 | EURC | `0xbEf5f6d51CB62b58e6A8f77868681825C6fe21c1` | `0x4CAD9fa41D498686261Bb7EC4db7D7291e550686` |
 | cirBTC | `0x171A4217b86A807A64eB94757Db6849fb4bDbAA0` | `0x7A19943AA36Ca7e365142Fe10023CB182A25153c` |
@@ -301,7 +303,11 @@ results of `eth_call` at the limit you send.
   reverts with a reason too big to copy. Either reverts the whole call, for the caller who included that route only.
 - WETH on Arbitrum One is upgradeable, though it blocks nobody. USDC, EURC, cirBTC and cbBTC are upgradeable, and can
   block addresses. A caller that the output token blocks can't be paid, so their swaps revert, and so would everyone's
-  if it blocked the treasury. WETH on the other chains, AERO and HYDX can't block anyone.
+  if it blocked the treasury. WETH on Ethereum, Base and OP Mainnet, AERO and HYDX can't block anyone.
+- WETH on Arc is minted against WETH locked on Ethereum, by a `CrossChainTokenService` that a single key can upgrade on
+  each chain. Another single key owns the token: it can pause it, and add minters, which could mint WETH that nothing
+  backs. The token also checks a denylist, so it can block addresses. The WETH swapper on Arc pays out a token only as
+  sound as those keys.
 - On Arc, USDC is the native currency, and `0x3600000000000000000000000000000000000000` is the ERC-20 that moves it,
   in 6 decimals where the native balance has 18. The swapper treats it as any ERC-20: it can take it and pay it, and
   counts it by `balanceOf`. Foundry can't run the precompiles that this ERC-20 calls, so the fork tests of Arc run it
@@ -322,14 +328,9 @@ token has no code.
 | Networks | Ethereum, Base, OP Mainnet, Arbitrum One, Arc |
 | Addresses | one swapper for each chain and output token, under [Chains](#chains) |
 | Exchanges | each chain's, under [Chains](#chains), in that order |
-| Treasury | `0x450c72de8c0079B49AcedF294a13011bd09D125B`, a 2-of-3 Safe, fixed in the source. It exists on Base only, so far: `script/Treasury.s.sol` creates it on another chain |
+| Treasury | `0x450c72de8c0079B49AcedF294a13011bd09D125B`, a 2-of-3 Safe, fixed in the source. It must exist on a chain before a deployment there |
 | Fee | 1% (`FEE_BPS = 100`), fixed in the source |
 | Method | CREATE2 through `0x4e59b44847b379578588920cA78FbF26c0B4956C`, salt `keccak256("metadex.cafe/ImmutableSwapper/v2")` for all; the chain's exchanges and the output token set them apart |
-
-The treasury was made on Base by Safe's proxy factory, in block 52,814,397. `script/Treasury.s.sol` sends the same call
-on another chain, which makes the same Safe at the same address, with the same three owners, keys that work on every
-chain, and the same threshold. Anyone can send it. It needs Safe v1.5.0's contracts on the chain, which all five have,
-and it checks the owners and the threshold of the Safe it finds or makes.
 
 Deployment steps, for each chain:
 
@@ -337,15 +338,12 @@ Deployment steps, for each chain:
    different bytecode.
 2. Run `forge test` with the chain's RPC set: `ETHEREUM_RPC_URL`, `BASE_RPC_URL`, `OPTIMISM_RPC_URL`,
    `ARBITRUM_RPC_URL` or `ARC_RPC_URL`. Then run `script/check-verification.sh`.
-3. If the chain lacks the treasury, do a dry run of `script/Treasury.s.sol`, without `--broadcast`, then send it. It
-   does nothing where the treasury exists.
-4. Do a dry run of `script/Deploy.s.sol`, and check that it logs the chain's addresses under [Chains](#chains). It
-   skips any that is already deployed.
-5. Deploy, then verify each swapper on Sourcify, and on the chain's explorer with the verifier it takes:
+3. Do a dry run of `script/Deploy.s.sol`, and check that it logs the chain's addresses under [Chains](#chains). It
+   stops where the treasury doesn't exist yet, and skips any swapper already deployed.
+4. Deploy, then verify each swapper on Sourcify, and on the chain's explorer with the verifier it takes:
 
 ```
 CHAIN=arc RPC=$ARC_RPC_URL # the chain's key in verification/bytecode-hashes.json, and its RPC
-forge script script/Treasury.s.sol --rpc-url $RPC --broadcast --ledger # where the chain lacks the treasury
 forge script script/Deploy.s.sol --rpc-url $RPC --broadcast --ledger
 H=verification/bytecode-hashes.json
 ID=$(jq -j ".chains.$CHAIN.chainId" $H)
@@ -400,9 +398,9 @@ RPCs often keep too little history: Arbitrum's own no longer serves the state at
 
 - `forge test` runs the unit tests, and the fork tests of each chain whose RPC is set. Each chain's fork tests,
   [`test/fork/<Chain>.t.sol`](test/fork/), run against that chain at the block recorded in
-  [`test/fixtures/<chain>.json`](test/fixtures/). They create the treasury with `script/Treasury.s.sol` where it is
-  missing, deploy the chain's swappers with `script/Deploy.s.sol`, and swap through a real pool of each exchange, and
-  into each output token. They pin the code of the exchanges' factories and of what they rely on. Some of Aero's pools
+  [`test/fixtures/<chain>.json`](test/fixtures/). They deploy the chain's swappers with `script/Deploy.s.sol`, with a
+  stand-in for the treasury where it doesn't exist yet, and swap through a real pool of each exchange, and into each
+  output token. They pin the code of the exchanges' factories and of what they rely on. Some of Aero's pools
   hold no liquidity yet, so the fork tests add their own.
 - `test/fixtures/generate.py <chain> [block]` rewrites a chain's fixture: a pool of each exchange, a holder of each
   token, and each route's quote at that block, from the exchanges' own quotes.
